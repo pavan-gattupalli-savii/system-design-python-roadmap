@@ -1,9 +1,10 @@
 import { useMemo } from "react";
-import { roadmap } from "../data/roadmap";
 import { sessionColors } from "../utils/stats";
 import { ResourceCard } from "./ResourceCard";
+import type { Phase } from "../data/models";
 
 interface Props {
+  roadmap: Phase[];
   query: string;
   onJumpToWeek: (ph: number, wn: number) => void;
   isMobile: boolean;
@@ -11,7 +12,7 @@ interface Props {
   toggle: (id: string) => void;
 }
 
-export function SearchResults({ query, onJumpToWeek, isMobile, completed, toggle }: Props) {
+export function SearchResults({ roadmap, query, onJumpToWeek, isMobile, completed, toggle }: Props) {
   const results = useMemo(() => {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
@@ -29,7 +30,7 @@ export function SearchResults({ query, onJumpToWeek, isMobile, completed, toggle
       });
     });
     return found;
-  }, [query]);
+  }, [query, roadmap]);
 
   if (!query.trim()) return null;
 

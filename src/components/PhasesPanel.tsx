@@ -1,8 +1,8 @@
-import { roadmap } from "../data/roadmap";
 import { getPhaseStats } from "../utils/stats";
 import type { Phase } from "../data/models";
 
 interface Props {
+  roadmap: Phase[];
   selPhase: number;
   isMobile: boolean;
   width: number;
@@ -10,7 +10,7 @@ interface Props {
   completed: Set<string>;
 }
 
-export function PhasesPanel({ selPhase, isMobile, width, selectPhase, completed }: Props) {
+export function PhasesPanel({ roadmap, selPhase, isMobile, width, selectPhase, completed }: Props) {
   return (
     <div
       style={{

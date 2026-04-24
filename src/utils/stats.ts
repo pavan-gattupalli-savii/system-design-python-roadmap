@@ -1,14 +1,15 @@
-import { roadmap } from "../data/roadmap";
 import type { Phase, WeekWithPhase, ColorScheme } from "../data/models";
 
-/** Unique, stable ID for each resource — used as the localStorage progress key. */
+/** Unique, stable ID for each resource — used as the sessionStorage progress key. */
 export const resId = (phase: number, weekN: number, si: number, ri: number): string =>
   `${phase}_${weekN}_${si}_${ri}`;
 
 /** All weeks flattened across all phases, each enriched with phase metadata. */
-export const allWeeks: WeekWithPhase[] = roadmap.flatMap((p) =>
-  p.weeks.map((w) => ({ ...w, phase: p.phase, accent: p.accent, light: p.light }))
-);
+export function getAllWeeks(roadmap: Phase[]): WeekWithPhase[] {
+  return roadmap.flatMap((p) =>
+    p.weeks.map((w) => ({ ...w, phase: p.phase, accent: p.accent, light: p.light }))
+  );
+}
 
 /** Maps a session label to its badge colour scheme. */
 export function sessionColors(label: string): ColorScheme {

@@ -1,10 +1,10 @@
 import type { Phase } from "./models";
 
-// Pure roadmap data — phases, weeks, sessions, resources.
+// Pure Python roadmap data — 40 weeks, 7 phases.
 // Types   → src/data/types.ts
 // Helpers → src/utils/stats.ts
 // Books   → src/data/books.ts
-export const roadmap: Phase[] = [
+export const pythonRoadmap: Phase[] = [
   {
     phase: 1, title: "Python Internals & OOP Mastery", icon: "🐍",
     accent: "#059669", light: "#6EE7B7",

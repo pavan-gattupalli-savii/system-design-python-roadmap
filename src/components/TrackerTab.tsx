@@ -1,17 +1,18 @@
 import { useState, useMemo } from "react";
-import { roadmap } from "../data/roadmap";
 import { TYPES } from "../data/types";
 import { getPhaseStats } from "../utils/stats";
 import { TRACKER_URL } from "../constants/app";
-import { CHANNELS } from "../constants/channels";
+import type { Phase, Channel } from "../data/models";
 
 interface Props {
+  roadmap: Phase[];
+  channels: Channel[];
   completed: Set<string>;
   reset: () => void;
   isMobile: boolean;
 }
 
-export function TrackerTab({ completed, reset, isMobile }: Props) {
+export function TrackerTab({ roadmap, channels, completed, reset, isMobile }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
 
   const totalStats = useMemo(() => {
@@ -22,7 +23,7 @@ export function TrackerTab({ completed, reset, isMobile }: Props) {
       done  += s.done;
     });
     return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
-  }, [completed]);
+  }, [completed, roadmap]);
 
   const handleReset = () => {
     if (confirmReset) { reset(); setConfirmReset(false); }
@@ -108,7 +109,7 @@ export function TrackerTab({ completed, reset, isMobile }: Props) {
       {/* ── Key channels (from constants/channels.js) ── */}
       <div style={{ fontSize: 11, color: "#374151", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Key Channels & References</div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))", gap: 8 }}>
-        {CHANNELS.map((ch) => (
+        {channels.map((ch) => (
           <a
             key={ch.name}
             href={ch.url}
