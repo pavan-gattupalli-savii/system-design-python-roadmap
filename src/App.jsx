@@ -104,7 +104,7 @@ function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isMobile }
           aria-label={isDone ? "Mark as not done" : "Mark as done"}
           style={{ marginTop: 2 }}
         >
-          <span style={{ fontSize: 18, lineHeight: 1 }}>{isDone ? "\u2705" : "\u2B1C"}</span>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>{isDone ? "✅" : "⬜"}</span>
         </button>
       </div>
     </div>
@@ -167,7 +167,7 @@ function PhasesPanel({ selPhase, isMobile, selectPhase, completed }) {
                     />
                   </div>
                   <div style={{ fontSize: 9, color: "#374151", marginTop: 2 }}>
-                    {done}/{total}{pct > 0 ? " \u00b7 " + pct + "%" : ""}{pct === 100 ? " \u2713" : ""}
+                    {done}/{total}{pct > 0 ? " · " + pct + "%" : ""}{pct === 100 ? " ✓" : ""}
                   </div>
                 </>
               )}
@@ -175,7 +175,7 @@ function PhasesPanel({ selPhase, isMobile, selectPhase, completed }) {
             {isMobile && (
               <div style={{ flexShrink: 0, textAlign: "right" }}>
                 <div style={{ fontSize: 10, color: pct === 100 ? "#4ade80" : p.light }}>{pct}%</div>
-                <span style={{ color: "#334155", fontSize: 16 }}>\u203a</span>
+                <span style={{ color: "#334155", fontSize: 16 }}>›</span>
               </div>
             )}
           </button>
@@ -200,7 +200,7 @@ function WeeksPanel({ phase, selWeek, isMobile, selectWeek, setMobileView, compl
     >
       {isMobile && (
         <button className="back-btn" onClick={() => setMobileView("phases")}>
-          \u2039 All Phases
+          ‹ All Phases
         </button>
       )}
       <div style={{ padding: "10px 14px 6px", fontSize: 10, letterSpacing: 2, color: "#374151", textTransform: "uppercase" }}>
@@ -249,12 +249,12 @@ function WeeksPanel({ phase, selWeek, isMobile, selectWeek, setMobileView, compl
                 fontWeight: wComplete ? 700 : 400,
               }}
             >
-              {wComplete ? "\u2713 " : ""}Wk {w.n}
+              {wComplete ? "✓ " : ""}Wk {w.n}
             </span>
             <span style={{ fontSize: isMobile ? 13 : 11, color: isActive ? "#e2e8f0" : "#6b7280", lineHeight: 1.4, flex: 1 }}>
               {w.title}
             </span>
-            {isMobile && <span style={{ color: "#334155", fontSize: 16, flexShrink: 0 }}>\u203a</span>}
+            {isMobile && <span style={{ color: "#334155", fontSize: 16, flexShrink: 0 }}>›</span>}
           </button>
         );
       })}
@@ -268,7 +268,7 @@ function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, se
   if (!weekObj) {
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", fontSize: 13 }}>
-        \u2190 Select a week to see resources
+        ← Select a week to see resources
       </div>
     );
   }
@@ -287,13 +287,13 @@ function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, se
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "14px 14px 80px" : "24px 28px" }}>
       {isMobile && (
         <button className="back-btn" onClick={() => setMobileView("weeks")} style={{ marginBottom: 14 }}>
-          \u2039 {phase && phase.icon} Phase {weekObj.phase} weeks
+          ‹ {phase && phase.icon} Phase {weekObj.phase} weeks
         </button>
       )}
 
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, color: (phase && phase.accent) || "#6366f1", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-          Phase {weekObj.phase} \u00b7 Week {weekObj.n} of 40
+          Phase {weekObj.phase} · Week {weekObj.n} of 40
         </div>
         <h2 style={{ fontSize: isMobile ? 17 : 20, color: "#f0f6ff", fontWeight: 700, margin: "0 0 12px", lineHeight: 1.3 }}>
           {weekObj.title}
@@ -303,11 +303,11 @@ function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, se
             const tc = TYPES[type] || TYPES["Article"];
             return (
               <span key={type} style={{ fontSize: 10, color: tc.tx, background: tc.tx + "12", border: "1px solid " + tc.tx + "25", borderRadius: 4, padding: "2px 7px" }}>
-                {tc.icon} {count}\u00d7 {type}
+                {tc.icon} {count}× {type}
               </span>
             );
           })}
-          <span style={{ fontSize: 11, color: "#475569", marginLeft: 4 }}>\u2248 {allMins} min total</span>
+          <span style={{ fontSize: 11, color: "#475569", marginLeft: 4 }}>≈ {allMins} min total</span>
           <span style={{ fontSize: 11, color: doneInWeek === totalResInWeek && totalResInWeek > 0 ? "#4ade80" : "#6b7280", marginLeft: "auto" }}>
             {doneInWeek}/{totalResInWeek} done
           </span>
@@ -342,7 +342,7 @@ function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, se
               </span>
               <span style={{ fontSize: isMobile ? 12 : 13, color: "#cbd5e1", flex: 1 }}>{session.focus}</span>
               <span style={{ fontSize: 11, color: sessionDone === session.resources.length ? "#4ade80" : "#374151", marginLeft: "auto", flexShrink: 0 }}>
-                {sessionDone}/{session.resources.length} \u00b7 {smins}m {isOpen ? "\u25b2" : "\u25bc"}
+                {sessionDone}/{session.resources.length} · {smins}m {isOpen ? "▲" : "▼"}
               </span>
             </button>
 
@@ -358,8 +358,8 @@ function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, se
       })}
 
       <div style={{ marginTop: 16, background: "#0d1117", border: "1px solid #1c2430", borderRadius: 8, padding: "12px 16px", fontSize: 11, color: "#374151", lineHeight: 1.6 }}>
-        <span style={{ color: "#fbbf24" }}>\U0001f4a1 </span>
-        Build every week \u2014 even a small project cements concepts far better than passive reading. Check off resources as you complete them!
+        <span style={{ color: "#fbbf24" }}>💡 </span>
+        Build every week — even a small project cements concepts far better than passive reading. Check off resources as you complete them!
       </div>
     </div>
   );
@@ -399,7 +399,7 @@ function SearchResults({ query, onJumpToWeek, isMobile, completed, toggle }) {
       </div>
       {results.length === 0 ? (
         <div style={{ color: "#374151", fontSize: 13 }}>
-          No matches. Try broad terms like "Redis", "Kafka", "SOLID", "auth", "docker"\u2026
+          No matches. Try broad terms like "Redis", "Kafka", "SOLID", "auth", "docker"…
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -407,18 +407,18 @@ function SearchResults({ query, onJumpToWeek, isMobile, completed, toggle }) {
             <div key={i} style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 10, overflow: "hidden" }}>
               <div style={{ padding: "8px 14px", background: "#090e16", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 9, color: p.accent, letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>
-                  {p.icon} Ph{p.phase} \u00b7 Wk {w.n}
+                  {p.icon} Ph{p.phase} · Wk {w.n}
                 </span>
-                <span style={{ fontSize: 11, color: "#4b5563" }}>\u00b7</span>
+                <span style={{ fontSize: 11, color: "#4b5563" }}>·</span>
                 <span style={{ fontSize: 11, color: "#6b7280" }}>{w.title}</span>
-                <span style={{ fontSize: 11, color: "#4b5563" }}>\u00b7</span>
+                <span style={{ fontSize: 11, color: "#4b5563" }}>·</span>
                 <span style={{ fontSize: 11, color: sessionColors(s.label).color, fontStyle: "italic" }}>{s.focus}</span>
                 <button
                   className="jump-btn"
                   onClick={() => onJumpToWeek(p.phase, w.n)}
                   style={{ background: p.accent + "20", border: "1px solid " + p.accent + "40", color: p.light }}
                 >
-                  Go to week \u2192
+                  Go to week →
                 </button>
               </div>
               <div style={{ padding: "8px 14px 12px" }}>
@@ -455,12 +455,12 @@ function TrackerTab({ completed, reset, isMobile }) {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>Overall Progress</div>
             <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-              {totalStats.done} of {totalStats.total} resources completed \u00b7{" "}
+              {totalStats.done} of {totalStats.total} resources completed ·{" "}
               <span style={{ color: totalStats.pct === 100 ? "#4ade80" : "#6366f1", fontWeight: 700 }}>{totalStats.pct}%</span>
             </div>
           </div>
           <button className={"reset-btn" + (confirmReset ? " confirm" : "")} onClick={handleReset}>
-            {confirmReset ? "\u26a0 Confirm reset" : "Reset progress"}
+            {confirmReset ? "⚠ Confirm reset" : "Reset progress"}
           </button>
         </div>
         <div className="progress-bar-track" style={{ height: 8 }}>
@@ -470,10 +470,10 @@ function TrackerTab({ completed, reset, isMobile }) {
 
       <div style={{ marginBottom: 20 }}>
         <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer" className="tracker-link" style={{ fontSize: 13, padding: "9px 18px" }}>
-          \U0001f4ca Open Google Sheets Tracker \u2197
+          📊 Open Google Sheets Tracker ↗
         </a>
         <div style={{ marginTop: 8, fontSize: 11, color: "#374151" }}>
-          Your personal spreadsheet tracker \u2014 weekly goals, session logs, and resource library.
+          Your personal spreadsheet tracker — weekly goals, session logs, and resource library.
         </div>
       </div>
 
@@ -489,7 +489,7 @@ function TrackerTab({ completed, reset, isMobile }) {
                 <span style={{ fontSize: 18 }}>{p.icon}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: pct === 100 ? "#4ade80" : p.light }}>Phase {p.phase}: {p.title}</div>
-                  <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>{p.weeks.length} weeks \u00b7 {done}/{total} resources</div>
+                  <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>{p.weeks.length} weeks · {done}/{total} resources</div>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: pct === 100 ? "#4ade80" : pct > 50 ? p.light : "#374151", flexShrink: 0 }}>{pct}%</span>
               </div>
@@ -517,17 +517,17 @@ function TrackerTab({ completed, reset, isMobile }) {
           { name: "Hussein Nasser", url: "https://youtube.com/@hnasr", desc: "Deep dives on networking & databases" },
           { name: "Gaurav Sen", url: "https://youtube.com/@gkcs", desc: "System design interview prep" },
           { name: "ArjanCodes", url: "https://youtube.com/@ArjanCodes", desc: "Python design patterns & best practices" },
-          { name: "System Design Primer", url: "https://github.com/donnemartin/system-design-primer", desc: "GitHub reference \u2014 bookmark this" },
+          { name: "System Design Primer", url: "https://github.com/donnemartin/system-design-primer", desc: "GitHub reference — bookmark this" },
           { name: "refactoring.guru", url: "https://refactoring.guru", desc: "Design patterns with Python examples" },
-          { name: "Use The Index, Luke", url: "https://use-the-index-luke.com", desc: "SQL indexing deep dive \u2014 free" },
-          { name: "Google SRE Book", url: "https://sre.google/sre-book/table-of-contents/", desc: "Reliability engineering by Google \u2014 free" },
+          { name: "Use The Index, Luke", url: "https://use-the-index-luke.com", desc: "SQL indexing deep dive — free" },
+          { name: "Google SRE Book", url: "https://sre.google/sre-book/table-of-contents/", desc: "Reliability engineering by Google — free" },
         ].map((ch) => (
           <a key={ch.name} href={ch.url} target="_blank" rel="noopener noreferrer"
             style={{ display: "block", background: "#090e16", border: "1px solid #1c2430", borderRadius: 8, padding: "11px 14px", textDecoration: "none" }}
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#374151")}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1c2430")}
           >
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0", marginBottom: 3 }}>{ch.name} \u2197</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0", marginBottom: 3 }}>{ch.name} ↗</div>
             <div style={{ fontSize: 11, color: "#374151" }}>{ch.desc}</div>
           </a>
         ))}
@@ -592,9 +592,9 @@ export default function App() {
         <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12, marginBottom: isMobile ? 8 : 0, flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: "#f0f6ff", letterSpacing: -0.3 }}>
-              \U0001f40d System Design Roadmap
+              🐍 System Design Roadmap
             </div>
-            <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>Python-first \u00b7 40 weeks \u00b7 7 phases</div>
+            <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>Python-first · 40 weeks · 7 phases</div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ background: "#111827", border: "1px solid #1f2937", borderRadius: 6, padding: "5px 11px", fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
@@ -602,13 +602,13 @@ export default function App() {
               <span>/{totalStats.total} done</span>
             </div>
             <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer" className="tracker-link">
-              \U0001f4ca Tracker \u2197
+              📊 Tracker ↗
             </a>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 0, marginTop: isMobile ? 4 : 10 }}>
-          {[{ id: "roadmap", label: "\U0001f4da Roadmap" }, { id: "tracker", label: "\U0001f4ca Overview" }].map((tab) => (
+          {[{ id: "roadmap", label: "📚 Roadmap" }, { id: "tracker", label: "📊 Overview" }].map((tab) => (
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setSearchQuery(""); }}
@@ -632,10 +632,10 @@ export default function App() {
       {/* SEARCH BAR */}
       {activeTab === "roadmap" && (
         <div style={{ background: "#090e16", borderBottom: "1px solid #161b22", padding: "8px 16px", display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: 13, color: "#374151", flexShrink: 0 }}>\U0001f50d</span>
+          <span style={{ fontSize: 13, color: "#374151", flexShrink: 0 }}>🔍</span>
           <input
             className="search-input"
-            placeholder="Search resources\u2026 e.g. Redis, Kafka, Docker, SOLID, auth"
+            placeholder="Search resources… e.g. Redis, Kafka, Docker, SOLID, auth"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Escape" && setSearchQuery("")}
@@ -643,7 +643,7 @@ export default function App() {
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} style={{ background: "transparent", border: "none", color: "#374151", cursor: "pointer", fontSize: 14, padding: "0 4px", fontFamily: "inherit", flexShrink: 0 }}>
-              \u2715
+              ✕
             </button>
           )}
         </div>
@@ -654,8 +654,8 @@ export default function App() {
         <div style={{ background: "#090e16", borderBottom: "1px solid #161b22", padding: "6px 20px", display: "flex", gap: 20, flexShrink: 0 }}>
           {[
             { label: "Total weeks", val: "40" },
-            { label: "Avg hrs/week", val: "8\u201312" },
-            { label: "Core books", val: "DDIA \u00b7 Fluent Python \u00b7 Head First DP \u00b7 SDI Vol 1\u20132" },
+            { label: "Avg hrs/week", val: "8–12" },
+            { label: "Core books", val: "DDIA · Fluent Python · Head First DP · SDI Vol 1–2" },
           ].map(({ label, val }) => (
             <div key={label} style={{ display: "flex", gap: 7, alignItems: "center" }}>
               <span style={{ fontSize: 10, color: "#374151", letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
