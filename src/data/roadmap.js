@@ -1,25 +1,10 @@
 export const TRACKER_URL =
   "https://docs.google.com/spreadsheets/d/1w3S42p_ZAH9t_OLJQZ8N5fkFy4wHnmdj/edit?usp=drivesdk&ouid=106113630169695081159&rtpof=true&sd=true";
 
-// URLs for freely accessible book versions
-export const BOOK_URLS = {
-  "Fluent Python": "https://elmoukrie.com/wp-content/uploads/2022/05/luciano-ramalho-fluent-python_-clear-concise-and-effective-programming-oreilly-media-2022.pdf",
-  "DDIA":         "https://dataintensive.net/",
-  "Google SRE Book": "https://sre.google/sre-book/table-of-contents/",
-};
-
-export const TYPES = {
-  "Book":       { bg: "#1a2740", tx: "#7eb8f7", icon: "📖" },
-  "YouTube":    { bg: "#3b0a0a", tx: "#f87171", icon: "▶"  },
-  "Docs":       { bg: "#0f2a18", tx: "#6ee7b7", icon: "📄" },
-  "Article":    { bg: "#2a1f00", tx: "#fbbf24", icon: "📰" },
-  "Build":      { bg: "#1a0a3b", tx: "#c4b5fd", icon: "🔨" },
-  "Practice":   { bg: "#3b0f1a", tx: "#f9a8d4", icon: "🎯" },
-  "Ask Claude": { bg: "#0a2030", tx: "#67e8f9", icon: "🤖" },
-  "Platform":   { bg: "#0f2a20", tx: "#86efac", icon: "🌐" },
-  "Blog":       { bg: "#2a1500", tx: "#fb923c", icon: "✍️" },
-};
-
+// Pure roadmap data — phases, weeks, sessions, resources.
+// Types   → src/data/types.js
+// Helpers → src/utils/stats.js
+// Books   → src/data/books.js
 export const roadmap = [
   {
     phase: 1, title: "Python Internals & OOP Mastery", icon: "🐍",
@@ -609,28 +594,4 @@ export const roadmap = [
   },
 ];
 
-export const allWeeks = roadmap.flatMap(p =>
-  p.weeks.map(w => ({ ...w, phase: p.phase, accent: p.accent, light: p.light }))
-);
-
-export const resId = (phase, weekN, si, ri) => `${phase}_${weekN}_${si}_${ri}`;
-
-export const sessionColors = (label) => {
-  if (label.startsWith("Build"))  return { color: "#c4b5fd", bg: "#1a0a3b", border: "#3b1f7b" };
-  if (label === "Practice")       return { color: "#f9a8d4", bg: "#3b0f1a", border: "#7f1d3b" };
-  if (label === "Review")         return { color: "#fde68a", bg: "#2a1f00", border: "#78350f" };
-  return                                 { color: "#6ee7b7", bg: "#0f2a18", border: "#1a4d2e" };
-};
-
-export const getPhaseStats = (p, completed) => {
-  let total = 0, done = 0;
-  p.weeks.forEach(w => {
-    w.sessions.forEach((s, si) => {
-      s.resources.forEach((_, ri) => {
-        total++;
-        if (completed.has(resId(p.phase, w.n, si, ri))) done++;
-      });
-    });
-  });
-  return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
-};
+// Helpers moved to src/utils/stats.js
