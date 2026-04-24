@@ -16,3 +16,8 @@ npm-debug.log*
 # Env
 .env
 .env.local
+
+# Source documents (kept locally, not tracked in git)
+*.pdf
+*.xlsx
+*.xls
