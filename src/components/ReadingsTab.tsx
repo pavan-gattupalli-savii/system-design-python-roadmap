@@ -3,15 +3,49 @@
 // Filters: type · difficulty · topic · search. Sort: newest / top / A-Z.
 // Upvotes: base count in readings.ts + one local browser vote per entry.
 
-import { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { READINGS, POST_TYPES, DIFFICULTIES } from "../data/readings";
 import type { Reading } from "../data/readings";
 
-const REPO          = "pavan-gattupalli-savii/system-design-python-roadmap";
-const ISSUE_URL     = `https://github.com/${REPO}/issues/new?template=reading-suggestion.md&title=%5BReading%5D+`;
-const PR_URL        = `https://github.com/${REPO}/pulls`;
-const FILE_URL      = `https://github.com/${REPO}/blob/main/src/data/readings.ts`;
-const VOTE_KEY      = "sd_my_votes_v1";
+const REPO     = "pavan-gattupalli-savii/system-design-python-roadmap";
+const PR_URL   = `https://github.com/${REPO}/compare`;
+const FILE_URL = `https://github.com/${REPO}/blob/main/src/data/readings.ts`;
+const VOTE_KEY = "sd_my_votes_v1";
+
+// Pre-filled issue body — always works via GitHub's ?body= parameter
+const _ISSUE_BODY = encodeURIComponent([
+  "## 📖 Reading Suggestion",
+  "",
+  "**Title**",
+  "<!-- Short human-readable title for the resource -->",
+  "",
+  "**URL**",
+  "<!-- Full https:// link -->",
+  "",
+  "**Type**",
+  "<!-- Pick one: Blog · YouTube · LinkedIn · Book · Paper · Course · Newsletter · Thread · Docs · Website · Podcast · Tool · Repo · Slide · Case Study -->",
+  "",
+  "**Difficulty**",
+  "<!-- Pick one: Beginner · Intermediate · Advanced -->",
+  "",
+  "**Topics / Tags**",
+  "<!-- Comma-separated lowercase kebab-case, e.g. `caching, redis, rate-limiting` -->",
+  "",
+  "**Your Name (Added By)**",
+  "",
+  "**Your GitHub Username** _(optional — used for avatar + profile link)_",
+  "",
+  "**Why it's useful** _(optional, one line)_",
+  "",
+  "---",
+  "",
+  "## Checklist",
+  "- [ ] Resource is publicly accessible",
+  "- [ ] URL is correct and working",
+  "- [ ] Topics are lowercase kebab-case",
+  "- [ ] Not a duplicate — I checked `src/data/readings.ts`",
+].join("\n"));
+const ISSUE_URL = `https://github.com/${REPO}/issues/new?labels=reading-suggestion&title=%5BReading%5D+&body=${_ISSUE_BODY}`;
 
 // ── Local vote helpers ────────────────────────────────────────────────────────
 function loadMyVotes(): Set<number> {
@@ -298,56 +332,66 @@ function CtaLink({ href, children }: { href: string; children: React.ReactNode }
 function TableRow({ r, idx, myVotes, toggleVote }: {
   r: Reading; idx: number; myVotes: Set<number>; toggleVote: (id: number) => void;
 }) {
-  const voted     = myVotes.has(r.id);
-  const voteTotal = r.upvotes + (voted ? 1 : 0);
-  const ds        = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
-  const rowBg     = idx % 2 === 0 ? "var(--bg-page)" : "var(--bg-panel)";
+  const voted  = myVotes.has(r.id);
+  const ds     = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
+  const rowBg  = idx % 2 === 0 ? "var(--bg-page)" : "var(--bg-panel)";
+
+  const cellBase: React.CSSProperties = {
+    verticalAlign: "middle",
+    borderTop: "1px solid var(--border-subtle)",
+    borderBottom: "1px solid var(--border-subtle)",
+  };
 
   return (
     <tr
-      style={{ borderBottom: "1px solid var(--border-subtle)", background: rowBg }}
+      style={{ background: rowBg, transition: "background 0.12s" }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-card)")}
       onMouseLeave={(e) => (e.currentTarget.style.background = rowBg)}
     >
-      {/* ▲ Upvote — first column */}
-      <td style={{ padding: "8px 6px", verticalAlign: "middle", textAlign: "center" }}>
+      {/* ♥ Save — first column */}
+      <td style={{
+        ...cellBase, padding: "10px 6px", textAlign: "center",
+        borderLeft: "1px solid var(--border-subtle)", borderRadius: "8px 0 0 8px",
+      }}>
         <button
           onClick={() => toggleVote(r.id)}
-          title={voted ? "Remove upvote" : "Upvote this reading"}
+          title={voted ? "Saved in your browser — click to remove" : "Save this resource (stored locally in your browser)"}
           style={{
-            display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 1,
-            background: voted ? "#6366f122" : "transparent",
-            border: "1px solid " + (voted ? "#6366f1" : "var(--border)"),
-            color: voted ? "#a5b4fc" : "var(--text-muted)",
-            borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700,
+            display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2,
+            background: voted ? "#6366f118" : "transparent",
+            border: "1px solid " + (voted ? "#818cf8" : "var(--border)"),
+            color: voted ? "#818cf8" : "var(--text-muted)",
+            borderRadius: 6, padding: "5px 8px", fontSize: 10, fontWeight: 700,
             cursor: "pointer", fontFamily: "inherit", minWidth: 36, transition: "all 0.15s",
           }}
         >
-          <span style={{ fontSize: 11, lineHeight: 1 }}>▲</span>
-          <span>{voteTotal}</span>
+          <span style={{ fontSize: 13, lineHeight: 1 }}>{voted ? "♥" : "♡"}</span>
+          <span style={{ fontSize: 10 }}>{r.upvotes}</span>
         </button>
       </td>
 
       {/* Type */}
-      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+      <td style={{ ...cellBase, padding: "10px 14px" }}>
         <span style={{
-          fontSize: 10, fontWeight: 700, color: "var(--text-secondary)",
-          background: "var(--bg-card)", border: "1px solid var(--border)",
-          borderRadius: 4, padding: "2px 8px", whiteSpace: "nowrap",
+          display: "inline-flex", alignItems: "center", gap: 4,
+          fontSize: 10, fontWeight: 600, color: "var(--text-secondary)",
+          background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)",
+          borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap",
         }}>
-          {TYPE_ICONS[r.type] || "📌"} {r.type}
+          <span>{TYPE_ICONS[r.type] || "📌"}</span>
+          <span>{r.type}</span>
         </span>
       </td>
 
       {/* Title */}
-      <td style={{ padding: "10px 14px", verticalAlign: "middle", maxWidth: 360 }}>
+      <td style={{ ...cellBase, padding: "10px 14px" }}>
         <a
           href={r.url} target="_blank" rel="noopener noreferrer"
-          style={{ color: "var(--text-bright)", fontWeight: 600, textDecoration: "none", display: "block", lineHeight: 1.4 }}
-          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+          style={{ color: "var(--text-bright)", fontWeight: 600, fontSize: 13, textDecoration: "none", lineHeight: 1.45, display: "block" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#818cf8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-bright)")}
         >
-          {r.title} ↗
+          {r.title} <span style={{ fontSize: 10, opacity: 0.55 }}>↗</span>
         </a>
         {r.notes && (
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.4 }}>{r.notes}</div>
@@ -355,31 +399,31 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
       </td>
 
       {/* Difficulty */}
-      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+      <td style={{ ...cellBase, padding: "10px 14px" }}>
         {r.difficulty && ds ? (
           <span style={{
             fontSize: 10, fontWeight: 700, color: ds.tx, background: ds.bg,
-            border: "1px solid " + ds.tx + "44", borderRadius: 4, padding: "2px 8px", whiteSpace: "nowrap",
+            border: "1px solid " + ds.tx + "44", borderRadius: 5, padding: "3px 9px", whiteSpace: "nowrap",
           }}>
             {r.difficulty}
           </span>
-        ) : <span style={{ color: "var(--text-muted)", fontSize: 11 }}>—</span>}
+        ) : <span style={{ color: "var(--text-dim)", fontSize: 14 }}>—</span>}
       </td>
 
       {/* Added by — GitHub avatar + name link */}
-      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+      <td style={{ ...cellBase, padding: "10px 14px" }}>
         {r.githubUser ? (
           <a
             href={`https://github.com/${r.githubUser}`} target="_blank" rel="noopener noreferrer"
-            style={{ display: "flex", alignItems: "center", gap: 6, textDecoration: "none", color: "var(--text-secondary)" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, textDecoration: "none", color: "var(--text-secondary)" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-bright)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
           >
             <img
-              src={`https://github.com/${r.githubUser}.png?size=24`} alt={r.addedBy}
-              style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, border: "1px solid var(--border)" }}
+              src={`https://github.com/${r.githubUser}.png?size=32`} alt={r.addedBy}
+              style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, border: "1px solid var(--border)" }}
             />
-            <span style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 90 }}>
+            <span style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 84 }}>
               {r.addedBy}
             </span>
           </a>
@@ -389,21 +433,28 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
       </td>
 
       {/* Topics */}
-      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+      <td style={{ ...cellBase, padding: "10px 14px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {r.topics.slice(0, 3).map((t) => (
-            <span key={t} style={{ fontSize: 9, color: "#0ea5e9", background: "#0ea5e922", border: "1px solid #0ea5e933", borderRadius: 4, padding: "1px 6px" }}>
+          {r.topics.slice(0, 4).map((t) => (
+            <span key={t} style={{
+              fontSize: 9, color: "#38bdf8", background: "#0ea5e911",
+              border: "1px solid #0ea5e922", borderRadius: 4, padding: "2px 7px",
+            }}>
               #{t}
             </span>
           ))}
-          {r.topics.length > 3 && (
-            <span style={{ fontSize: 9, color: "var(--text-muted)" }}>+{r.topics.length - 3}</span>
+          {r.topics.length > 4 && (
+            <span style={{ fontSize: 9, color: "var(--text-muted)", alignSelf: "center" }}>+{r.topics.length - 4}</span>
           )}
         </div>
       </td>
 
       {/* Date */}
-      <td style={{ padding: "10px 14px", color: "var(--text-muted)", verticalAlign: "middle", whiteSpace: "nowrap", fontSize: 11 }}>
+      <td style={{
+        ...cellBase, padding: "10px 14px",
+        color: "var(--text-muted)", whiteSpace: "nowrap", fontSize: 11,
+        borderRight: "1px solid var(--border-subtle)", borderRadius: "0 8px 8px 0",
+      }}>
         {r.addedOn.slice(0, 7)}
       </td>
     </tr>
@@ -414,9 +465,8 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
 function ReadingCard({ r, myVotes, toggleVote }: {
   r: Reading; myVotes: Set<number>; toggleVote: (id: number) => void;
 }) {
-  const voted     = myVotes.has(r.id);
-  const voteTotal = r.upvotes + (voted ? 1 : 0);
-  const ds        = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
+  const voted = myVotes.has(r.id);
+  const ds    = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
 
   return (
     <div style={{
@@ -427,17 +477,18 @@ function ReadingCard({ r, myVotes, toggleVote }: {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 2 }}>
         <button
           onClick={() => toggleVote(r.id)}
+          title={voted ? "Saved in your browser — click to remove" : "Save this resource (stored locally in your browser)"}
           style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-            background: voted ? "#6366f122" : "transparent",
-            border: "1px solid " + (voted ? "#6366f1" : "var(--border)"),
-            color: voted ? "#a5b4fc" : "var(--text-muted)",
-            borderRadius: 6, padding: "6px 9px", fontSize: 11, fontWeight: 700,
-            cursor: "pointer", fontFamily: "inherit", minWidth: 38, transition: "all 0.15s",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+            background: voted ? "#6366f118" : "transparent",
+            border: "1px solid " + (voted ? "#818cf8" : "var(--border)"),
+            color: voted ? "#818cf8" : "var(--text-muted)",
+            borderRadius: 8, padding: "8px 10px", fontSize: 11, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit", minWidth: 40, transition: "all 0.15s",
           }}
         >
-          <span style={{ fontSize: 14, lineHeight: 1 }}>▲</span>
-          <span style={{ fontSize: 12 }}>{voteTotal}</span>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>{voted ? "♥" : "♡"}</span>
+          <span style={{ fontSize: 12 }}>{r.upvotes}</span>
         </button>
       </div>
 
