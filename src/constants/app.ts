@@ -4,9 +4,7 @@
 import type { Tab } from "../data/models";
 
 export const APP_TITLE    = "System Design Roadmap";
-export const APP_SUBTITLE = "Python · Java · 40 weeks · 7 phases";
-
-export const TOTAL_WEEKS  = 40;
+export const APP_SUBTITLE = "Python · Java · 49–54 weeks · 9 phases";
 
 // Per-language sessionStorage keys — bump the version to reset saved progress.
 export const STORAGE_KEYS: Record<string, string> = {

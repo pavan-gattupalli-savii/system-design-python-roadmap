@@ -47,6 +47,7 @@ export default function App() {
   const channels      = CHANNELS_BY_LANG[lang];
   const storageKey    = STORAGE_KEYS[lang];
   const flatWeeks     = useMemo(() => getAllWeeks(activeRoadmap), [activeRoadmap]);
+  const totalWeeks    = flatWeeks.length ? flatWeeks[flatWeeks.length - 1].n : 40;
 
   const { completed, toggle, reset } = useProgress(storageKey);
 
@@ -243,7 +244,7 @@ export default function App() {
           <>
             {mobileView === "phases" && <PhasesPanel roadmap={activeRoadmap} selPhase={selPhase} isMobile={true}  width={phases.width} selectPhase={selectPhase} completed={completed} />}
             {mobileView === "weeks"  && <WeeksPanel  phase={phase} selWeek={selWeek} isMobile={true}  width={weeks.width} selectWeek={selectWeek} setMobileView={setMobileView} completed={completed} />}
-            {mobileView === "detail" && <DetailPanel weekObj={weekObj} phase={phase} openSessions={openSessions} toggleSession={toggleSession} isMobile={true}  setMobileView={setMobileView} completed={completed} toggle={toggle} />}
+            {mobileView === "detail" && <DetailPanel weekObj={weekObj} phase={phase} openSessions={openSessions} toggleSession={toggleSession} isMobile={true}  setMobileView={setMobileView} completed={completed} toggle={toggle} totalWeeks={totalWeeks} />}
           </>
         ) : (
           <>
@@ -251,7 +252,7 @@ export default function App() {
             <DragHandle onMouseDown={phases.onDragStart} />
             <WeeksPanel  phase={phase} selWeek={selWeek} isMobile={false} width={weeks.width} selectWeek={selectWeek} setMobileView={setMobileView} completed={completed} />
             <DragHandle onMouseDown={weeks.onDragStart} />
-            <DetailPanel weekObj={weekObj} phase={phase} openSessions={openSessions} toggleSession={toggleSession} isMobile={false} setMobileView={setMobileView} completed={completed} toggle={toggle} />
+            <DetailPanel weekObj={weekObj} phase={phase} openSessions={openSessions} toggleSession={toggleSession} isMobile={false} setMobileView={setMobileView} completed={completed} toggle={toggle} totalWeeks={totalWeeks} />
           </>
         )}
       </main>

@@ -1,5 +1,4 @@
 import { TYPES } from "../data/types";
-import { TOTAL_WEEKS } from "../constants/app";
 import { resId, sessionColors } from "../utils/stats";
 import { ResourceCard } from "./ResourceCard";
 import type { Phase, WeekWithPhase } from "../data/models";
@@ -13,9 +12,10 @@ interface Props {
   setMobileView: (v: string) => void;
   completed: Set<string>;
   toggle: (id: string) => void;
+  totalWeeks: number;
 }
 
-export function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, setMobileView, completed, toggle }: Props) {
+export function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, setMobileView, completed, toggle, totalWeeks }: Props) {
   if (!weekObj) {
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", fontSize: 13 }}>
@@ -53,7 +53,7 @@ export function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMob
       {/* Week header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, color: phaseAccent, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-          Phase {weekObj.phase} · Week {weekObj.n} of {TOTAL_WEEKS}
+          Phase {weekObj.phase} · Week {weekObj.n} of {totalWeeks}
         </div>
         <h2 style={{ fontSize: isMobile ? 17 : 20, color: "#f0f6ff", fontWeight: 700, margin: "0 0 12px", lineHeight: 1.3 }}>
           {weekObj.title}
