@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import "./App.css";
 import {
   TYPES, TRACKER_URL, roadmap, allWeeks,
-  resId, sessionColors, getPhaseStats,
+  resId, sessionColors, getPhaseStats, BOOK_URLS,
 } from "./data/roadmap";
 
 // ── HOOKS ─────────────────────────────────────────────────────────────────────
@@ -44,6 +44,51 @@ function useProgress() {
   }, []);
 
   return { completed, toggle, reset };
+}
+
+// ── URL RESOLUTION ───────────────────────────────────────────────────────────
+
+// Converts raw "where" strings into clickable URLs.
+function resolveUrl(where) {
+  if (!where) return null;
+  if (where.startsWith("http")) return where;
+
+  // YouTube → search 'X'
+  const yt = where.match(/YouTube\s*→\s*search\s*['"](.*?)['"]/i);
+  if (yt) return `https://www.youtube.com/results?search_query=${encodeURIComponent(yt[1])}`;
+
+  // realpython.com → search 'X'
+  const rp = where.match(/realpython\.com\s*→\s*search\s*'([^']+)'/i);
+  if (rp) return `https://realpython.com/search?q=${encodeURIComponent(rp[1])}`;
+
+  // Search: 'X' or Search 'X' at start of string
+  const gs = where.match(/^[Ss]earch:?\s+'([^']+)'/);
+  if (gs) return `https://www.google.com/search?q=${encodeURIComponent(gs[1])}`;
+
+  // Bare domain/path (e.g. docs.python.org/3/... or refactoring.guru/solid — desc)
+  const dm = where.match(/^([a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s]*)?)/i);
+  if (dm) return `https://${dm[1]}`;
+
+  return null;
+}
+
+// Returns the best URL for a resource card (explicit url field → where → item → BOOK_URLS).
+function getResourceUrl(res) {
+  if (res.url) return res.url;
+  const w = resolveUrl(res.where);
+  if (w) return w;
+  // YouTube items with "Search: 'X'" in the title
+  if (res.type === "YouTube") {
+    const m = res.item.match(/^Search:\s*'([^']+)'/i);
+    if (m) return `https://www.youtube.com/results?search_query=${encodeURIComponent(m[1])}`;
+  }
+  // Books: look up free online version
+  if (res.type === "Book") {
+    for (const [key, url] of Object.entries(BOOK_URLS)) {
+      if (res.item.includes(key)) return url;
+    }
+  }
+  return null;
 }
 
 // ── RESOURCE CARD ─────────────────────────────────────────────────────────────
@@ -91,7 +136,23 @@ function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isMobile }
               fontWeight: 500,
             }}
           >
-            {res.item}
+            {(() => {
+              const url = getResourceUrl(res);
+              return url ? (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "inherit", textDecoration: "none" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {res.item}
+                  <span style={{ fontSize: 10, color: tc.tx, marginLeft: 5, opacity: 0.75 }}>↗</span>
+                </a>
+              ) : res.item;
+            })()}
           </div>
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 5, lineHeight: 1.4 }}>
             <span style={{ color: "#374151" }}>{"→ "}</span>

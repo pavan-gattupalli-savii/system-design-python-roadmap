@@ -1,6 +1,13 @@
 export const TRACKER_URL =
   "https://docs.google.com/spreadsheets/d/1w3S42p_ZAH9t_OLJQZ8N5fkFy4wHnmdj/edit?usp=drivesdk&ouid=106113630169695081159&rtpof=true&sd=true";
 
+// URLs for freely accessible book versions
+export const BOOK_URLS = {
+  "Fluent Python": "https://elmoukrie.com/wp-content/uploads/2022/05/luciano-ramalho-fluent-python_-clear-concise-and-effective-programming-oreilly-media-2022.pdf",
+  "DDIA":         "https://dataintensive.net/",
+  "Google SRE Book": "https://sre.google/sre-book/table-of-contents/",
+};
+
 export const TYPES = {
   "Book":       { bg: "#1a2740", tx: "#7eb8f7", icon: "📖" },
   "YouTube":    { bg: "#3b0a0a", tx: "#f87171", icon: "▶"  },
