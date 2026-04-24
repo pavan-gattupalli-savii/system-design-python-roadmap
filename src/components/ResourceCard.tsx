@@ -1,11 +1,23 @@
 import { TYPES } from "../data/types";
 import { resId } from "../utils/stats";
 import { getResourceUrl } from "../utils/url";
+import type { Resource } from "../data/models";
 
-export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isMobile }) {
+interface Props {
+  phase: number;
+  weekN: number;
+  si: number;
+  ri: number;
+  res: Resource;
+  completed: Set<string>;
+  toggle: (id: string) => void;
+  isMobile: boolean;
+}
+
+export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isMobile }: Props) {
   const id    = resId(phase, weekN, si, ri);
   const isDone = completed.has(id);
-  const tc    = TYPES[res.type] || TYPES["Article"];
+  const tc    = TYPES[res.type] ?? TYPES["Article"];
   const url   = getResourceUrl(res);
 
   return (

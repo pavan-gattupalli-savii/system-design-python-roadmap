@@ -1,7 +1,5 @@
 // ── DESIGN TOKENS ──────────────────────────────────────────────────────────────
 // Every hardcoded colour, font, and size in one place.
-// Migrating to TypeScript: add `as const` after each object literal.
-// Migrating to CSS variables: generate var(--color-pageBg) from this file.
 
 export const COLORS = {
   // Backgrounds
@@ -32,12 +30,12 @@ export const COLORS = {
   accentViolet:  "#a5b4fc",
   accentPurple:  "#8b5cf6",
   accentAmber:   "#fbbf24",
-};
+} as const;
 
 export const FONT_STACK = "'Inter', 'SF Pro Display', system-ui, sans-serif";
 
 // Viewport breakpoint for the mobile layout
-export const BREAKPOINTS = { mobile: 768 };
+export const BREAKPOINTS = { mobile: 768 } as const;
 
-// Left-sidebar column widths (px)
-export const PANEL_WIDTH = { phases: 200, weeks: 170 };
+// Left-sidebar column widths (px) — default values; user can drag to resize
+export const PANEL_WIDTH = { phases: 200, weeks: 170 } as const;

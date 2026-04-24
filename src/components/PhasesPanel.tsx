@@ -1,19 +1,27 @@
 import { roadmap } from "../data/roadmap";
 import { getPhaseStats } from "../utils/stats";
-import { PANEL_WIDTH } from "../constants/theme";
+import type { Phase } from "../data/models";
 
-export function PhasesPanel({ selPhase, isMobile, selectPhase, completed }) {
+interface Props {
+  selPhase: number;
+  isMobile: boolean;
+  width: number;
+  selectPhase: (ph: number) => void;
+  completed: Set<string>;
+}
+
+export function PhasesPanel({ selPhase, isMobile, width, selectPhase, completed }: Props) {
   return (
     <div
       style={{
         background: "#0d1117",
         overflowY: "auto",
         flexShrink: 0,
-        width: isMobile ? "100%" : PANEL_WIDTH.phases,
+        width: isMobile ? "100%" : width,
         borderRight: isMobile ? "none" : "1px solid #1c2430",
       }}
     >
-      {roadmap.map((p) => {
+      {roadmap.map((p: Phase) => {
         const { done, total, pct } = getPhaseStats(p, completed);
         const isActive = selPhase === p.phase;
         return (

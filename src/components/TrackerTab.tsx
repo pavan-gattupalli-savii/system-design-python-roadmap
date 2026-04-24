@@ -5,7 +5,13 @@ import { getPhaseStats } from "../utils/stats";
 import { TRACKER_URL } from "../constants/app";
 import { CHANNELS } from "../constants/channels";
 
-export function TrackerTab({ completed, reset, isMobile }) {
+interface Props {
+  completed: Set<string>;
+  reset: () => void;
+  isMobile: boolean;
+}
+
+export function TrackerTab({ completed, reset, isMobile }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
 
   const totalStats = useMemo(() => {

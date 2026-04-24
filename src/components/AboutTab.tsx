@@ -1,0 +1,135 @@
+// ── ABOUT TAB ──────────────────────────────────────────────────────────────────
+// Creator profile + roadmap overview.
+
+const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
+const GITHUB_REPO  = "https://github.com/iamgpavan/system-design-python-roadmap";
+
+const TECH_STACK = [
+  { icon: "⚛️",  name: "React 18",   desc: "UI framework with hooks" },
+  { icon: "⚡",  name: "Vite 6",     desc: "Lightning-fast build tool" },
+  { icon: "🔷",  name: "TypeScript", desc: "Type-safe JavaScript" },
+  { icon: "📦",  name: "gh-pages",   desc: "Zero-config GitHub Pages deploy" },
+];
+
+const ROADMAP_HIGHLIGHTS = [
+  { icon: "📅", label: "40 weeks",     desc: "Structured week-by-week curriculum" },
+  { icon: "🎯", label: "7 phases",     desc: "Python → Design Patterns → Infra → Scale" },
+  { icon: "📚", label: "500+ items",   desc: "Books, videos, docs, and hands-on builds" },
+  { icon: "✅", label: "Progress",     desc: "Per-resource tracking saved to localStorage" },
+];
+
+export function AboutTab({ isMobile }: { isMobile: boolean }) {
+  return (
+    <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px" : "32px 48px", maxWidth: 760, margin: "0 auto", width: "100%" }}>
+
+      {/* ── Creator card ── */}
+      <div style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 14, padding: isMobile ? "20px" : "28px 32px", marginBottom: 24, display: "flex", flexDirection: isMobile ? "column" : "row", gap: 24, alignItems: isMobile ? "flex-start" : "center" }}>
+        {/* Avatar placeholder */}
+        <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }}>
+          🐍
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#f0f6ff", marginBottom: 4 }}>
+            G. Pavan
+          </div>
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14, lineHeight: 1.6 }}>
+            Built this roadmap to go from Python developer to system-design-ready engineer —
+            documenting every resource, book chapter, and build project along the way.
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a
+              href={LINKEDIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                background: "#0077B5", color: "#fff",
+                borderRadius: 7, padding: "8px 16px",
+                fontSize: 13, fontWeight: 600, textDecoration: "none",
+                transition: "opacity 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+              Connect on LinkedIn ↗
+            </a>
+            <a
+              href={GITHUB_REPO}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                background: "#161b22", color: "#e2e8f0",
+                border: "1px solid #30363d",
+                borderRadius: 7, padding: "8px 16px",
+                fontSize: 13, fontWeight: 600, textDecoration: "none",
+                transition: "border-color 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#6366f1")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#30363d")}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+              </svg>
+              View on GitHub ↗
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Roadmap highlights ── */}
+      <div style={{ fontSize: 11, color: "#374151", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+        About the Roadmap
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
+        {ROADMAP_HIGHLIGHTS.map(({ icon, label, desc }) => (
+          <div key={label} style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 10, padding: "14px 16px" }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>{icon}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 11, color: "#374151", lineHeight: 1.5 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── How to use ── */}
+      <div style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 12, padding: "18px 22px", marginBottom: 24 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 12 }}>How to use this roadmap</div>
+        {[
+          ["1", "Pick a phase", "Start from Phase 1 or jump to where your knowledge gaps are."],
+          ["2", "Work week by week", "Each week has 2–3 sessions of Study → Build → Practice."],
+          ["3", "Check off resources", "Use the ☐ checkbox on each card — progress is saved in your browser."],
+          ["4", "Use the search", "Press the 🔍 bar to find any topic instantly across all 40 weeks."],
+          ["5", "Log in the tracker", "Open the Google Sheets tracker to log hours and notes per week."],
+        ].map(([num, title, detail]) => (
+          <div key={num} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+            <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: "50%", background: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", marginTop: 1 }}>{num}</div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{title}</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{detail}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Tech stack ── */}
+      <div style={{ fontSize: 11, color: "#374151", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+        Built with
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {TECH_STACK.map(({ icon, name, desc }) => (
+          <div key={name} style={{ background: "#090e16", border: "1px solid #1c2430", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>{icon}</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{name}</div>
+              <div style={{ fontSize: 10, color: "#374151" }}>{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
+}

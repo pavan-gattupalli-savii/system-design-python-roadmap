@@ -3,7 +3,15 @@ import { roadmap } from "../data/roadmap";
 import { sessionColors } from "../utils/stats";
 import { ResourceCard } from "./ResourceCard";
 
-export function SearchResults({ query, onJumpToWeek, isMobile, completed, toggle }) {
+interface Props {
+  query: string;
+  onJumpToWeek: (ph: number, wn: number) => void;
+  isMobile: boolean;
+  completed: Set<string>;
+  toggle: (id: string) => void;
+}
+
+export function SearchResults({ query, onJumpToWeek, isMobile, completed, toggle }: Props) {
   const results = useMemo(() => {
     if (!query.trim()) return [];
     const q = query.toLowerCase();

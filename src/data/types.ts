@@ -1,13 +1,9 @@
 // ── RESOURCE TYPES ─────────────────────────────────────────────────────────────
 // Each resource card is tagged with one of these types.
 // Change bg / tx / icon here to restyle all cards of that type at once.
-//
-// TypeScript migration:
-//   type ResourceTypeName = keyof typeof TYPES;
-//   type TypeStyle = { bg: string; tx: string; icon: string };
+import type { TypeStyle } from "./models";
 
-/** @type {Record<string, { bg: string; tx: string; icon: string }>} */
-export const TYPES = {
+export const TYPES: Record<string, TypeStyle> = {
   "Book":       { bg: "#1a2740", tx: "#7eb8f7", icon: "📖" },
   "YouTube":    { bg: "#3b0a0a", tx: "#f87171", icon: "▶"  },
   "Docs":       { bg: "#0f2a18", tx: "#6ee7b7", icon: "📄" },

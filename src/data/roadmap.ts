@@ -1,11 +1,10 @@
-export const TRACKER_URL =
-  "https://docs.google.com/spreadsheets/d/1w3S42p_ZAH9t_OLJQZ8N5fkFy4wHnmdj/edit?usp=drivesdk&ouid=106113630169695081159&rtpof=true&sd=true";
+import type { Phase } from "./models";
 
 // Pure roadmap data — phases, weeks, sessions, resources.
-// Types   → src/data/types.js
-// Helpers → src/utils/stats.js
-// Books   → src/data/books.js
-export const roadmap = [
+// Types   → src/data/types.ts
+// Helpers → src/utils/stats.ts
+// Books   → src/data/books.ts
+export const roadmap: Phase[] = [
   {
     phase: 1, title: "Python Internals & OOP Mastery", icon: "🐍",
     accent: "#059669", light: "#6EE7B7",
@@ -594,4 +593,4 @@ export const roadmap = [
   },
 ];
 
-// Helpers moved to src/utils/stats.js
+// Helpers moved to src/utils/stats.ts

@@ -2,8 +2,20 @@ import { TYPES } from "../data/types";
 import { TOTAL_WEEKS } from "../constants/app";
 import { resId, sessionColors } from "../utils/stats";
 import { ResourceCard } from "./ResourceCard";
+import type { Phase, WeekWithPhase } from "../data/models";
 
-export function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, setMobileView, completed, toggle }) {
+interface Props {
+  weekObj: WeekWithPhase | undefined;
+  phase: Phase | undefined;
+  openSessions: Record<number, boolean>;
+  toggleSession: (si: number) => void;
+  isMobile: boolean;
+  setMobileView: (v: string) => void;
+  completed: Set<string>;
+  toggle: (id: string) => void;
+}
+
+export function DetailPanel({ weekObj, phase, openSessions, toggleSession, isMobile, setMobileView, completed, toggle }: Props) {
   if (!weekObj) {
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", fontSize: 13 }}>

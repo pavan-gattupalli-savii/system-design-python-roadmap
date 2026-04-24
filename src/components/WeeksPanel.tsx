@@ -1,14 +1,24 @@
 import { resId } from "../utils/stats";
-import { PANEL_WIDTH } from "../constants/theme";
+import type { Phase } from "../data/models";
 
-export function WeeksPanel({ phase, selWeek, isMobile, selectWeek, setMobileView, completed }) {
+interface Props {
+  phase: Phase | undefined;
+  selWeek: number;
+  isMobile: boolean;
+  width: number;
+  selectWeek: (wn: number) => void;
+  setMobileView: (v: string) => void;
+  completed: Set<string>;
+}
+
+export function WeeksPanel({ phase, selWeek, isMobile, width, selectWeek, setMobileView, completed }: Props) {
   return (
     <div
       style={{
         background: "#090e16",
         overflowY: "auto",
         flexShrink: 0,
-        width: isMobile ? "100%" : PANEL_WIDTH.weeks,
+        width: isMobile ? "100%" : width,
         borderRight: isMobile ? "none" : "1px solid #1c2430",
       }}
     >
@@ -19,10 +29,10 @@ export function WeeksPanel({ phase, selWeek, isMobile, selectWeek, setMobileView
       )}
 
       <div style={{ padding: "10px 14px 6px", fontSize: 10, letterSpacing: 2, color: "#374151", textTransform: "uppercase" }}>
-        {phase && phase.icon} {phase && phase.title}
+        {phase?.icon} {phase?.title}
       </div>
 
-      {phase && phase.weeks.map((w) => {
+      {phase?.weeks.map((w) => {
         let wTotal = 0, wDone = 0;
         w.sessions.forEach((s, si) => {
           s.resources.forEach((_, ri) => {

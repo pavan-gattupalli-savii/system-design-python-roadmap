@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { BREAKPOINTS } from "../constants/theme";
 
-// Returns true when the viewport width is below the mobile breakpoint.
-// Adjust BREAKPOINTS.mobile in constants/theme.js to change the threshold.
-export function useIsMobile() {
+/** Returns true when the viewport width is below the mobile breakpoint. */
+export function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < BREAKPOINTS.mobile : false
   );

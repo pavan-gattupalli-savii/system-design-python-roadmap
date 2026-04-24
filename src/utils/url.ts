@@ -1,16 +1,19 @@
 import { BOOK_URLS } from "../data/books";
+import type { Resource } from "../data/models";
 
-// Converts a raw "where" string into a clickable URL, or returns null.
-// Patterns handled:
-//   "YouTube → search 'X'"          → youtube.com/results?search_query=X
-//   "realpython.com → search 'X'"   → realpython.com/search?q=X
-//   "Search: 'X'" (at line start)   → google.com/search?q=X
-//   "domain.com/path — description" → https://domain.com/path
-export function resolveUrl(where) {
+/**
+ * Converts a raw "where" string into a clickable URL, or returns null.
+ * Patterns handled:
+ *   "YouTube → search 'X'"          → youtube.com/results?search_query=X
+ *   "realpython.com → search 'X'"   → realpython.com/search?q=X
+ *   "Search: 'X'" (at line start)   → google.com/search?q=X
+ *   "domain.com/path — description" → https://domain.com/path
+ */
+export function resolveUrl(where: string | undefined): string | null {
   if (!where) return null;
   if (where.startsWith("http")) return where;
 
-  const yt = where.match(/YouTube\s*→\s*search\s*['"](.*?)['"]/i);
+  const yt = where.match(/YouTube\s*→\s*search\s*['"]([^'"]*?)['"]\s*/i);
   if (yt) return `https://www.youtube.com/results?search_query=${encodeURIComponent(yt[1])}`;
 
   const rp = where.match(/realpython\.com\s*→\s*search\s*'([^']+)'/i);
@@ -19,16 +22,14 @@ export function resolveUrl(where) {
   const gs = where.match(/^[Ss]earch:?\s+'([^']+)'/);
   if (gs) return `https://www.google.com/search?q=${encodeURIComponent(gs[1])}`;
 
-  // Bare domain/path — strip trailing description after a space or em-dash
   const dm = where.match(/^([a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s]*)?)/i);
   if (dm) return `https://${dm[1]}`;
 
   return null;
 }
 
-// Returns the best clickable URL for a resource card.
-// Priority: explicit res.url → where field → YouTube title match → BOOK_URLS
-export function getResourceUrl(res) {
+/** Returns the best clickable URL for a resource card. */
+export function getResourceUrl(res: Resource): string | null {
   if (res.url) return res.url;
 
   const fromWhere = resolveUrl(res.where);
