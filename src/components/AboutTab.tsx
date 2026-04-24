@@ -2,7 +2,7 @@
 // Creator profile + roadmap overview.
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
-const GITHUB_REPO  = "https://github.com/iamgpavan/system-design-python-roadmap";
+const GITHUB_REPO  = "https://github.com/pavan-gattupalli-savii/system-design-python-roadmap";
 
 const TECH_STACK = [
   { icon: "⚛️",  name: "React 18",   desc: "UI framework with hooks" },
@@ -15,7 +15,7 @@ const ROADMAP_HIGHLIGHTS = [
   { icon: "📅", label: "40 weeks",     desc: "Structured week-by-week curriculum" },
   { icon: "🎯", label: "7 phases",     desc: "Python → Design Patterns → Infra → Scale" },
   { icon: "📚", label: "500+ items",   desc: "Books, videos, docs, and hands-on builds" },
-  { icon: "✅", label: "Progress",     desc: "Per-resource tracking saved to localStorage" },
+  { icon: "✅", label: "Progress",     desc: "Per-session tracking — resets on refresh" },
 ];
 
 export function AboutTab({ isMobile }: { isMobile: boolean }) {
@@ -30,7 +30,7 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#f0f6ff", marginBottom: 4 }}>
-            G. Pavan
+            Pavan Kumar
           </div>
           <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14, lineHeight: 1.6 }}>
             Built this roadmap to go from Python developer to system-design-ready engineer —

@@ -7,11 +7,15 @@ interface ProgressHook {
   reset: () => void;
 }
 
-/** Manages per-resource completion state backed by localStorage. */
+/** Manages per-resource completion state backed by sessionStorage.
+ *  Progress resets on page refresh or when the tab is closed.
+ *  This prevents confusion when multiple people share the same device.
+ *  Future: replace sessionStorage with a user-auth-backed API call.
+ */
 export function useProgress(): ProgressHook {
   const [completed, setCompleted] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = sessionStorage.getItem(STORAGE_KEY);
       return new Set<string>(stored ? JSON.parse(stored) : []);
     } catch {
       return new Set<string>();
@@ -22,14 +26,14 @@ export function useProgress(): ProgressHook {
     setCompleted((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
       return next;
     });
   }, []);
 
   const reset = useCallback(() => {
     setCompleted(new Set());
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return { completed, toggle, reset };
