@@ -44,7 +44,8 @@ export const TRACKER_URL =
 
 // Navigation tabs — add, remove, or reorder here; the UI auto-renders them.
 export const TABS: Tab[] = [
-  { id: "roadmap", label: "📚 Roadmap" },
-  { id: "tracker", label: "📊 Overview" },
-  { id: "about",   label: "👤 About"   },
+  { id: "tracker",   label: "📊 Overview"  },
+  { id: "roadmap",   label: "📚 Roadmap"   },
+  { id: "readings",  label: "📖 Readings"  },
+  { id: "about",     label: "👤 About"     },
 ];

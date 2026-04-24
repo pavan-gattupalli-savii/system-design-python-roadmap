@@ -36,28 +36,28 @@ export function SearchResults({ roadmap, query, onJumpToWeek, isMobile, complete
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "14px" : "20px 28px" }}>
-      <div style={{ marginBottom: 14, color: "#64748b", fontSize: 12 }}>
+      <div style={{ marginBottom: 14, color: "var(--text-secondary)", fontSize: 12 }}>
         <span style={{ color: results.length > 0 ? "#6ee7b7" : "#f87171" }}>
           {results.length} result{results.length !== 1 ? "s" : ""}
         </span>
-        {" "}for <span style={{ color: "#e2e8f0" }}>"{query}"</span>
+        {" "}for <span style={{ color: "var(--text-bright)" }}>"{query}"</span>
       </div>
 
       {results.length === 0 ? (
-        <div style={{ color: "#374151", fontSize: 13 }}>
+        <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
           No matches. Try broad terms like "Redis", "Kafka", "SOLID", "auth", "docker"…
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {results.map(({ p, w, s, si, r, ri }, i) => (
-            <div key={i} style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 10, overflow: "hidden" }}>
-              <div style={{ padding: "8px 14px", background: "#090e16", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div key={i} style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ padding: "8px 14px", background: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 9, color: p.accent, letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>
                   {p.icon} Ph{p.phase} · Wk {w.n}
                 </span>
-                <span style={{ fontSize: 11, color: "#4b5563" }}>·</span>
-                <span style={{ fontSize: 11, color: "#6b7280" }}>{w.title}</span>
-                <span style={{ fontSize: 11, color: "#4b5563" }}>·</span>
+                <span style={{ fontSize: 11, color: "var(--text-dim)" }}>·</span>
+                <span style={{ fontSize: 11, color: "var(--text-dim)" }}>{w.title}</span>
+                <span style={{ fontSize: 11, color: "var(--text-dim)" }}>·</span>
                 <span style={{ fontSize: 11, color: sessionColors(s.label).color, fontStyle: "italic" }}>{s.focus}</span>
                 <button
                   className="jump-btn"

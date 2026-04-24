@@ -1,21 +1,21 @@
-import { useState, useMemo }                                          from "react";
+import { useState, useMemo, useEffect }                              from "react";
 import "./App.css";
 
 import { ROADMAPS }                                                  from "./data/roadmap-index";
-import type { Language }                                           from "./data/roadmap-index";
-import { getAllWeeks, getPhaseStats }                              from "./utils/stats";
+import type { Language }                                             from "./data/roadmap-index";
+import { getAllWeeks, getPhaseStats }                                from "./utils/stats";
 import { APP_TITLE, APP_SUBTITLE, TABS, LANGUAGES, STORAGE_KEYS, TRACKER_URL } from "./constants/app";
 import { CHANNELS_BY_LANG }                                         from "./constants/channels";
 import { FONT_STACK }                                               from "./constants/theme";
 import { useIsMobile }                                              from "./hooks/useIsMobile";
 import { useProgress }                                             from "./hooks/useProgress";
 import { usePanelResize }                                           from "./hooks/usePanelResize";
-import { PhasesPanel }                                             from "./components/PhasesPanel";
-import { WeeksPanel }                                              from "./components/WeeksPanel";
+import { TimelinePanel }                                            from "./components/TimelinePanel";
 import { DetailPanel }                                             from "./components/DetailPanel";
 import { SearchResults }                                            from "./components/SearchResults";
 import { TrackerTab }                                               from "./components/TrackerTab";
 import { AboutTab }                                                 from "./components/AboutTab";
+import { ReadingsTab }                                              from "./components/ReadingsTab";
 
 function DragHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void }) {
   const [hovered, setHovered] = useState(false);
@@ -40,6 +40,14 @@ function DragHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => voi
 export default function App() {
   const isMobile = useIsMobile();
 
+  // ── Theme ───────────────────────────────────────────────────────────
+  const [isDark, setIsDark] = useState(() => localStorage.getItem("sd-theme") !== "light");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+    localStorage.setItem("sd-theme", isDark ? "dark" : "light");
+  }, [isDark]);
+
   // ── Language selection ──────────────────────────────────────────────
   const [lang, setLang] = useState<Language>("python");
   const langDef       = LANGUAGES.find((l) => l.id === lang)!;
@@ -47,12 +55,12 @@ export default function App() {
   const channels      = CHANNELS_BY_LANG[lang];
   const storageKey    = STORAGE_KEYS[lang];
   const flatWeeks     = useMemo(() => getAllWeeks(activeRoadmap), [activeRoadmap]);
-  const totalWeeks    = flatWeeks.length ? flatWeeks[flatWeeks.length - 1].n : 40;
+  const totalWeeks    = flatWeeks.length ? flatWeeks[flatWeeks.length - 1].n : 54;
 
   const { completed, toggle, reset } = useProgress(storageKey);
 
-  const phases = usePanelResize(200, 130, 300);
-  const weeks  = usePanelResize(170, 110, 280);
+  // Timeline panel resize (left side)
+  const timeline = usePanelResize(360, 240, 540);
 
   const [activeTab,     setActiveTab]     = useState(TABS[0].id);
   const [selPhase,      setSelPhase]      = useState(1);
@@ -80,7 +88,6 @@ export default function App() {
     const firstWeek = activeRoadmap.find((p) => p.phase === ph)?.weeks[0]?.n;
     if (firstWeek) setSelWeek(firstWeek);
     setOpenSessions({ 0: true, 1: true, 2: true });
-    if (isMobile) setMobileView("weeks");
   }
 
   function selectWeek(wn: number) {
@@ -115,44 +122,71 @@ export default function App() {
   const showSearch = activeTab === "roadmap" && searchQuery.trim().length > 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#060a10", color: "#c9d8e8", fontFamily: FONT_STACK, userSelect: "none" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        background: "var(--bg-page)",
+        color: "var(--text-body)",
+        fontFamily: FONT_STACK,
+        userSelect: "none",
+      }}
+    >
 
       {/* TOP BAR */}
-      <header style={{ background: "#0d1117", borderBottom: "1px solid #1c2430", padding: isMobile ? "10px 14px 0" : "12px 24px 0", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12, marginBottom: isMobile ? 8 : 0, flexWrap: "wrap" }}>
-
+      <header
+        style={{
+          background:   "var(--bg-panel)",
+          borderBottom: "1px solid var(--border)",
+          boxShadow:    isDark ? "0 1px 8px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.08)",
+          padding:      isMobile ? "10px 14px 0" : "12px 24px 0",
+          flexShrink:   0,
+          transition:   "box-shadow 0.2s",
+        }}
+      >
+        <div
+          style={{
+            display:        "flex",
+            alignItems:     isMobile ? "flex-start" : "center",
+            justifyContent: "space-between",
+            gap:            12,
+            marginBottom:   isMobile ? 8 : 0,
+            flexWrap:       "wrap",
+          }}
+        >
           {/* Title */}
           <div>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: "#f0f6ff", letterSpacing: -0.3 }}>
+            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: "var(--text-heading)", letterSpacing: -0.3 }}>
               {APP_TITLE}
             </div>
-            <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>{APP_SUBTITLE}</div>
+            <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{APP_SUBTITLE}</div>
           </div>
 
-          {/* Right cluster */}
+          {/* Right controls */}
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
 
             {/* Language switcher */}
-            <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: "1px solid #1c2430", flexShrink: 0 }}>
+            <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)", flexShrink: 0 }}>
               {LANGUAGES.map((l, idx) => {
                 const active = lang === l.id;
                 return (
                   <button
                     key={l.id}
                     onClick={() => switchLanguage(l.id as Language)}
-                    title={`Switch to ${l.label} roadmap`}
+                    title={"Switch to " + l.label + " roadmap"}
                     style={{
-                      background: active ? l.accent + "22" : "transparent",
-                      border: "none",
-                      borderRight: idx < LANGUAGES.length - 1 ? "1px solid #1c2430" : "none",
-                      padding: isMobile ? "6px 10px" : "6px 14px",
-                      fontSize: isMobile ? 11 : 12,
-                      color: active ? l.color : "#4b5563",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      fontWeight: active ? 700 : 400,
-                      transition: "all 0.15s",
-                      whiteSpace: "nowrap",
+                      background:  active ? l.accent + "22" : "transparent",
+                      border:      "none",
+                      borderRight: idx < LANGUAGES.length - 1 ? "1px solid var(--border)" : "none",
+                      padding:     isMobile ? "6px 10px" : "6px 14px",
+                      fontSize:    isMobile ? 11 : 12,
+                      color:       active ? l.color : "var(--text-dim)",
+                      cursor:      "pointer",
+                      fontFamily:  "inherit",
+                      fontWeight:  active ? 700 : 400,
+                      transition:  "all 0.15s",
+                      whiteSpace:  "nowrap",
                     }}
                   >
                     {l.icon} {l.label}
@@ -162,8 +196,10 @@ export default function App() {
             </div>
 
             {/* Progress pill */}
-            <div style={{ background: "#111827", border: "1px solid #1f2937", borderRadius: 6, padding: "5px 11px", fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-              <span style={{ color: totalStats.done > 0 ? langDef.color : "#374151", fontWeight: 700 }}>{totalStats.done}</span>
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-mid)", borderRadius: 6, padding: "5px 11px", fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <span style={{ color: totalStats.done > 0 ? langDef.color : "var(--text-muted)", fontWeight: 700 }}>
+                {totalStats.done}
+              </span>
               <span>/{totalStats.total} done</span>
             </div>
 
@@ -171,23 +207,31 @@ export default function App() {
             <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer" className="tracker-link">
               🔊 Tracker ↗
             </a>
+
+            {/* Theme toggle */}
+            <button
+              className="theme-toggle"
+              onClick={() => setIsDark((d) => !d)}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? "☀️" : "🌙"}
+            </button>
           </div>
         </div>
 
+        {/* Nav tabs */}
         <nav style={{ display: "flex", marginTop: isMobile ? 4 : 10 }}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              className="nav-tab"
               onClick={() => { setActiveTab(tab.id); setSearchQuery(""); }}
               style={{
-                background: "transparent", border: "none",
                 borderBottom: activeTab === tab.id ? "2px solid #6366f1" : "2px solid transparent",
-                padding: isMobile ? "8px 14px" : "10px 18px",
-                fontSize: 12,
-                color: activeTab === tab.id ? "#a5b4fc" : "#374151",
-                cursor: "pointer", fontFamily: "inherit",
-                fontWeight: activeTab === tab.id ? 600 : 400,
-                transition: "color 0.12s, border-color 0.12s",
+                padding:      isMobile ? "8px 14px" : "10px 18px",
+                fontSize:     12,
+                color:        activeTab === tab.id ? "#a5b4fc" : "var(--text-muted)",
+                fontWeight:   activeTab === tab.id ? 600 : 400,
               }}
             >
               {tab.label}
@@ -198,8 +242,8 @@ export default function App() {
 
       {/* SEARCH BAR */}
       {activeTab === "roadmap" && (
-        <div style={{ background: "#090e16", borderBottom: "1px solid #161b22", padding: "8px 16px", display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: 13, color: "#374151", flexShrink: 0 }}>🔍</span>
+        <div style={{ background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)", padding: "8px 16px", display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+          <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
           <input
             className="search-input"
             placeholder="Search resources… e.g. Redis, Kafka, Docker, SOLID, auth"
@@ -209,8 +253,11 @@ export default function App() {
             style={{ flex: 1 }}
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} style={{ background: "transparent", border: "none", color: "#374151", cursor: "pointer", fontSize: 14, padding: "0 4px", fontFamily: "inherit", flexShrink: 0 }}>
-              ✕’
+            <button
+              onClick={() => setSearchQuery("")}
+              style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 4px", fontFamily: "inherit", flexShrink: 0 }}
+            >
+              ✕
             </button>
           )}
         </div>
@@ -218,15 +265,15 @@ export default function App() {
 
       {/* INFO BAR (desktop) */}
       {activeTab === "roadmap" && !showSearch && !isMobile && (
-        <div style={{ background: "#090e16", borderBottom: "1px solid #161b22", padding: "6px 20px", display: "flex", gap: 20, flexShrink: 0 }}>
+        <div style={{ background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)", padding: "6px 20px", display: "flex", gap: 20, flexShrink: 0 }}>
           {[
-            { label: "Total weeks",  val: `${activeRoadmap.reduce((s, p) => s + p.weeks.length, 0)}` },
+            { label: "Total weeks",  val: String(activeRoadmap.reduce((s, p) => s + p.weeks.length, 0)) },
             { label: "Avg hrs/week", val: langDef.info.hrsPerWeek },
             { label: "Core books",   val: langDef.info.books },
           ].map(({ label, val }) => (
             <div key={label} style={{ display: "flex", gap: 7, alignItems: "center" }}>
-              <span style={{ fontSize: 10, color: "#374151", letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
-              <span style={{ fontSize: 11, color: "#64748b" }}>{val}</span>
+              <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
+              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{val}</span>
             </div>
           ))}
         </div>
@@ -234,25 +281,79 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main style={{ flex: 1, overflow: "hidden", display: "flex" }}>
+
         {activeTab === "tracker" ? (
-          <TrackerTab roadmap={activeRoadmap} channels={channels} completed={completed} reset={reset} isMobile={isMobile} />
+          <TrackerTab
+            roadmap={activeRoadmap}
+            channels={channels}
+            completed={completed}
+            reset={reset}
+            isMobile={isMobile}
+            isDark={isDark}
+            onNavigateToPhase={(ph) => { selectPhase(ph); setActiveTab("roadmap"); }}
+          />
         ) : activeTab === "about" ? (
           <AboutTab isMobile={isMobile} />
+        ) : activeTab === "readings" ? (
+          <ReadingsTab isMobile={isMobile} />
         ) : showSearch ? (
           <SearchResults roadmap={activeRoadmap} query={searchQuery} onJumpToWeek={handleJumpToWeek} isMobile={isMobile} completed={completed} toggle={toggle} />
         ) : isMobile ? (
           <>
-            {mobileView === "phases" && <PhasesPanel roadmap={activeRoadmap} selPhase={selPhase} isMobile={true}  width={phases.width} selectPhase={selectPhase} completed={completed} />}
-            {mobileView === "weeks"  && <WeeksPanel  phase={phase} selWeek={selWeek} isMobile={true}  width={weeks.width} selectWeek={selectWeek} setMobileView={setMobileView} completed={completed} />}
-            {mobileView === "detail" && <DetailPanel weekObj={weekObj} phase={phase} openSessions={openSessions} toggleSession={toggleSession} isMobile={true}  setMobileView={setMobileView} completed={completed} toggle={toggle} totalWeeks={totalWeeks} />}
+            {mobileView === "phases" && (
+              <TimelinePanel
+                roadmap={activeRoadmap}
+                selPhase={selPhase}
+                isMobile={true}
+                width={0}
+                completed={completed}
+                isDark={isDark}
+                selectPhase={selectPhase}
+                setMobileView={setMobileView}
+              />
+            )}
+            {mobileView === "detail" && (
+              <DetailPanel
+                weekObj={weekObj}
+                phase={phase}
+                openSessions={openSessions}
+                toggleSession={toggleSession}
+                isMobile={true}
+                isDark={isDark}
+                setMobileView={setMobileView}
+                selectWeek={selectWeek}
+                completed={completed}
+                toggle={toggle}
+                totalWeeks={totalWeeks}
+              />
+            )}
           </>
         ) : (
           <>
-            <PhasesPanel roadmap={activeRoadmap} selPhase={selPhase} isMobile={false} width={phases.width} selectPhase={selectPhase} completed={completed} />
-            <DragHandle onMouseDown={phases.onDragStart} />
-            <WeeksPanel  phase={phase} selWeek={selWeek} isMobile={false} width={weeks.width} selectWeek={selectWeek} setMobileView={setMobileView} completed={completed} />
-            <DragHandle onMouseDown={weeks.onDragStart} />
-            <DetailPanel weekObj={weekObj} phase={phase} openSessions={openSessions} toggleSession={toggleSession} isMobile={false} setMobileView={setMobileView} completed={completed} toggle={toggle} totalWeeks={totalWeeks} />
+            <TimelinePanel
+              roadmap={activeRoadmap}
+              selPhase={selPhase}
+              isMobile={false}
+              width={timeline.width}
+              completed={completed}
+              isDark={isDark}
+              selectPhase={selectPhase}
+              setMobileView={setMobileView}
+            />
+            <DragHandle onMouseDown={timeline.onDragStart} />
+            <DetailPanel
+              weekObj={weekObj}
+              phase={phase}
+              openSessions={openSessions}
+              toggleSession={toggleSession}
+              isMobile={false}
+              isDark={isDark}
+              setMobileView={setMobileView}
+              selectWeek={selectWeek}
+              completed={completed}
+              toggle={toggle}
+              totalWeeks={totalWeeks}
+            />
           </>
         )}
       </main>

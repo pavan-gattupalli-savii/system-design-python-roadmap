@@ -44,7 +44,7 @@ export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isM
           {/* Title — clickable when a URL is resolvable */}
           <div
             className="resource-title"
-            style={{ fontSize: isMobile ? 12 : 13, color: isDone ? "#4b5563" : "#f0f6ff", lineHeight: 1.5, fontWeight: 500 }}
+            style={{ fontSize: isMobile ? 12 : 13, color: isDone ? "var(--text-dim)" : "var(--text-heading)", lineHeight: 1.5, fontWeight: 500 }}
           >
             {url ? (
               <a
@@ -65,8 +65,8 @@ export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isM
           </div>
 
           {/* Where / source hint */}
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 5, lineHeight: 1.4 }}>
-            <span style={{ color: "#374151" }}>→ </span>
+          <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 5, lineHeight: 1.4 }}>
+            <span style={{ color: "var(--text-muted)" }}>→ </span>
             {res.where}
           </div>
         </div>

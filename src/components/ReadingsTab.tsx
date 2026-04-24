@@ -1,0 +1,502 @@
+// ── READINGS TAB ──────────────────────────────────────────────────────────────
+// Community-curated resources, contributed via GitHub PRs.
+// Filters: type · difficulty · topic · search. Sort: newest / top / A-Z.
+// Upvotes: base count in readings.ts + one local browser vote per entry.
+
+import { useState, useMemo, useCallback } from "react";
+import { READINGS, POST_TYPES, DIFFICULTIES } from "../data/readings";
+import type { Reading } from "../data/readings";
+
+const REPO          = "pavan-gattupalli-savii/system-design-python-roadmap";
+const ISSUE_URL     = `https://github.com/${REPO}/issues/new?template=reading-suggestion.md&title=%5BReading%5D+`;
+const PR_URL        = `https://github.com/${REPO}/pulls`;
+const FILE_URL      = `https://github.com/${REPO}/blob/main/src/data/readings.ts`;
+const VOTE_KEY      = "sd_my_votes_v1";
+
+// ── Local vote helpers ────────────────────────────────────────────────────────
+function loadMyVotes(): Set<number> {
+  try { return new Set(JSON.parse(localStorage.getItem(VOTE_KEY) || "[]")); }
+  catch { return new Set(); }
+}
+function saveMyVotes(v: Set<number>) {
+  try { localStorage.setItem(VOTE_KEY, JSON.stringify([...v])); } catch {}
+}
+
+// ── Icon + colour maps ────────────────────────────────────────────────────────
+const TYPE_ICONS: Record<string, string> = {
+  Blog: "✍️", YouTube: "▶️", LinkedIn: "💼", Book: "📖", Paper: "📄",
+  Course: "🎓", Newsletter: "📬", Thread: "🧵", Docs: "📘", Website: "🌐",
+  Podcast: "🎙️", Tool: "🔧", Repo: "⭐", Slide: "🖥️", "Case Study": "🔬",
+};
+
+const DIFF_STYLE: Record<string, { bg: string; tx: string }> = {
+  Beginner:     { bg: "#052e1644", tx: "#4ade80" },
+  Intermediate: { bg: "#78350f33", tx: "#fbbf24" },
+  Advanced:     { bg: "#312e8133", tx: "#a5b4fc" },
+};
+
+type SortKey = "newest" | "top" | "alpha";
+
+function allTopics(rs: Reading[]): string[] {
+  const s = new Set<string>();
+  rs.forEach((r) => r.topics.forEach((t) => s.add(t)));
+  return [...s].sort();
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
+  const [search,      setSearch]      = useState("");
+  const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set());
+  const [activeDiff,  setActiveDiff]  = useState("");
+  const [activeTopic, setActiveTopic] = useState("");
+  const [sort,        setSort]        = useState<SortKey>("top");
+  const [myVotes,     setMyVotes]     = useState<Set<number>>(loadMyVotes);
+
+  const topics = useMemo(() => allTopics(READINGS), []);
+
+  const toggleVote = useCallback((id: number) => {
+    setMyVotes((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      saveMyVotes(next);
+      return next;
+    });
+  }, []);
+
+  function toggleType(t: string) {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      next.has(t) ? next.delete(t) : next.add(t);
+      return next;
+    });
+  }
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    let res = READINGS.filter((r) => {
+      if (activeTypes.size > 0 && !activeTypes.has(r.type)) return false;
+      if (activeDiff  && r.difficulty !== activeDiff)        return false;
+      if (activeTopic && !r.topics.includes(activeTopic))    return false;
+      if (!q) return true;
+      return (
+        r.title.toLowerCase().includes(q) ||
+        r.addedBy.toLowerCase().includes(q) ||
+        (r.githubUser || "").toLowerCase().includes(q) ||
+        r.topics.some((t) => t.includes(q)) ||
+        r.type.toLowerCase().includes(q) ||
+        (r.notes || "").toLowerCase().includes(q)
+      );
+    });
+    if (sort === "top")   res = [...res].sort((a, b) => (b.upvotes + (myVotes.has(b.id) ? 1 : 0)) - (a.upvotes + (myVotes.has(a.id) ? 1 : 0)));
+    if (sort === "alpha") res = [...res].sort((a, b) => a.title.localeCompare(b.title));
+    if (sort === "newest")res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
+    return res;
+  }, [search, activeTypes, activeDiff, activeTopic, sort, myVotes]);
+
+  const hasFilters = activeTypes.size > 0 || activeTopic || activeDiff || search;
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+      {/* ── Toolbar ─────────────────────────────────────────────────── */}
+      <div style={{
+        background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)",
+        padding: isMobile ? "10px 12px" : "12px 20px", flexShrink: 0,
+        display: "flex", flexDirection: "column", gap: 10,
+      }}>
+
+        {/* Row 1 — Search + sort + actions */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
+          <input
+            className="search-input"
+            placeholder="Search title, author, tag, type…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setSearch("")}
+            style={{ flex: 1 }}
+          />
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            style={{
+              background: "var(--bg-card)", border: "1px solid var(--border)",
+              color: "var(--text-secondary)", borderRadius: 6, padding: "5px 8px",
+              fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            }}
+          >
+            <option value="top">▲ Top</option>
+            <option value="newest">🕐 Newest</option>
+            <option value="alpha">A→Z</option>
+          </select>
+          {hasFilters && (
+            <button
+              onClick={() => { setSearch(""); setActiveTypes(new Set()); setActiveTopic(""); setActiveDiff(""); }}
+              style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+            >
+              Clear
+            </button>
+          )}
+          <a
+            href={ISSUE_URL} target="_blank" rel="noopener noreferrer"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              background: "#6366f1", color: "#fff", border: "none", borderRadius: 7,
+              padding: isMobile ? "6px 10px" : "6px 14px", fontSize: isMobile ? 11 : 12,
+              fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+            }}
+          >
+            ＋ Suggest
+          </a>
+        </div>
+
+        {/* Row 2 — Type chips */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {POST_TYPES.map((t) => {
+            const active = activeTypes.has(t);
+            return (
+              <button key={t} onClick={() => toggleType(t)} style={{
+                background: active ? "#6366f1" : "transparent",
+                border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
+                color: active ? "#fff" : "var(--text-secondary)",
+                borderRadius: 20, padding: "3px 10px", fontSize: 11, cursor: "pointer",
+                fontFamily: "inherit", fontWeight: active ? 600 : 400, transition: "all 0.12s",
+              }}>
+                {TYPE_ICONS[t] || "📌"} {t}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Row 3 — Difficulty + Topic filters */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2 }}>Level:</span>
+          {DIFFICULTIES.map((d) => {
+            const active = activeDiff === d;
+            const ds = DIFF_STYLE[d] || { bg: "transparent", tx: "var(--text-muted)" };
+            return (
+              <button key={d} onClick={() => setActiveDiff(active ? "" : d)} style={{
+                background: active ? ds.bg : "transparent",
+                border: "1px solid " + (active ? ds.tx + "66" : "var(--border-subtle)"),
+                color: active ? ds.tx : "var(--text-muted)",
+                borderRadius: 4, padding: "2px 10px", fontSize: 10, cursor: "pointer",
+                fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
+              }}>{d}</button>
+            );
+          })}
+          <span style={{ width: 1, height: 12, background: "var(--border-subtle)", margin: "0 4px", display: "inline-block" }} />
+          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2 }}>Topic:</span>
+          {topics.map((t) => {
+            const active = activeTopic === t;
+            return (
+              <button key={t} onClick={() => setActiveTopic(active ? "" : t)} style={{
+                background: active ? "#0ea5e922" : "transparent",
+                border: "1px solid " + (active ? "#0ea5e9" : "var(--border-subtle)"),
+                color: active ? "#0ea5e9" : "var(--text-muted)",
+                borderRadius: 4, padding: "2px 8px", fontSize: 10, cursor: "pointer",
+                fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
+              }}>#{t}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Result count bar ─────────────────────────────────────────── */}
+      <div style={{
+        padding: "7px 20px", fontSize: 11, color: "var(--text-muted)",
+        background: "var(--bg-page)", borderBottom: "1px solid var(--border-subtle)",
+        flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <span>{filtered.length} of {READINGS.length} readings</span>
+        <a href={FILE_URL} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 10, color: "var(--text-muted)", textDecoration: "none" }}>
+          View source on GitHub →
+        </a>
+      </div>
+
+      {/* ── Table / Card list ────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {filtered.length === 0 ? (
+          <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+            No readings match your filters.
+          </div>
+        ) : isMobile ? (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {filtered.map((r) => <ReadingCard key={r.id} r={r} myVotes={myVotes} toggleVote={toggleVote} />)}
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontSize: 12 }}>
+              <colgroup>
+                <col style={{ width: 54 }} />
+                <col style={{ width: 110 }} />
+                <col />
+                <col style={{ width: 110 }} />
+                <col style={{ width: 130 }} />
+                <col style={{ width: 180 }} />
+                <col style={{ width: 72 }} />
+              </colgroup>
+              <thead>
+                <tr style={{ background: "var(--bg-panel)", borderBottom: "2px solid var(--border)", position: "sticky", top: 0, zIndex: 1 }}>
+                  {(["▲", "Type", "Title / Link", "Level", "Added By", "Topics", "Date"] as string[]).map((h) => (
+                    <th key={h} style={{
+                      padding: h === "▲" ? "10px 8px" : "10px 14px",
+                      textAlign: h === "▲" ? "center" : "left",
+                      fontSize: 10, fontWeight: 700, letterSpacing: 1.2,
+                      textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap",
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r, idx) => (
+                  <TableRow key={r.id} r={r} idx={idx} myVotes={myVotes} toggleVote={toggleVote} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── Contribute footer ── */}
+        <div style={{ padding: "28px 20px", textAlign: "center", borderTop: "1px solid var(--border-subtle)" }}>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>
+            Know a great resource? Contribute via GitHub — all reads are PR-reviewed.
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <CtaLink href={ISSUE_URL}>🙋 Suggest via Issue</CtaLink>
+            <CtaLink href={PR_URL}>🔀 Open a Pull Request</CtaLink>
+          </div>
+          <div style={{ marginTop: 12, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+            Approved PRs appear here after merge. Add your GitHub username to get an avatar and profile link!
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CTA link ──────────────────────────────────────────────────────────────────
+function CtaLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href} target="_blank" rel="noopener noreferrer"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        background: "transparent", border: "1px solid #6366f1", color: "#a5b4fc",
+        borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600,
+        textDecoration: "none", transition: "background 0.15s",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "#6366f115")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      {children}
+    </a>
+  );
+}
+
+// ── Desktop table row ──────────────────────────────────────────────────────────
+function TableRow({ r, idx, myVotes, toggleVote }: {
+  r: Reading; idx: number; myVotes: Set<number>; toggleVote: (id: number) => void;
+}) {
+  const voted     = myVotes.has(r.id);
+  const voteTotal = r.upvotes + (voted ? 1 : 0);
+  const ds        = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
+  const rowBg     = idx % 2 === 0 ? "var(--bg-page)" : "var(--bg-panel)";
+
+  return (
+    <tr
+      style={{ borderBottom: "1px solid var(--border-subtle)", background: rowBg }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-card)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = rowBg)}
+    >
+      {/* ▲ Upvote — first column */}
+      <td style={{ padding: "8px 6px", verticalAlign: "middle", textAlign: "center" }}>
+        <button
+          onClick={() => toggleVote(r.id)}
+          title={voted ? "Remove upvote" : "Upvote this reading"}
+          style={{
+            display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 1,
+            background: voted ? "#6366f122" : "transparent",
+            border: "1px solid " + (voted ? "#6366f1" : "var(--border)"),
+            color: voted ? "#a5b4fc" : "var(--text-muted)",
+            borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit", minWidth: 36, transition: "all 0.15s",
+          }}
+        >
+          <span style={{ fontSize: 11, lineHeight: 1 }}>▲</span>
+          <span>{voteTotal}</span>
+        </button>
+      </td>
+
+      {/* Type */}
+      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, color: "var(--text-secondary)",
+          background: "var(--bg-card)", border: "1px solid var(--border)",
+          borderRadius: 4, padding: "2px 8px", whiteSpace: "nowrap",
+        }}>
+          {TYPE_ICONS[r.type] || "📌"} {r.type}
+        </span>
+      </td>
+
+      {/* Title */}
+      <td style={{ padding: "10px 14px", verticalAlign: "middle", maxWidth: 360 }}>
+        <a
+          href={r.url} target="_blank" rel="noopener noreferrer"
+          style={{ color: "var(--text-bright)", fontWeight: 600, textDecoration: "none", display: "block", lineHeight: 1.4 }}
+          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+        >
+          {r.title} ↗
+        </a>
+        {r.notes && (
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.4 }}>{r.notes}</div>
+        )}
+      </td>
+
+      {/* Difficulty */}
+      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+        {r.difficulty && ds ? (
+          <span style={{
+            fontSize: 10, fontWeight: 700, color: ds.tx, background: ds.bg,
+            border: "1px solid " + ds.tx + "44", borderRadius: 4, padding: "2px 8px", whiteSpace: "nowrap",
+          }}>
+            {r.difficulty}
+          </span>
+        ) : <span style={{ color: "var(--text-muted)", fontSize: 11 }}>—</span>}
+      </td>
+
+      {/* Added by — GitHub avatar + name link */}
+      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+        {r.githubUser ? (
+          <a
+            href={`https://github.com/${r.githubUser}`} target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", gap: 6, textDecoration: "none", color: "var(--text-secondary)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-bright)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
+          >
+            <img
+              src={`https://github.com/${r.githubUser}.png?size=24`} alt={r.addedBy}
+              style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, border: "1px solid var(--border)" }}
+            />
+            <span style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 90 }}>
+              {r.addedBy}
+            </span>
+          </a>
+        ) : (
+          <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.addedBy}</span>
+        )}
+      </td>
+
+      {/* Topics */}
+      <td style={{ padding: "10px 14px", verticalAlign: "middle" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {r.topics.slice(0, 3).map((t) => (
+            <span key={t} style={{ fontSize: 9, color: "#0ea5e9", background: "#0ea5e922", border: "1px solid #0ea5e933", borderRadius: 4, padding: "1px 6px" }}>
+              #{t}
+            </span>
+          ))}
+          {r.topics.length > 3 && (
+            <span style={{ fontSize: 9, color: "var(--text-muted)" }}>+{r.topics.length - 3}</span>
+          )}
+        </div>
+      </td>
+
+      {/* Date */}
+      <td style={{ padding: "10px 14px", color: "var(--text-muted)", verticalAlign: "middle", whiteSpace: "nowrap", fontSize: 11 }}>
+        {r.addedOn.slice(0, 7)}
+      </td>
+    </tr>
+  );
+}
+
+// ── Mobile card ────────────────────────────────────────────────────────────────
+function ReadingCard({ r, myVotes, toggleVote }: {
+  r: Reading; myVotes: Set<number>; toggleVote: (id: number) => void;
+}) {
+  const voted     = myVotes.has(r.id);
+  const voteTotal = r.upvotes + (voted ? 1 : 0);
+  const ds        = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
+
+  return (
+    <div style={{
+      display: "flex", gap: 12,
+      padding: "14px 14px", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-panel)",
+    }}>
+      {/* Left — upvote column */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 2 }}>
+        <button
+          onClick={() => toggleVote(r.id)}
+          style={{
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+            background: voted ? "#6366f122" : "transparent",
+            border: "1px solid " + (voted ? "#6366f1" : "var(--border)"),
+            color: voted ? "#a5b4fc" : "var(--text-muted)",
+            borderRadius: 6, padding: "6px 9px", fontSize: 11, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit", minWidth: 38, transition: "all 0.15s",
+          }}
+        >
+          <span style={{ fontSize: 14, lineHeight: 1 }}>▲</span>
+          <span style={{ fontSize: 12 }}>{voteTotal}</span>
+        </button>
+      </div>
+
+      {/* Right — content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Tags row */}
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5, alignItems: "center" }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, color: "var(--text-secondary)",
+            background: "var(--bg-secondary)", border: "1px solid var(--border)",
+            borderRadius: 4, padding: "1px 7px", whiteSpace: "nowrap",
+          }}>
+            {TYPE_ICONS[r.type] || "📌"} {r.type}
+          </span>
+          {r.difficulty && ds && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: ds.tx, background: ds.bg,
+              border: "1px solid " + ds.tx + "44", borderRadius: 4, padding: "1px 7px",
+            }}>
+              {r.difficulty}
+            </span>
+          )}
+          <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: "auto" }}>
+            {r.addedOn.slice(0, 7)}
+          </span>
+        </div>
+
+        {/* Title */}
+        <a
+          href={r.url} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 13, fontWeight: 600, color: "var(--text-bright)", textDecoration: "none", display: "block", lineHeight: 1.4, marginBottom: 4 }}
+        >
+          {r.title} ↗
+        </a>
+
+        {r.notes && (
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 7, lineHeight: 1.4 }}>{r.notes}</div>
+        )}
+
+        {/* Author + topics */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+          {r.githubUser ? (
+            <a
+              href={`https://github.com/${r.githubUser}`} target="_blank" rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: 4, textDecoration: "none", color: "var(--text-secondary)", fontSize: 10, marginRight: 4 }}
+            >
+              <img src={`https://github.com/${r.githubUser}.png?size=16`} alt={r.addedBy} style={{ width: 14, height: 14, borderRadius: "50%" }} />
+              {r.addedBy}
+            </a>
+          ) : (
+            <span style={{ fontSize: 10, color: "var(--text-secondary)", marginRight: 4 }}>by {r.addedBy}</span>
+          )}
+          {r.topics.slice(0, 4).map((t) => (
+            <span key={t} style={{ fontSize: 9, color: "#0ea5e9", background: "#0ea5e922", border: "1px solid #0ea5e933", borderRadius: 4, padding: "1px 5px" }}>
+              #{t}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

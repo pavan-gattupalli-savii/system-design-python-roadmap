@@ -14,11 +14,11 @@ export function PhasesPanel({ roadmap, selPhase, isMobile, width, selectPhase, c
   return (
     <div
       style={{
-        background: "#0d1117",
+        background: "var(--bg-panel)",
         overflowY: "auto",
         flexShrink: 0,
         width: isMobile ? "100%" : width,
-        borderRight: isMobile ? "none" : "1px solid #1c2430",
+        borderRight: isMobile ? "none" : "1px solid var(--border)",
       }}
     >
       {roadmap.map((p: Phase) => {
@@ -36,7 +36,7 @@ export function PhasesPanel({ roadmap, selPhase, isMobile, width, selectPhase, c
               borderLeft: !isMobile ? (isActive ? "3px solid " + p.accent : "3px solid transparent") : "none",
               borderRight: "none",
               borderTop: "none",
-              borderBottom: "1px solid #111827",
+              borderBottom: "1px solid var(--bg-card)",
               padding: isMobile ? "14px 16px" : "10px 16px",
               cursor: "pointer",
               display: "flex",
@@ -47,10 +47,10 @@ export function PhasesPanel({ roadmap, selPhase, isMobile, width, selectPhase, c
           >
             <span style={{ fontSize: isMobile ? 24 : 20, flexShrink: 0 }}>{p.icon}</span>
             <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? p.light : "#64748b" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? p.light : "var(--text-secondary)" }}>
                 Phase {p.phase}
               </div>
-              <div style={{ fontSize: isMobile ? 13 : 11, color: isActive ? "#e2e8f0" : "#4b5563", lineHeight: 1.35, marginTop: 2 }}>
+              <div style={{ fontSize: isMobile ? 13 : 11, color: isActive ? "var(--text-bright)" : "var(--text-dim)", lineHeight: 1.35, marginTop: 2 }}>
                 {p.title}
               </div>
               {!isMobile && (
@@ -58,7 +58,7 @@ export function PhasesPanel({ roadmap, selPhase, isMobile, width, selectPhase, c
                   <div className="progress-bar-track">
                     <div className="progress-bar-fill" style={{ width: pct + "%", background: pct === 100 ? "#4ade80" : p.accent }} />
                   </div>
-                  <div style={{ fontSize: 9, color: "#374151", marginTop: 2 }}>
+                  <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>
                     {done}/{total}{pct > 0 ? " · " + pct + "%" : ""}{pct === 100 ? " ✓" : ""}
                   </div>
                 </>

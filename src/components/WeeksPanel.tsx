@@ -9,27 +9,62 @@ interface Props {
   selectWeek: (wn: number) => void;
   setMobileView: (v: string) => void;
   completed: Set<string>;
+  onBackToOverview?: () => void;
 }
 
-export function WeeksPanel({ phase, selWeek, isMobile, width, selectWeek, setMobileView, completed }: Props) {
+export function WeeksPanel({ phase, selWeek, isMobile, width, selectWeek, setMobileView, completed, onBackToOverview }: Props) {
   return (
     <div
       style={{
-        background: "#090e16",
+        background: "var(--bg-secondary)",
         overflowY: "auto",
         flexShrink: 0,
         width: isMobile ? "100%" : width,
-        borderRight: isMobile ? "none" : "1px solid #1c2430",
+        borderRight: isMobile ? "none" : "1px solid var(--border)",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
+      {/* Back to overview (desktop) */}
+      {!isMobile && onBackToOverview && (
+        <button
+          onClick={onBackToOverview}
+          style={{
+            background: "transparent",
+            border: "none",
+            borderBottom: "1px solid var(--border-subtle)",
+            padding: "10px 14px",
+            color: "var(--text-muted)",
+            fontSize: 11,
+            cursor: "pointer",
+            textAlign: "left",
+            fontFamily: "inherit",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexShrink: 0,
+            transition: "color 0.12s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#94a3b8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+        >
+          ‹ All phases
+        </button>
+      )}
+
       {isMobile && (
         <button className="back-btn" onClick={() => setMobileView("phases")}>
           ‹ All Phases
         </button>
       )}
 
-      <div style={{ padding: "10px 14px 6px", fontSize: 10, letterSpacing: 2, color: "#374151", textTransform: "uppercase" }}>
-        {phase?.icon} {phase?.title}
+      <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
+        <div style={{ fontSize: 9, letterSpacing: 1.5, color: phase?.light ?? "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+          {phase?.icon} Phase {phase?.phase}
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-bright)", marginTop: 2 }}>
+          {phase?.title}
+        </div>
       </div>
 
       {phase?.weeks.map((w) => {
@@ -55,7 +90,7 @@ export function WeeksPanel({ phase, selWeek, isMobile, width, selectWeek, setMob
               borderLeft: !isMobile ? (isActive ? "2px solid " + phase.accent : "2px solid transparent") : "none",
               borderRight: "none",
               borderTop: "none",
-              borderBottom: "1px solid #0d1117",
+              borderBottom: "1px solid var(--bg-panel)",
               padding: isMobile ? "13px 16px" : "9px 14px",
               cursor: "pointer",
               display: "flex",
@@ -64,10 +99,10 @@ export function WeeksPanel({ phase, selWeek, isMobile, width, selectWeek, setMob
               gap: isMobile ? 12 : 2,
             }}
           >
-            <span style={{ fontSize: 11, color: wComplete ? "#4ade80" : isActive ? phase.light : "#4b5563", letterSpacing: 1, textTransform: "uppercase", flexShrink: 0, fontWeight: wComplete ? 700 : 400 }}>
+            <span style={{ fontSize: 11, color: wComplete ? "#4ade80" : isActive ? phase.light : "var(--text-dim)", letterSpacing: 1, textTransform: "uppercase", flexShrink: 0, fontWeight: wComplete ? 700 : 400 }}>
               {wComplete ? "✓ " : ""}Wk {w.n}
             </span>
-            <span style={{ fontSize: isMobile ? 13 : 11, color: isActive ? "#e2e8f0" : "#6b7280", lineHeight: 1.4, flex: 1 }}>
+            <span style={{ fontSize: isMobile ? 13 : 11, color: isActive ? "var(--text-bright)" : "var(--text-dim)", lineHeight: 1.4, flex: 1 }}>
               {w.title}
             </span>
             {isMobile && <span style={{ color: "#334155", fontSize: 16, flexShrink: 0 }}>›</span>}

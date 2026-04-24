@@ -12,10 +12,10 @@ const TECH_STACK = [
 ];
 
 const ROADMAP_HIGHLIGHTS = [
-  { icon: "📅", label: "40 weeks",     desc: "Structured week-by-week curriculum" },
-  { icon: "🎯", label: "7 phases",     desc: "Python → Design Patterns → Infra → Scale" },
-  { icon: "📚", label: "500+ items",   desc: "Books, videos, docs, and hands-on builds" },
-  { icon: "✅", label: "Progress",     desc: "Per-session tracking — resets on refresh" },
+  { icon: "📅", label: "49–54 weeks",  desc: "Structured week-by-week curriculum for Python & Java" },
+  { icon: "🎯", label: "9 phases",     desc: "Foundations → LLD → HLD → Reliability → Interview" },
+  { icon: "📚", label: "600+ resources", desc: "Books, videos, docs, and hands-on build projects" },
+  { icon: "✅", label: "Progress",     desc: "Per-session tracking saved in your browser" },
 ];
 
 export function AboutTab({ isMobile }: { isMobile: boolean }) {
@@ -23,18 +23,18 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px" : "32px 48px", maxWidth: 760, margin: "0 auto", width: "100%" }}>
 
       {/* ── Creator card ── */}
-      <div style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 14, padding: isMobile ? "20px" : "28px 32px", marginBottom: 24, display: "flex", flexDirection: isMobile ? "column" : "row", gap: 24, alignItems: isMobile ? "flex-start" : "center" }}>
+      <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 14, padding: isMobile ? "20px" : "28px 32px", marginBottom: 24, display: "flex", flexDirection: isMobile ? "column" : "row", gap: 24, alignItems: isMobile ? "flex-start" : "center" }}>
         {/* Avatar placeholder */}
         <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }}>
-          🐍
+          🐍☕
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#f0f6ff", marginBottom: 4 }}>
+          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "var(--text-heading)", marginBottom: 4 }}>
             Pavan Kumar
           </div>
-          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14, lineHeight: 1.6 }}>
-            Built this roadmap to go from Python developer to system-design-ready engineer —
-            documenting every resource, book chapter, and build project along the way.
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 14, lineHeight: 1.6 }}>
+            Built this roadmap to go from Python/Java developer to system-design-ready engineer —
+            documenting every resource, book chapter, and build project for both languages along the way.
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a
@@ -62,7 +62,7 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
               rel="noopener noreferrer"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
-                background: "#161b22", color: "#e2e8f0",
+                background: "var(--border-subtle)", color: "var(--text-bright)",
                 border: "1px solid #30363d",
                 borderRadius: 7, padding: "8px 16px",
                 fontSize: 13, fontWeight: 600, textDecoration: "none",
@@ -81,50 +81,50 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
       </div>
 
       {/* ── Roadmap highlights ── */}
-      <div style={{ fontSize: 11, color: "#374151", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
         About the Roadmap
       </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
         {ROADMAP_HIGHLIGHTS.map(({ icon, label, desc }) => (
-          <div key={label} style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 10, padding: "14px 16px" }}>
+          <div key={label} style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 10, padding: "14px 16px" }}>
             <div style={{ fontSize: 22, marginBottom: 8 }}>{icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>{label}</div>
-            <div style={{ fontSize: 11, color: "#374151", lineHeight: 1.5 }}>{desc}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-bright)", marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>{desc}</div>
           </div>
         ))}
       </div>
 
       {/* ── How to use ── */}
-      <div style={{ background: "#0d1117", border: "1px solid #1c2430", borderRadius: 12, padding: "18px 22px", marginBottom: 24 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 12 }}>How to use this roadmap</div>
+      <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 12, padding: "18px 22px", marginBottom: 24 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-bright)", marginBottom: 12 }}>How to use this roadmap</div>
         {[
           ["1", "Pick a phase", "Start from Phase 1 or jump to where your knowledge gaps are."],
           ["2", "Work week by week", "Each week has 2–3 sessions of Study → Build → Practice."],
           ["3", "Check off resources", "Use the ☐ checkbox on each card — progress is saved in your browser."],
-          ["4", "Use the search", "Press the 🔍 bar to find any topic instantly across all 40 weeks."],
+          ["4", "Use the search", "Press the 🔍 bar to find any topic instantly across all weeks in both roadmaps."],
           ["5", "Log in the tracker", "Open the Google Sheets tracker to log hours and notes per week."],
         ].map(([num, title, detail]) => (
           <div key={num} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
             <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: "50%", background: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", marginTop: 1 }}>{num}</div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{title}</div>
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{detail}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-bright)" }}>{title}</div>
+              <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>{detail}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* ── Tech stack ── */}
-      <div style={{ fontSize: 11, color: "#374151", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
         Built with
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {TECH_STACK.map(({ icon, name, desc }) => (
-          <div key={name} style={{ background: "#090e16", border: "1px solid #1c2430", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          <div key={name} style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 18 }}>{icon}</span>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{name}</div>
-              <div style={{ fontSize: 10, color: "#374151" }}>{desc}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-bright)" }}>{name}</div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{desc}</div>
             </div>
           </div>
         ))}
