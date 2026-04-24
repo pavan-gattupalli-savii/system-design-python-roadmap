@@ -6,6 +6,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { READINGS, POST_TYPES, DIFFICULTIES } from "../data/readings";
 import type { Reading } from "../data/readings";
+import { loadSet, saveSet } from "../utils/localStorage";
 
 const REPO     = "pavan-gattupalli-savii/system-design-python-roadmap";
 const PR_URL   = `https://github.com/${REPO}/compare`;
@@ -47,15 +48,6 @@ const _ISSUE_BODY = encodeURIComponent([
 ].join("\n"));
 const ISSUE_URL = `https://github.com/${REPO}/issues/new?labels=reading-suggestion&title=%5BReading%5D+&body=${_ISSUE_BODY}`;
 
-// ── Local vote helpers ────────────────────────────────────────────────────────
-function loadMyVotes(): Set<number> {
-  try { return new Set(JSON.parse(localStorage.getItem(VOTE_KEY) || "[]")); }
-  catch { return new Set(); }
-}
-function saveMyVotes(v: Set<number>) {
-  try { localStorage.setItem(VOTE_KEY, JSON.stringify([...v])); } catch {}
-}
-
 // ── Icon + colour maps ────────────────────────────────────────────────────────
 const TYPE_ICONS: Record<string, string> = {
   Blog: "✍️", YouTube: "▶️", LinkedIn: "💼", Book: "📖", Paper: "📄",
@@ -84,7 +76,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
   const [activeDiff,  setActiveDiff]  = useState("");
   const [activeTopic, setActiveTopic] = useState("");
   const [sort,        setSort]        = useState<SortKey>("top");
-  const [myVotes,     setMyVotes]     = useState<Set<number>>(loadMyVotes);
+  const [myVotes, setMyVotes] = useState<Set<number>>(() => loadSet(VOTE_KEY));
 
   const topics = useMemo(() => allTopics(READINGS), []);
 
@@ -92,7 +84,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
     setMyVotes((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      saveMyVotes(next);
+      saveSet(VOTE_KEY, next);
       return next;
     });
   }, []);
@@ -260,24 +252,30 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontSize: 12 }}>
+            <table style={{
+              width: "100%", minWidth: 800,
+              borderCollapse: "separate", borderSpacing: "0 3px",
+              fontSize: 12, padding: "8px 12px",
+            }}>
               <colgroup>
-                <col style={{ width: 54 }} />
-                <col style={{ width: 110 }} />
-                <col />
-                <col style={{ width: 110 }} />
-                <col style={{ width: 130 }} />
-                <col style={{ width: 180 }} />
-                <col style={{ width: 72 }} />
+                <col style={{ width: 52 }} />
+                <col style={{ width: 106 }} />
+                <col style={{ width: 230 }} />
+                <col style={{ width: 92 }} />
+                <col style={{ width: 116 }} />
+                <col style={{ width: 162 }} />
+                <col style={{ width: 64 }} />
               </colgroup>
               <thead>
-                <tr style={{ background: "var(--bg-panel)", borderBottom: "2px solid var(--border)", position: "sticky", top: 0, zIndex: 1 }}>
-                  {(["▲", "Type", "Title / Link", "Level", "Added By", "Topics", "Date"] as string[]).map((h) => (
+                <tr>
+                  {(["♡", "Type", "Title / Link", "Level", "Added By", "Topics", "Date"] as string[]).map((h, i) => (
                     <th key={h} style={{
-                      padding: h === "▲" ? "10px 8px" : "10px 14px",
-                      textAlign: h === "▲" ? "center" : "left",
-                      fontSize: 10, fontWeight: 700, letterSpacing: 1.2,
-                      textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap",
+                      padding: i === 0 ? "10px 6px 8px" : "10px 14px 8px",
+                      textAlign: i === 0 ? "center" : "left",
+                      fontSize: 9, fontWeight: 700, letterSpacing: 1.4,
+                      textTransform: "uppercase", color: "var(--text-muted)",
+                      whiteSpace: "nowrap", background: "transparent",
+                      borderBottom: "2px solid var(--border)",
                     }}>{h}</th>
                   ))}
                 </tr>

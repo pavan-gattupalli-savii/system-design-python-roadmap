@@ -47,5 +47,6 @@ export const TABS: Tab[] = [
   { id: "tracker",   label: "📊 Overview"  },
   { id: "roadmap",   label: "📚 Roadmap"   },
   { id: "readings",  label: "📖 Readings"  },
+  { id: "interview", label: "🎯 Interview" },
   { id: "about",     label: "👤 About"     },
 ];

@@ -16,6 +16,7 @@ import { SearchResults }                                            from "./comp
 import { TrackerTab }                                               from "./components/TrackerTab";
 import { AboutTab }                                                 from "./components/AboutTab";
 import { ReadingsTab }                                              from "./components/ReadingsTab";
+import { InterviewTab }                                             from "./components/InterviewTab";
 
 function DragHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void }) {
   const [hovered, setHovered] = useState(false);
@@ -296,6 +297,8 @@ export default function App() {
           <AboutTab isMobile={isMobile} />
         ) : activeTab === "readings" ? (
           <ReadingsTab isMobile={isMobile} />
+        ) : activeTab === "interview" ? (
+          <InterviewTab isMobile={isMobile} />
         ) : showSearch ? (
           <SearchResults roadmap={activeRoadmap} query={searchQuery} onJumpToWeek={handleJumpToWeek} isMobile={isMobile} completed={completed} toggle={toggle} />
         ) : isMobile ? (
