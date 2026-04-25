@@ -129,6 +129,30 @@ const OUTCOME_STYLE: Record<ExpOutcome, { tx: string; bg: string }> = {
 type QASort  = "difficulty" | "newest" | "alpha";
 type ExpSort = "top" | "newest" | "alpha";
 
+// ── Pagination component ──────────────────────────────────────────────────────
+function Pagination({ page, total, pageSize, onChange }: {
+  page: number; total: number; pageSize: number; onChange: (p: number) => void;
+}) {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+  const btnStyle = (disabled: boolean): React.CSSProperties => ({
+    background: disabled ? "transparent" : "var(--bg-card)",
+    border: "1px solid " + (disabled ? "var(--border-subtle)" : "var(--border)"),
+    color: disabled ? "var(--text-dim)" : "var(--text-secondary)",
+    borderRadius: 6, padding: "5px 14px", fontSize: 12, fontWeight: 600,
+    cursor: disabled ? "default" : "pointer", fontFamily: "inherit", transition: "all 0.12s",
+  });
+  return (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, padding: "14px 16px", borderTop: "1px solid var(--border-subtle)", marginTop: 4 }}>
+      <button style={btnStyle(page === 1)} disabled={page === 1} onClick={() => onChange(page - 1)}>← Prev</button>
+      <span style={{ fontSize: 12, color: "var(--text-muted)", minWidth: 120, textAlign: "center" }}>
+        Page {page} of {totalPages} · {total} items
+      </span>
+      <button style={btnStyle(page === totalPages)} disabled={page === totalPages} onClick={() => onChange(page + 1)}>Next →</button>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export function InterviewTab({ isMobile }: { isMobile: boolean }) {
   const [section, setSection] = useState<"experiences" | "qa">("experiences");
@@ -168,6 +192,8 @@ export function InterviewTab({ isMobile }: { isMobile: boolean }) {
 }
 
 // ══ EXPERIENCES SECTION ═══════════════════════════════════════════════════════
+const EXP_PAGE_SIZE = 8;
+
 function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const [search,        setSearch]        = useState("");
   const [activePlat,    setActivePlat]    = useState<ExpPlatform | "">("");
@@ -175,6 +201,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const [activeOutcome, setActiveOutcome] = useState<ExpOutcome | "">("");
   const [sort,          setSort]          = useState<ExpSort>("top");
   const [myVotes,       setMyVotes]       = useState<Set<number>>(() => loadSet(EXP_VOTE_KEY));
+  const [page,          setPage]          = useState(1);
 
   const toggleVote = useCallback((id: number) => {
     setMyVotes((prev) => {
@@ -213,6 +240,11 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   }, [search, activePlat, activeComp, activeOutcome, sort]);
 
   const hasFilters = !!(search || activePlat || activeComp || activeOutcome);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => { setPage(1); }, [search, activePlat, activeComp, activeOutcome, sort]);
+
+  const pagedExp = filtered.slice((page - 1) * EXP_PAGE_SIZE, page * EXP_PAGE_SIZE);
 
   return (
     <>
@@ -334,11 +366,12 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "8px 12px" }}>
-            {filtered.map((e) => (
+            {pagedExp.map((e) => (
               <ExperienceCard key={e.id} e={e} myVotes={myVotes} toggleVote={toggleVote} isMobile={isMobile} />
             ))}
           </div>
         )}
+        <Pagination page={page} total={filtered.length} pageSize={EXP_PAGE_SIZE} onChange={setPage} />
 
         {/* Footer */}
         <div style={{ padding: "24px 20px", textAlign: "center", borderTop: "1px solid var(--border-subtle)" }}>
@@ -465,6 +498,8 @@ function ExperienceCard({ e, myVotes, toggleVote, isMobile }: {
   );
 }
 
+const QA_PAGE_SIZE = 10;
+
 // ══ Q&A SECTION ═══════════════════════════════════════════════════════════════
 function QASection({ isMobile }: { isMobile: boolean }) {
   const [search,        setSearch]        = useState("");
@@ -474,6 +509,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   const [sort,          setSort]          = useState<QASort>("difficulty");
   const [practiced,     setPracticed]     = useState<Set<number>>(() => loadSet(PRACTICE_KEY));
   const [expanded,      setExpanded]      = useState<Set<number>>(new Set());
+  const [page,          setPage]          = useState(1);
 
   const togglePracticed = useCallback((id: number) => {
     setPracticed((prev) => {
@@ -517,6 +553,11 @@ function QASection({ isMobile }: { isMobile: boolean }) {
 
   const hasFilters     = !!(search || activecat || activeDiff || activeCompany);
   const practicedCount = filtered.filter((q) => practiced.has(q.id)).length;
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => { setPage(1); }, [search, activecat, activeDiff, activeCompany, sort]);
+
+  const pagedQA = filtered.slice((page - 1) * QA_PAGE_SIZE, page * QA_PAGE_SIZE);
 
   return (
     <>
@@ -639,7 +680,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
             No questions match your filters.
           </div>
         ) : (
-          filtered.map((q) => (
+          pagedQA.map((q) => (
             <QuestionCard
               key={q.id} q={q}
               isPracticed={practiced.has(q.id)}
@@ -650,6 +691,8 @@ function QASection({ isMobile }: { isMobile: boolean }) {
             />
           ))
         )}
+
+        <Pagination page={page} total={filtered.length} pageSize={QA_PAGE_SIZE} onChange={setPage} />
 
         {/* Footer */}
         <div style={{ padding: "24px 16px", textAlign: "center", borderTop: "1px solid var(--border-subtle)", marginTop: 8 }}>
@@ -698,7 +741,8 @@ function QuestionCard({
   return (
     <div style={{
       background: "var(--bg-panel)",
-      border: "1px solid " + (isPracticed ? "#4ade8033" : "var(--border-subtle)"),
+      border: "1px solid " + (isPracticed ? "#4ade8044" : "var(--border-subtle)"),
+      borderLeft: "3px solid " + (isPracticed ? "#4ade80" : ds.tx),
       borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s",
     }}>
       {/* Header */}
@@ -725,7 +769,18 @@ function QuestionCard({
 
         {/* Question + meta */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6, alignItems: "center" }}>
+          {/* Title first for better readability */}
+          <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: "var(--text-bright)", lineHeight: 1.4, marginBottom: 8 }}>
+            {q.title}
+          </div>
+          {/* Tags row below title */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center", marginBottom: 6 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 600, color: ds.tx, background: ds.bg,
+              border: "1px solid " + ds.tx + "44", borderRadius: 5, padding: "2px 8px", whiteSpace: "nowrap",
+            }}>
+              {q.difficulty}
+            </span>
             <span style={{
               fontSize: 10, fontWeight: 600, color: "var(--text-secondary)",
               background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)",
@@ -733,16 +788,10 @@ function QuestionCard({
             }}>
               {CAT_ICON[q.category]} {q.category}
             </span>
-            <span style={{
-              fontSize: 10, fontWeight: 700, color: ds.tx, background: ds.bg,
-              border: "1px solid " + ds.tx + "44", borderRadius: 5, padding: "2px 8px", whiteSpace: "nowrap",
-            }}>
-              {q.difficulty}
-            </span>
             {q.companies.slice(0, isMobile ? 2 : 4).map((c) => (
               <span key={c} style={{
                 fontSize: 10, color: "var(--text-muted)", background: "var(--bg-card)",
-                border: "1px solid var(--border-subtle)", borderRadius: 4, padding: "1px 6px",
+                border: "1px solid var(--border-subtle)", borderRadius: 4, padding: "1px 6px", whiteSpace: "nowrap",
               }}>
                 {COMPANY_LOGOS[c]} {c}
               </span>
@@ -751,15 +800,13 @@ function QuestionCard({
               <span style={{ fontSize: 10, color: "var(--text-muted)" }}>+{q.companies.length - (isMobile ? 2 : 4)}</span>
             )}
             {q.answerDocs && q.answerDocs.length > 0 && (
-              <span style={{ fontSize: 10, color: "#4ade80", background: "#052e1633", border: "1px solid #4ade8033", borderRadius: 4, padding: "1px 7px", marginLeft: 2 }}>
+              <span style={{ fontSize: 10, color: "#4ade80", background: "#052e1633", border: "1px solid #4ade8033", borderRadius: 4, padding: "1px 7px" }}>
                 {q.answerDocs.length} answer{q.answerDocs.length > 1 ? "s" : ""}
               </span>
             )}
           </div>
-          <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: "var(--text-bright)", lineHeight: 1.4 }}>
-            {q.title}
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+          {/* Topics row */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {q.topics.slice(0, 5).map((t) => (
               <span key={t} style={{ fontSize: 9, color: "#38bdf8", background: "#0ea5e911", border: "1px solid #0ea5e922", borderRadius: 4, padding: "1px 6px" }}>
                 #{t}

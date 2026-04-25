@@ -18,6 +18,12 @@ const ROADMAP_HIGHLIGHTS = [
   { icon: "✅", label: "Progress",     desc: "Per-session tracking saved in your browser" },
 ];
 
+const COMMUNITY_FEATURES = [
+  { icon: "📖", label: "Reading List", desc: "Community-curated articles, videos, papers and more — all PR-reviewed" },
+  { icon: "💬", label: "Experiences",  desc: "Real interview experience posts from engineers at top companies" },
+  { icon: "❓", label: "Q & A",        desc: "Practice questions with hints, follow-ups, and community answer docs" },
+];
+
 export function AboutTab({ isMobile }: { isMobile: boolean }) {
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px" : "32px 48px", maxWidth: 760, margin: "0 auto", width: "100%" }}>
@@ -94,6 +100,20 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
         ))}
       </div>
 
+      {/* ── Community features ── */}
+      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+        Community Features
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+        {COMMUNITY_FEATURES.map(({ icon, label, desc }) => (
+          <div key={label} style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 10, padding: "14px 16px" }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>{icon}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-bright)", marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+
       {/* ── How to use ── */}
       <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 12, padding: "18px 22px", marginBottom: 24 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-bright)", marginBottom: 12 }}>How to use this roadmap</div>
@@ -103,6 +123,7 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
           ["3", "Check off resources", "Use the ☐ checkbox on each card — progress is saved in your browser."],
           ["4", "Use the search", "Press the 🔍 bar to find any topic instantly across all weeks in both roadmaps."],
           ["5", "Log in the tracker", "Open the Google Sheets tracker to log hours and notes per week."],
+          ["6", "Prep for interviews", "Browse the Experiences tab for real stories, then drill Q&A with hints and community answers."],
         ].map(([num, title, detail]) => (
           <div key={num} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
             <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: "50%", background: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", marginTop: 1 }}>{num}</div>

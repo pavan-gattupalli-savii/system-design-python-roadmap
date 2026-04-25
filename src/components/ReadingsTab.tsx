@@ -120,6 +120,34 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
   }, [search, activeTypes, activeDiff, activeTopic, sort, myVotes]);
 
   const hasFilters = activeTypes.size > 0 || activeTopic || activeDiff || search;
+  const [page, setPage] = useState(1);
+  const READINGS_PAGE_SIZE = 15;
+
+  // Reset page on filter change
+  React.useEffect(() => { setPage(1); }, [search, activeTypes, activeDiff, activeTopic, sort]);
+
+  const pagedReadings = filtered.slice((page - 1) * READINGS_PAGE_SIZE, page * READINGS_PAGE_SIZE);
+
+  function Pagination({ total }: { total: number }) {
+    const totalPages = Math.ceil(total / READINGS_PAGE_SIZE);
+    if (totalPages <= 1) return null;
+    const btnStyle = (disabled: boolean): React.CSSProperties => ({
+      background: disabled ? "transparent" : "var(--bg-card)",
+      border: "1px solid " + (disabled ? "var(--border-subtle)" : "var(--border)"),
+      color: disabled ? "var(--text-dim)" : "var(--text-secondary)",
+      borderRadius: 6, padding: "5px 14px", fontSize: 12, fontWeight: 600,
+      cursor: disabled ? "default" : "pointer", fontFamily: "inherit", transition: "all 0.12s",
+    });
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, padding: "14px 16px", borderTop: "1px solid var(--border-subtle)" }}>
+        <button style={btnStyle(page === 1)} disabled={page === 1} onClick={() => setPage(page - 1)}>← Prev</button>
+        <span style={{ fontSize: 12, color: "var(--text-muted)", minWidth: 120, textAlign: "center" }}>
+          Page {page} of {totalPages} · {total} items
+        </span>
+        <button style={btnStyle(page === totalPages)} disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next →</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -248,7 +276,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
           </div>
         ) : isMobile ? (
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {filtered.map((r) => <ReadingCard key={r.id} r={r} myVotes={myVotes} toggleVote={toggleVote} />)}
+            {pagedReadings.map((r) => <ReadingCard key={r.id} r={r} myVotes={myVotes} toggleVote={toggleVote} />)}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -281,13 +309,15 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, idx) => (
+                {pagedReadings.map((r, idx) => (
                   <TableRow key={r.id} r={r} idx={idx} myVotes={myVotes} toggleVote={toggleVote} />
                 ))}
               </tbody>
             </table>
           </div>
         )}
+
+        <Pagination total={filtered.length} />
 
         {/* ── Contribute footer ── */}
         <div style={{ padding: "28px 20px", textAlign: "center", borderTop: "1px solid var(--border-subtle)" }}>
