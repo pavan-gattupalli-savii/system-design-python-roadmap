@@ -16,10 +16,13 @@ const enabled = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
 let transporter: Transporter | null = null;
 if (enabled) {
   transporter = nodemailer.createTransport({
-    host:   SMTP_HOST,
-    port:   SMTP_PORT,
-    secure: SMTP_PORT === 465,
-    auth:   { user: SMTP_USER, pass: SMTP_PASS },
+    host:              SMTP_HOST,
+    port:              SMTP_PORT,
+    secure:            SMTP_PORT === 465,
+    auth:              { user: SMTP_USER, pass: SMTP_PASS },
+    connectionTimeout: 8_000,   // ms to establish TCP connection
+    greetingTimeout:   8_000,   // ms to wait for SMTP greeting
+    socketTimeout:     10_000,  // ms idle timeout on open socket
   });
 }
 
