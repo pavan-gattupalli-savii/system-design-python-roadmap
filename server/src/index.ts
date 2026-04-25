@@ -53,6 +53,14 @@ app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
+// ── Prevent crashes from unhandled rejections / exceptions ───────────────────
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+});
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 if (!process.env.DATABASE_URL) {
   console.error("❌ DATABASE_URL is not set — DB queries will fail with 500");
