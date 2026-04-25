@@ -54,6 +54,10 @@ app.use((_req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+if (!process.env.DATABASE_URL) {
+  console.error("❌ DATABASE_URL is not set — DB queries will fail with 500");
+}
+
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ API server running on port ${PORT}`);
 });
