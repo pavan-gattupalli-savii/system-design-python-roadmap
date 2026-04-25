@@ -139,53 +139,110 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
         display: "flex", flexDirection: "column", gap: 10,
       }}>
 
-        {/* Row 1 — Search + sort + actions */}
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
-          <input
-            className="search-input"
-            placeholder="Search title, author, tag, type…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setSearch("")}
-            style={{ flex: 1 }}
-          />
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            style={{
-              background: "var(--bg-card)", border: "1px solid var(--border)",
-              color: "var(--text-secondary)", borderRadius: 6, padding: "5px 8px",
-              fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
-            }}
-          >
-            <option value="top">▲ Top</option>
-            <option value="newest">🕐 Newest</option>
-            <option value="alpha">A→Z</option>
-          </select>
-          {hasFilters && (
-            <button
-              onClick={() => { setSearch(""); setActiveTypes(new Set()); setActiveTopic(""); setActiveDiff(""); }}
-              style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+        {/* Row 1 — Search (full width on mobile) + sort + actions */}
+        {isMobile ? (
+          <>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
+              <input
+                className="search-input"
+                placeholder="Search title, author, tag, type…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Escape" && setSearch("")}
+                style={{ flex: 1 }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortKey)}
+                style={{
+                  flex: 1,
+                  background: "var(--bg-card)", border: "1px solid var(--border)",
+                  color: "var(--text-secondary)", borderRadius: 6, padding: "6px 8px",
+                  fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                <option value="top">▲ Top</option>
+                <option value="newest">🕐 Newest</option>
+                <option value="alpha">A→Z</option>
+              </select>
+              {hasFilters && (
+                <button
+                  onClick={() => { setSearch(""); setActiveTypes(new Set()); setActiveTopic(""); setActiveDiff(""); }}
+                  style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+                >
+                  Clear
+                </button>
+              )}
+              <Link
+                to={SUBMIT_PATH}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  background: "#6366f1", color: "#fff", border: "none", borderRadius: 7,
+                  padding: "6px 14px", fontSize: 12,
+                  fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+                }}
+              >
+                + Publish
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
+            <input
+              className="search-input"
+              placeholder="Search title, author, tag, type…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && setSearch("")}
+              style={{ flex: 1 }}
+            />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              style={{
+                background: "var(--bg-card)", border: "1px solid var(--border)",
+                color: "var(--text-secondary)", borderRadius: 6, padding: "5px 8px",
+                fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+              }}
             >
-              Clear
-            </button>
-          )}
-          <Link
-            to={SUBMIT_PATH}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              background: "#6366f1", color: "#fff", border: "none", borderRadius: 7,
-              padding: isMobile ? "6px 10px" : "6px 14px", fontSize: isMobile ? 11 : 12,
-              fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
-            }}
-          >
-            ＋ Publish
-          </Link>
-        </div>
+              <option value="top">▲ Top</option>
+              <option value="newest">🕐 Newest</option>
+              <option value="alpha">A→Z</option>
+            </select>
+            {hasFilters && (
+              <button
+                onClick={() => { setSearch(""); setActiveTypes(new Set()); setActiveTopic(""); setActiveDiff(""); }}
+                style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+              >
+                Clear
+              </button>
+            )}
+            <Link
+              to={SUBMIT_PATH}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                background: "#6366f1", color: "#fff", border: "none", borderRadius: 7,
+                padding: "6px 14px", fontSize: 12,
+                fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+              }}
+            >
+              ＋ Publish
+            </Link>
+          </div>
+        )}
 
-        {/* Row 2 — Type chips */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+        {/* Row 2 — Type chips (scrollable on mobile) */}
+        <div style={{
+          display: "flex", gap: 5,
+          overflowX: isMobile ? "auto" : undefined,
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          WebkitOverflowScrolling: "touch" as never,
+          paddingBottom: isMobile ? 2 : 0,
+        }}>
           {POST_TYPES.map((t) => {
             const active = activeTypes.has(t);
             return (
@@ -193,8 +250,9 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
                 background: active ? "#6366f1" : "transparent",
                 border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
                 color: active ? "#fff" : "var(--text-secondary)",
-                borderRadius: 20, padding: "3px 10px", fontSize: 11, cursor: "pointer",
+                borderRadius: 20, padding: "4px 11px", fontSize: 11, cursor: "pointer",
                 fontFamily: "inherit", fontWeight: active ? 600 : 400, transition: "all 0.12s",
+                flexShrink: 0, whiteSpace: "nowrap",
               }}>
                 {TYPE_ICONS[t] || "📌"} {t}
               </button>
@@ -202,9 +260,15 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
           })}
         </div>
 
-        {/* Row 3 — Difficulty + Topic filters */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2 }}>Level:</span>
+        {/* Row 3 — Difficulty + Topic filters (scrollable on mobile) */}
+        <div style={{
+          display: "flex", gap: 5, alignItems: "center",
+          overflowX: isMobile ? "auto" : undefined,
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          WebkitOverflowScrolling: "touch" as never,
+          paddingBottom: isMobile ? 2 : 0,
+        }}>
+          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Level:</span>
           {DIFFICULTIES.map((d) => {
             const active = activeDiff === d;
             const ds = DIFF_STYLE[d] || { bg: "transparent", tx: "var(--text-muted)" };
@@ -215,11 +279,12 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
                 color: active ? ds.tx : "var(--text-muted)",
                 borderRadius: 4, padding: "2px 10px", fontSize: 10, cursor: "pointer",
                 fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
+                flexShrink: 0, whiteSpace: "nowrap",
               }}>{d}</button>
             );
           })}
-          <span style={{ width: 1, height: 12, background: "var(--border-subtle)", margin: "0 4px", display: "inline-block" }} />
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2 }}>Topic:</span>
+          <span style={{ width: 1, height: 12, background: "var(--border-subtle)", margin: "0 4px", display: "inline-block", flexShrink: 0 }} />
+          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Topic:</span>
           {topics.map((t) => {
             const active = activeTopic === t;
             return (
@@ -229,6 +294,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
                 color: active ? "#0ea5e9" : "var(--text-muted)",
                 borderRadius: 4, padding: "2px 8px", fontSize: 10, cursor: "pointer",
                 fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
+                flexShrink: 0, whiteSpace: "nowrap",
               }}>#{t}</button>
             );
           })}

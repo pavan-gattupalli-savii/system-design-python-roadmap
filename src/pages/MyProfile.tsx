@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { patchMe } from "../api/me";
 import { profileForm, type ProfileForm } from "../lib/schemas";
-import { FormFooter, FormButton, fieldInput } from "../components/FormShell";
+import { FormButton, fieldInput } from "../components/FormShell";
 import type { LayoutContext } from "../components/Layout";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
@@ -328,7 +328,11 @@ export default function MyProfile() {
                   </FieldRow>
                 </SectionCard>
 
-                <FormFooter isMobile={ctx.isMobile}>
+                <div style={{
+                  marginTop: 18,
+                  display: "flex", gap: 10, justifyContent: "flex-end", alignItems: "center",
+                  flexWrap: "wrap",
+                }}>
                   {savedAt && Date.now() - savedAt < 4000 && (
                     <span style={{ fontSize: 12, color: "#34d399", marginRight: "auto" }}>✓ Saved</span>
                   )}
@@ -338,7 +342,7 @@ export default function MyProfile() {
                   <FormButton type="submit" primary disabled={mutation.isPending}>
                     {mutation.isPending ? "Saving…" : "Save changes"}
                   </FormButton>
-                </FormFooter>
+                </div>
               </form>
             )
         )}
