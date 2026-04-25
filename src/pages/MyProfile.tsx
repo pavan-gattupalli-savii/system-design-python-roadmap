@@ -1,28 +1,14 @@
 // ── My Profile page ───────────────────────────────────────────────────────────
-// Authenticated. Header card with avatar (GitHub if set), display name, email,
-// "member since" line, and an admin badge — only when role === "admin".
-// Two strips of stat cards (Awaiting review / Published) followed by an
-// editable profile form with a sticky footer.
-
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMyProfile } from "../hooks/useMyProfile";
-import { patchMe, type MyProfile as MyProfileT } from "../api/me";
+import { patchMe } from "../api/me";
 import { profileForm, type ProfileForm } from "../lib/schemas";
-import {
-  FormShell, Field, fieldInput, FormButton, FormFooter,
-} from "../components/FormShell";
+import { FormFooter, FormButton, fieldInput } from "../components/FormShell";
 import type { LayoutContext } from "../components/Layout";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
-
-const counts: { key: "readings" | "interviews" | "experiences" | "answers"; label: string }[] = [
-  { key: "readings",    label: "Readings"     },
-  { key: "interviews",  label: "Questions"    },
-  { key: "experiences", label: "Experiences"  },
-  { key: "answers",     label: "Answer docs"  },
-];
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function memberSince(iso?: string): string {
@@ -46,17 +32,28 @@ function normalizeLinkedin(raw: string): { href: string; label: string } | null 
   return { href: `https://www.linkedin.com/in/${handle}/`, label: handle };
 }
 
+const STAT_ICONS: Record<string, string> = {
+  readings: "📖",
+  interviews: "💬",
+  experiences: "🏢",
+  answers: "📝",
+};
+
+const statKeys: { key: "readings" | "interviews" | "experiences" | "answers"; label: string }[] = [
+  { key: "readings",    label: "Readings"    },
+  { key: "interviews",  label: "Questions"   },
+  { key: "experiences", label: "Experiences" },
+  { key: "answers",     label: "Answers"     },
+];
+
 export default function MyProfile() {
   const ctx  = useOutletContext<LayoutContext>();
   const { user } = useAuth();
   const qc   = useQueryClient();
   const { data: profile, isLoading } = useMyProfile();
 
-  const [form, setForm] = useState<ProfileForm>({
-    displayName: "",
-    github:      "",
-    linkedin:    "",
-  });
+  const [tab, setTab] = useState<"info" | "prefs">("info");
+  const [form, setForm] = useState<ProfileForm>({ displayName: "", github: "", linkedin: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
@@ -98,230 +95,367 @@ export default function MyProfile() {
     mutation.mutate(parsed.data);
   }
 
-  const showAdmin = profile?.role === "admin";
+  const showAdmin  = profile?.role === "admin";
   const linkedinView = useMemo(() => normalizeLinkedin(profile?.linkedin ?? ""), [profile?.linkedin]);
+  const display    = profile?.displayName?.trim() || user?.email || "—";
+  const email      = profile?.email ?? user?.email ?? "";
+  const gh         = profile?.github?.trim() || "";
+  const initial    = (display || "U").slice(0, 1).toUpperCase();
+  const sinceLabel = memberSince(profile?.createdAt);
 
-  const totalPending = profile
-    ? counts.reduce((sum, c) => sum + (profile.pending[c.key] ?? 0), 0)
-    : 0;
+  const totalPending   = profile ? statKeys.reduce((s, c) => s + (profile.pending[c.key] ?? 0), 0) : 0;
+  const totalPublished = profile ? statKeys.reduce((s, c) => s + (profile.published[c.key] ?? 0), 0) : 0;
 
-  return (
-    <FormShell
-      title="My profile"
-      subtitle="Update how you appear next to your published readings, questions and experiences."
-      isMobile={ctx.isMobile}
-    >
-      {/* ── Header card ───────────────────────────────────────────────── */}
-      <ProfileHeader
-        profile={profile}
-        fallbackEmail={user?.email}
-        showAdmin={showAdmin}
-        linkedinView={linkedinView}
-        memberSinceLabel={memberSince(profile?.createdAt)}
-      />
-
-      {/* ── Awaiting review (only when there's something pending) ─────── */}
-      {totalPending > 0 && (
-        <CountsStrip
-          isMobile={ctx.isMobile}
-          tone="pending"
-          title="Awaiting review"
-          counts={counts.map(({ key, label }) => ({ key, label, value: profile?.pending[key] ?? 0 }))}
-        />
-      )}
-
-      {/* ── Published counts ───────────────────────────────────────────── */}
-      <CountsStrip
-        isMobile={ctx.isMobile}
-        tone="published"
-        title="Published"
-        counts={counts.map(({ key, label }) => ({ key, label, value: profile?.published[key] ?? 0 }))}
-      />
-
-      {/* ── Editable form ──────────────────────────────────────────────── */}
-      {isLoading
-        ? <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 18 }}>Loading profile…</div>
-        : (
-          <form onSubmit={submit} style={{ marginTop: 18 }}>
-            <Field label="Display name" hint="Shown next to readings/experiences you publish" error={errors.displayName}>
-              <input style={fieldInput} value={form.displayName} onChange={(e) => update("displayName", e.target.value)} placeholder="Your name"/>
-            </Field>
-
-            <Field label="GitHub username (optional)" hint="Used for your avatar on the readings list" error={errors.github}>
-              <input style={fieldInput} value={form.github ?? ""} onChange={(e) => update("github", e.target.value)} placeholder="octocat"/>
-            </Field>
-
-            <Field label="LinkedIn handle or URL (optional)" hint='e.g. "john-doe" or a full https://www.linkedin.com URL' error={errors.linkedin}>
-              <input style={fieldInput} value={form.linkedin ?? ""} onChange={(e) => update("linkedin", e.target.value)} placeholder="john-doe"/>
-            </Field>
-
-            {/* ── Preferences (theme + language) ──────────────────────── */}
-            <PreferencesSection
-              isDark={ctx.isDark}
-              setIsDark={ctx.setIsDark}
-              lang={ctx.lang}
-              setLang={ctx.setLang}
-            />
-
-            <FormFooter isMobile={ctx.isMobile}>
-              {savedAt && Date.now() - savedAt < 4000 && (
-                <span style={{ fontSize: 12, color: "#34d399", marginRight: "auto" }}>Saved ✓</span>
-              )}
-              <FormButton type="submit" primary disabled={mutation.isPending}>
-                {mutation.isPending ? "Saving…" : "Save changes"}
-              </FormButton>
-            </FormFooter>
-          </form>
-        )}
-    </FormShell>
-  );
-}
-
-// ── Header card ─────────────────────────────────────────────────────────────
-function ProfileHeader({
-  profile, fallbackEmail, showAdmin, linkedinView, memberSinceLabel,
-}: {
-  profile?:        MyProfileT;
-  fallbackEmail?:  string;
-  showAdmin:       boolean;
-  linkedinView:    { href: string; label: string } | null;
-  memberSinceLabel: string;
-}) {
-  const display = profile?.displayName?.trim() || fallbackEmail || "—";
-  const email   = profile?.email ?? fallbackEmail ?? "";
-  const gh      = profile?.github?.trim();
-  const initial = (display || "U").slice(0, 1).toUpperCase();
+  const pad = ctx.isMobile ? "16px 14px 96px" : "24px 32px 96px";
 
   return (
-    <div style={{
-      position: "relative",
-      padding: 18,
-      borderRadius: 14,
-      background: "linear-gradient(135deg, #1e1b4b22, #0d111722), var(--bg-card)",
-      border: "1px solid var(--border)",
-      marginBottom: 18,
-      display: "flex", alignItems: "center", gap: 14,
-      flexWrap: "wrap",
-    }}>
-      {gh ? (
-        <img
-          src={`https://github.com/${gh}.png?size=120`}
-          alt=""
-          width={56}
-          height={56}
-          style={{
-            borderRadius: "50%",
-            border: "2px solid #6366f1",
-            background: "var(--bg-secondary)",
-            flexShrink: 0,
-          }}
-        />
-      ) : (
+    <div style={{ flex: 1, overflowY: "auto", padding: pad }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+
+        {/* ── Hero card ──────────────────────────────────────────────── */}
         <div style={{
-          width: 56, height: 56, borderRadius: "50%",
-          background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-          color: "#fff", display: "grid", placeItems: "center",
-          fontWeight: 800, fontSize: 22, flexShrink: 0,
-          border: "2px solid #6366f1",
+          borderRadius: 18,
+          overflow: "hidden",
+          border: "1px solid var(--border)",
+          marginBottom: 20,
+          background: "var(--bg-card)",
         }}>
-          {initial}
-        </div>
-      )}
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {/* Banner */}
           <div style={{
-            fontSize: 18, fontWeight: 800, color: "var(--text-heading)",
-            letterSpacing: -0.3,
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            maxWidth: "100%",
+            height: 90,
+            background: "linear-gradient(120deg, #312e81 0%, #4c1d95 50%, #1e3a5f 100%)",
+          }} />
+
+          {/* Avatar + identity row */}
+          <div style={{
+            padding: ctx.isMobile ? "0 16px 16px" : "0 24px 20px",
+            marginTop: -36,
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 16,
+            flexWrap: "wrap",
           }}>
-            {display}
-          </div>
-          {showAdmin && (
-            <span style={{
-              fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase",
-              padding: "3px 8px", borderRadius: 999,
-              background: "#7c3aed22", color: "#c4b5fd",
-              border: "1px solid #7c3aed55",
+            {gh ? (
+              <img
+                src={`https://github.com/${gh}.png?size=120`}
+                alt=""
+                width={72}
+                height={72}
+                style={{
+                  borderRadius: "50%",
+                  border: "3px solid var(--bg-card)",
+                  background: "var(--bg-secondary)",
+                  flexShrink: 0,
+                  boxShadow: "0 2px 12px #00000044",
+                }}
+              />
+            ) : (
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                color: "#fff", display: "grid", placeItems: "center",
+                fontWeight: 800, fontSize: 26, flexShrink: 0,
+                border: "3px solid var(--bg-card)",
+                boxShadow: "0 2px 12px #00000044",
+              }}>
+                {initial}
+              </div>
+            )}
+
+            <div style={{ flex: 1, minWidth: 0, paddingTop: 38 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: "var(--text-heading)", letterSpacing: -0.3 }}>
+                  {display}
+                </span>
+                {showAdmin && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase",
+                    padding: "3px 9px", borderRadius: 999,
+                    background: "#7c3aed22", color: "#c4b5fd",
+                    border: "1px solid #7c3aed55",
+                  }}>Admin</span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{email}</div>
+            </div>
+
+            {/* Meta links */}
+            <div style={{
+              display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
+              fontSize: 11, color: "var(--text-muted)",
+              paddingTop: ctx.isMobile ? 0 : 38,
             }}>
-              Admin
-            </span>
-          )}
+              <span>Member since {sinceLabel}</span>
+              {gh && (
+                <a href={`https://github.com/${gh}`} target="_blank" rel="noreferrer"
+                  style={{ color: "#a5b4fc", textDecoration: "none" }}>GitHub ↗</a>
+              )}
+              {linkedinView && (
+                <a href={linkedinView.href} target="_blank" rel="noreferrer"
+                  style={{ color: "#a5b4fc", textDecoration: "none" }}>LinkedIn ↗</a>
+              )}
+            </div>
+          </div>
+
+          {/* Stats grid */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${ctx.isMobile ? 2 : 4}, 1fr)`,
+            borderTop: "1px solid var(--border-subtle)",
+          }}>
+            {statKeys.map(({ key, label }, i) => {
+              const pub  = profile?.published[key] ?? 0;
+              const pend = profile?.pending[key]   ?? 0;
+              const isLastRow = ctx.isMobile ? i >= 2 : false;
+              const isOddRight = ctx.isMobile && i % 2 === 1;
+              return (
+                <div key={key} style={{
+                  padding: "14px 16px",
+                  borderRight: !isOddRight && i < statKeys.length - 1 ? "1px solid var(--border-subtle)" : undefined,
+                  borderTop: isLastRow ? "1px solid var(--border-subtle)" : undefined,
+                }}>
+                  <div style={{ fontSize: 18, marginBottom: 4 }}>{STAT_ICONS[key]}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-heading)", lineHeight: 1 }}>
+                    {pub}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>{label}</div>
+                  {pend > 0 && (
+                    <div style={{
+                      display: "inline-block", marginTop: 6,
+                      fontSize: 10, fontWeight: 700, color: "#fbbf24",
+                      background: "#fbbf2415", border: "1px solid #fbbf2430",
+                      borderRadius: 999, padding: "2px 7px",
+                    }}>
+                      {pend} pending
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Summary bar */}
+          <div style={{
+            padding: "10px 20px",
+            borderTop: "1px solid var(--border-subtle)",
+            display: "flex", gap: 20, flexWrap: "wrap",
+            fontSize: 12, color: "var(--text-muted)",
+          }}>
+            <span><strong style={{ color: "var(--text-secondary)" }}>{totalPublished}</strong> published</span>
+            {totalPending > 0 && (
+              <span style={{ color: "#fbbf24" }}>
+                <strong>{totalPending}</strong> awaiting review
+              </span>
+            )}
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3, wordBreak: "break-all" }}>
-          {email}
-        </div>
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <span>Member since {memberSinceLabel}</span>
-          {gh && (
-            <a
-              href={`https://github.com/${gh}`}
-              target="_blank" rel="noreferrer"
-              style={{ color: "#a5b4fc", textDecoration: "none" }}
+
+        {/* ── Tab switcher ───────────────────────────────────────────── */}
+        <div style={{
+          display: "flex", gap: 4,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: 12,
+          padding: 4,
+          marginBottom: 20,
+        }}>
+          {(["info", "prefs"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              style={{
+                flex: 1,
+                padding: "9px 0",
+                borderRadius: 9,
+                fontSize: 13,
+                fontWeight: tab === t ? 700 : 500,
+                background: tab === t
+                  ? "linear-gradient(135deg, #6366f1, #7c3aed)"
+                  : "transparent",
+                color: tab === t ? "#fff" : "var(--text-secondary)",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.15s",
+                boxShadow: tab === t ? "0 1px 6px #6366f133" : "none",
+              }}
             >
-              github.com/{gh}
-            </a>
-          )}
-          {linkedinView && (
-            <a
-              href={linkedinView.href}
-              target="_blank" rel="noreferrer"
-              style={{ color: "#a5b4fc", textDecoration: "none" }}
-            >
-              linkedin/{linkedinView.label}
-            </a>
-          )}
+              {t === "info" ? "✏️  Edit Profile" : "⚙️  Preferences"}
+            </button>
+          ))}
         </div>
+
+        {/* ── Edit info tab ──────────────────────────────────────────── */}
+        {tab === "info" && (
+          isLoading
+            ? <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "20px 0" }}>Loading…</div>
+            : (
+              <form onSubmit={submit}>
+                <SectionCard title="Identity">
+                  <FieldRow label="Display name" hint="Shown next to readings and experiences you publish" error={errors.displayName}>
+                    <input
+                      style={fieldInput}
+                      value={form.displayName}
+                      onChange={(e) => update("displayName", e.target.value)}
+                      placeholder="Your name"
+                    />
+                  </FieldRow>
+                </SectionCard>
+
+                <SectionCard title="Social links" style={{ marginTop: 14 }}>
+                  <FieldRow label="GitHub username" hint="Pulls your avatar on the readings list" error={errors.github}>
+                    <div style={{ position: "relative" }}>
+                      <span style={{
+                        position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+                        fontSize: 12, color: "var(--text-muted)", pointerEvents: "none", userSelect: "none",
+                      }}>github.com/</span>
+                      <input
+                        style={{ ...fieldInput, paddingLeft: 82 }}
+                        value={form.github ?? ""}
+                        onChange={(e) => update("github", e.target.value)}
+                        placeholder="octocat"
+                      />
+                    </div>
+                  </FieldRow>
+                  <FieldRow label="LinkedIn" hint='Handle (e.g. "john-doe") or full https://linkedin.com URL' error={errors.linkedin}>
+                    <input
+                      style={fieldInput}
+                      value={form.linkedin ?? ""}
+                      onChange={(e) => update("linkedin", e.target.value)}
+                      placeholder="john-doe"
+                    />
+                  </FieldRow>
+                </SectionCard>
+
+                <FormFooter isMobile={ctx.isMobile}>
+                  {savedAt && Date.now() - savedAt < 4000 && (
+                    <span style={{ fontSize: 12, color: "#34d399", marginRight: "auto" }}>✓ Saved</span>
+                  )}
+                  {mutation.isError && (
+                    <span style={{ fontSize: 12, color: "#f87171", marginRight: "auto" }}>Save failed — try again</span>
+                  )}
+                  <FormButton type="submit" primary disabled={mutation.isPending}>
+                    {mutation.isPending ? "Saving…" : "Save changes"}
+                  </FormButton>
+                </FormFooter>
+              </form>
+            )
+        )}
+
+        {/* ── Preferences tab ───────────────────────────────────────── */}
+        {tab === "prefs" && (
+          <SectionCard title="Preferences">
+            <div style={{ display: "grid", gridTemplateColumns: ctx.isMobile ? "1fr" : "1fr 1fr", gap: 24 }}>
+              <PreferenceItem label="Theme">
+                <SegmentedControl<"light" | "dark">
+                  options={[
+                    { label: "☀️ Light", value: "light" },
+                    { label: "🌙 Dark",  value: "dark"  },
+                  ]}
+                  value={ctx.isDark ? "dark" : "light"}
+                  onChange={(v) => ctx.setIsDark(v === "dark")}
+                />
+              </PreferenceItem>
+              <PreferenceItem label="Language">
+                <SegmentedControl<Language>
+                  options={[
+                    { label: "🐍 Python", value: "python" },
+                    { label: "☕ Java",   value: "java"   },
+                  ]}
+                  value={ctx.lang}
+                  onChange={ctx.setLang}
+                />
+              </PreferenceItem>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 16, lineHeight: 1.6 }}>
+              These preferences are also switchable from the header bar at any time.
+            </div>
+          </SectionCard>
+        )}
+
       </div>
     </div>
   );
 }
 
-// ── Counts strip ────────────────────────────────────────────────────────────
-function CountsStrip({
-  isMobile, tone, title, counts,
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function SectionCard({
+  title, children, style,
 }: {
-  isMobile: boolean;
-  tone:     "pending" | "published";
-  title:    string;
-  counts:   { key: string; label: string; value: number }[];
+  title: string;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
 }) {
-  const accent = tone === "pending" ? "#fbbf24" : "var(--text-heading)";
   return (
-    <section style={{ marginBottom: 16 }}>
+    <div style={{
+      background: "var(--bg-card)",
+      border: "1px solid var(--border)",
+      borderRadius: 14,
+      overflow: "hidden",
+      ...style,
+    }}>
       <div style={{
-        fontSize: 10.5, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase",
-        color: tone === "pending" ? "#fbbf24" : "var(--text-muted)",
-        marginBottom: 6,
+        padding: "12px 18px",
+        borderBottom: "1px solid var(--border-subtle)",
+        fontSize: 11, fontWeight: 700, letterSpacing: 1.2,
+        textTransform: "uppercase", color: "var(--text-muted)",
       }}>
         {title}
       </div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)",
-        gap: 8,
-      }}>
-        {counts.map((c) => (
-          <div key={c.key} style={{
-            padding: "10px 12px", borderRadius: 10,
-            background: "var(--bg-card)",
-            border: "1px solid " + (tone === "pending" ? "#fbbf2455" : "var(--border-subtle)"),
-          }}>
-            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{c.label}</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: accent, marginTop: 2 }}>{c.value}</div>
-          </div>
-        ))}
+      <div style={{ padding: "16px 18px" }}>
+        {children}
       </div>
-    </section>
+    </div>
   );
 }
 
-// ── Preferences section ─────────────────────────────────────────────────────
+function FieldRow({
+  label, hint, error, children,
+}: {
+  label: string;
+  hint?: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{
+        display: "block",
+        fontSize: 11, fontWeight: 700, letterSpacing: 1.1,
+        textTransform: "uppercase", color: "var(--text-muted)",
+        marginBottom: 6,
+      }}>
+        {label}
+      </label>
+      {children}
+      {error
+        ? <div style={{ fontSize: 11, color: "#f87171", marginTop: 4 }}>{error}</div>
+        : hint
+          ? <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{hint}</div>
+          : null}
+    </div>
+  );
+}
+
+function PreferenceItem({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div style={{
+        fontSize: 11, fontWeight: 700, letterSpacing: 1.1,
+        textTransform: "uppercase", color: "var(--text-muted)",
+        marginBottom: 10,
+      }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function SegmentedControl<T extends string>({
-  options,
-  value,
-  onChange,
+  options, value, onChange,
 }: {
   options: { label: string; value: T }[];
   value: T;
@@ -360,74 +494,6 @@ function SegmentedControl<T extends string>({
           {opt.label}
         </button>
       ))}
-    </div>
-  );
-}
-
-const sectionLabelStyle: React.CSSProperties = {
-  fontSize: 10.5,
-  fontWeight: 700,
-  letterSpacing: 1.3,
-  textTransform: "uppercase",
-  color: "var(--text-muted)",
-};
-
-const fieldLabelStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 700,
-  letterSpacing: 1.1,
-  textTransform: "uppercase",
-  color: "var(--text-muted)",
-  marginBottom: 8,
-  display: "block",
-};
-
-function PreferencesSection({
-  isDark, setIsDark, lang, setLang,
-}: {
-  isDark: boolean;
-  setIsDark: (v: boolean | ((d: boolean) => boolean)) => void;
-  lang: Language;
-  setLang: (l: Language) => void;
-}) {
-  return (
-    <div style={{
-      marginTop: 28,
-      padding: "18px 20px",
-      borderRadius: 12,
-      background: "var(--bg-card)",
-      border: "1px solid var(--border)",
-    }}>
-      <div style={{ ...sectionLabelStyle, marginBottom: 18 }}>Preferences</div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        <div>
-          <span style={fieldLabelStyle}>Theme</span>
-          <SegmentedControl<"light" | "dark">
-            options={[
-              { label: "☀️ Light", value: "light" },
-              { label: "🌙 Dark",  value: "dark"  },
-            ]}
-            value={isDark ? "dark" : "light"}
-            onChange={(v) => setIsDark(v === "dark")}
-          />
-        </div>
-        <div>
-          <span style={fieldLabelStyle}>Language</span>
-          <SegmentedControl<Language>
-            options={[
-              { label: "🐍 Python", value: "python" },
-              { label: "☕ Java",   value: "java"   },
-            ]}
-            value={lang}
-            onChange={setLang}
-          />
-        </div>
-      </div>
-
-      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 14 }}>
-        Also switchable anytime from the header bar.
-      </div>
     </div>
   );
 }

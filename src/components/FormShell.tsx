@@ -3,22 +3,63 @@
 // optional subtitle, posting-as chip, two-column field grid and sticky footer.
 
 import type { CSSProperties, ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export function FormShell({
-  title, subtitle, children, isMobile,
+  title, subtitle, children, isMobile, backLabel, backHref,
 }: {
-  title:    string;
-  subtitle?: string;
-  children:  ReactNode;
-  isMobile:  boolean;
+  title:      string;
+  subtitle?:  string;
+  children:   ReactNode;
+  isMobile:   boolean;
+  /** Label for the back button, e.g. "Back to Readings" */
+  backLabel?: string;
+  /** If provided, back button links here; otherwise calls navigate(-1) */
+  backHref?:  string;
 }) {
+  const navigate = useNavigate();
   return (
     <div style={{
       flex: 1, overflowY: "auto",
-      padding: isMobile ? "18px 14px 96px" : "28px 24px 96px",
+      padding: isMobile ? "16px 14px 96px" : "24px 28px 96px",
     }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        {backLabel && (
+          backHref
+            ? (
+              <Link
+                to={backHref}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  fontSize: 12, fontWeight: 600, color: "var(--text-muted)",
+                  textDecoration: "none", marginBottom: 16,
+                  letterSpacing: 0.3,
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--text-secondary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
+              >
+                ← {backLabel}
+              </Link>
+            )
+            : (
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  fontSize: 12, fontWeight: 600, color: "var(--text-muted)",
+                  background: "none", border: "none", cursor: "pointer",
+                  padding: 0, marginBottom: 16, fontFamily: "inherit",
+                  letterSpacing: 0.3,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--text-secondary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
+              >
+                ← {backLabel}
+              </button>
+            )
+        )}
         <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: "var(--text-heading)", marginBottom: 6, letterSpacing: -0.3 }}>
           {title}
         </div>

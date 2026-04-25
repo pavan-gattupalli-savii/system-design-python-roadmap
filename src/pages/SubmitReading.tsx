@@ -79,8 +79,22 @@ export default function SubmitReading() {
 
   if (done) {
     return (
-      <FormShell title="Submitted" subtitle="Thanks! Your reading is now in the admin queue. You'll see it appear once an admin approves it." isMobile={ctx.isMobile}>
-        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Redirecting back to readings…</div>
+      <FormShell
+        title="Submitted ✓"
+        subtitle="Thanks! Your reading is now in the admin queue. You'll see it appear once an admin approves it."
+        isMobile={ctx.isMobile}
+        backLabel="Back to Readings"
+        backHref="/app/readings"
+      >
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "16px 18px", borderRadius: 12,
+          background: "#0f291f", border: "1px solid #1a4d2e",
+          fontSize: 13, color: "#6ee7b7",
+        }}>
+          <span style={{ fontSize: 20 }}>🎉</span>
+          Redirecting back to readings…
+        </div>
       </FormShell>
     );
   }
@@ -93,6 +107,8 @@ export default function SubmitReading() {
       title="Publish a reading"
       subtitle="Share an article, paper, video or book that helped you. Admins review every submission before it appears in the public list."
       isMobile={ctx.isMobile}
+      backLabel="Back to Readings"
+      backHref="/app/readings"
     >
       <PostingAs displayName={displayName} email={user?.email} github={github} />
 
@@ -129,7 +145,7 @@ export default function SubmitReading() {
         </Field>
 
         <FormFooter isMobile={ctx.isMobile}>
-          <FormButton onClick={() => navigate(-1)}>Cancel</FormButton>
+          <FormButton onClick={() => navigate("/app/readings")}>Cancel</FormButton>
           <FormButton type="submit" primary disabled={submitting}>
             {submitting ? "Submitting…" : "Submit for review"}
           </FormButton>

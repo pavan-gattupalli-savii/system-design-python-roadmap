@@ -83,8 +83,22 @@ export default function SubmitInterview() {
 
   if (done) {
     return (
-      <FormShell title="Submitted" subtitle="Thanks! Your question is now in the admin queue." isMobile={ctx.isMobile}>
-        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Redirecting…</div>
+      <FormShell
+        title="Submitted ✓"
+        subtitle="Thanks! Your question is now in the admin queue."
+        isMobile={ctx.isMobile}
+        backLabel="Back to Interview Questions"
+        backHref="/app/interview"
+      >
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "16px 18px", borderRadius: 12,
+          background: "#0f291f", border: "1px solid #1a4d2e",
+          fontSize: 13, color: "#6ee7b7",
+        }}>
+          <span style={{ fontSize: 20 }}>🎉</span>
+          Redirecting back to interview questions…
+        </div>
       </FormShell>
     );
   }
@@ -97,6 +111,8 @@ export default function SubmitInterview() {
       title="Suggest an interview question"
       subtitle="Share a question that tripped you up — admins will review it before it goes live."
       isMobile={ctx.isMobile}
+      backLabel="Back to Interview Questions"
+      backHref="/app/interview"
     >
       <PostingAs displayName={displayName} email={user?.email} github={github} />
 
@@ -138,7 +154,7 @@ export default function SubmitInterview() {
         </Field>
 
         <FormFooter isMobile={ctx.isMobile}>
-          <FormButton onClick={() => navigate(-1)}>Cancel</FormButton>
+          <FormButton onClick={() => navigate("/app/interview")}>Cancel</FormButton>
           <FormButton type="submit" primary disabled={submitting}>
             {submitting ? "Submitting…" : "Submit for review"}
           </FormButton>

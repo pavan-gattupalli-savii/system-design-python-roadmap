@@ -36,15 +36,6 @@ export function TrackerTab({ roadmap, channels, completed, reset, isMobile, isDa
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "14px" : "24px 32px" }}>
 
-      {/* ── Session notice ── */}
-      <div style={{ background: "#0f1a0f", border: "1px solid #1a4d2e", borderRadius: 8, padding: "9px 14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 14, flexShrink: 0 }}>ℹ️</span>
-        <span style={{ fontSize: 11, color: "#6ee7b7", lineHeight: 1.5 }}>
-          Progress is tracked for this browser session only and resets on refresh. This keeps each visitor's view independent.{" "}
-          <span style={{ color: "var(--text-muted)" }}>User accounts coming in a future update.</span>
-        </span>
-      </div>
-
       {/* ── Overall progress ── */}
       <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 12, padding: "18px 22px", marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 12, flexWrap: "wrap" }}>
