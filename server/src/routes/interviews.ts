@@ -1,6 +1,6 @@
 // ── Interview Q&A routes ──────────────────────────────────────────────────────
 import { Router } from "express";
-import { sql } from "../db/client.js";
+import { sql, rawFragment } from "../db/client.js";
 import { adminAuth } from "../middleware/adminAuth.js";
 import { writeLimiter } from "../middleware/rateLimiter.js";
 
@@ -11,10 +11,18 @@ const router = Router();
 router.get("/", async (req, res) => {
   try {
     const { category, difficulty, company, sort = "difficulty", page = "1", limit = "50" } = req.query as Record<string, string>;
-    const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const pageNum  = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const offset   = (pageNum - 1) * limitNum;
+
+    const orderBy =
+      sort === "newest" ? "q.added_on DESC, q.id DESC" :
+      sort === "alpha"  ? "q.title ASC, q.id DESC"     :
+      // default: sort by difficulty Easy→Medium→Hard
+      "CASE q.difficulty WHEN 'Easy' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Hard' THEN 3 END ASC, q.id DESC";
 
     const rows = await sql`
-      SELECT q.*, 
+      SELECT q.*,
         COALESCE(
           json_agg(
             json_build_object('label', a.label, 'url', a.url, 'by', a.by, 'addedOn', a.added_on)
@@ -25,18 +33,12 @@ router.get("/", async (req, res) => {
       FROM interview_questions q
       LEFT JOIN answer_docs a ON a.question_id = q.id
       WHERE q.is_approved = true
-        AND (${category || null} IS NULL OR q.category = ${category || ""})
-        AND (${difficulty || null} IS NULL OR q.difficulty = ${difficulty || ""})
-        AND (${company || null} IS NULL OR ${company || ""} = ANY(q.companies))
+        AND (${category   ?? null}::text IS NULL OR q.category   = ${category   ?? ""}::text)
+        AND (${difficulty ?? null}::text IS NULL OR q.difficulty = ${difficulty ?? ""}::text)
+        AND (${company    ?? null}::text IS NULL OR ${company    ?? ""}::text = ANY(q.companies))
       GROUP BY q.id
-      ORDER BY
-        CASE WHEN ${sort} = 'difficulty' THEN
-          CASE q.difficulty WHEN 'Easy' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Hard' THEN 3 END
-        END ASC,
-        CASE WHEN ${sort} = 'newest' THEN q.added_on END DESC,
-        CASE WHEN ${sort} = 'alpha'  THEN q.title   END ASC,
-        q.id DESC
-      LIMIT ${parseInt(limit)}
+      ORDER BY ${sql(rawFragment(orderBy))}
+      LIMIT ${limitNum}
       OFFSET ${offset}
     `;
 
@@ -53,7 +55,7 @@ router.get("/", async (req, res) => {
       answerDocs:  q.answer_docs,
     }));
 
-    res.json({ data, page: parseInt(page), limit: parseInt(limit) });
+    res.json({ data, page: pageNum, limit: limitNum });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch questions" });

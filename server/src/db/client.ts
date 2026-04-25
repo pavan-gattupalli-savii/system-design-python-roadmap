@@ -5,8 +5,6 @@
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import "dotenv/config";
 
-// Lazily initialised so a missing DATABASE_URL doesn't crash the process at
-// import time (which would prevent the port from ever binding).
 let _sql: NeonQueryFunction<false, false> | undefined;
 
 function getSql(): NeonQueryFunction<false, false> {
@@ -20,14 +18,22 @@ function getSql(): NeonQueryFunction<false, false> {
   return _sql;
 }
 
-// sql is a tagged template literal query function — safe, parameterised.
-// Delegates to the lazily-created neon client on first use.
-export const sql = function (
-  strings: TemplateStringsArray,
-  ...values: unknown[]
-) {
+// Tagged template literal that delegates to the lazily-created neon client.
+// Cast to NeonQueryFunction so callers can use sql.unsafe() for ORDER BY fragments.
+export const sql = function (strings: TemplateStringsArray, ...values: unknown[]) {
   return getSql()(strings, ...values);
 } as NeonQueryFunction<false, false>;
+
+/**
+ * Tag a pre-validated raw SQL fragment so it can be spliced into a neon
+ * tagged-template query without parameter binding.
+ * ONLY use with hard-coded/enum-validated strings — never user input.
+ */
+export function rawFragment(s: string): TemplateStringsArray {
+  const arr = [s] as unknown as TemplateStringsArray;
+  Object.defineProperty(arr, "raw", { value: [s] });
+  return arr;
+}
 
 // Helper: run a query and return rows, typed
 export async function query<T = Record<string, unknown>>(

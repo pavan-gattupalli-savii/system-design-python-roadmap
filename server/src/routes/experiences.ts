@@ -1,6 +1,6 @@
 // ── Experiences routes ────────────────────────────────────────────────────────
 import { Router } from "express";
-import { sql } from "../db/client.js";
+import { sql, rawFragment } from "../db/client.js";
 import { adminAuth } from "../middleware/adminAuth.js";
 import { writeLimiter } from "../middleware/rateLimiter.js";
 
@@ -11,20 +11,23 @@ const router = Router();
 router.get("/", async (req, res) => {
   try {
     const { platform, company, outcome, sort = "top", page = "1", limit = "50" } = req.query as Record<string, string>;
-    const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const pageNum  = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const offset   = (pageNum - 1) * limitNum;
+
+    const orderBy =
+      sort === "newest" ? "added_on DESC, id DESC" :
+      sort === "alpha"  ? "title ASC, id DESC"    :
+                          "upvotes DESC, id DESC";
 
     const rows = await sql`
       SELECT * FROM experiences
       WHERE is_approved = true
-        AND (${platform || null} IS NULL OR platform = ${platform || ""})
-        AND (${company  || null} IS NULL OR company  = ${company  || ""})
-        AND (${outcome  || null} IS NULL OR outcome  = ${outcome  || ""})
-      ORDER BY
-        CASE WHEN ${sort} = 'top'    THEN upvotes  END DESC,
-        CASE WHEN ${sort} = 'newest' THEN added_on END DESC,
-        CASE WHEN ${sort} = 'alpha'  THEN title    END ASC,
-        id DESC
-      LIMIT ${parseInt(limit)}
+        AND (${platform ?? null}::text IS NULL OR platform = ${platform ?? ""}::text)
+        AND (${company  ?? null}::text IS NULL OR company  = ${company  ?? ""}::text)
+        AND (${outcome  ?? null}::text IS NULL OR outcome  = ${outcome  ?? ""}::text)
+      ORDER BY ${sql(rawFragment(orderBy))}
+      LIMIT ${limitNum}
       OFFSET ${offset}
     `;
 
@@ -44,7 +47,7 @@ router.get("/", async (req, res) => {
       addedOn:    e.added_on,
     }));
 
-    res.json({ data, page: parseInt(page), limit: parseInt(limit) });
+    res.json({ data, page: pageNum, limit: limitNum });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch experiences" });
