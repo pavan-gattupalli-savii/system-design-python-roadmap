@@ -81,6 +81,17 @@ const emailField = z
   .transform((s) => s.trim().toLowerCase())
   .refine((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s), { message: "Invalid email" });
 
+export const registerSchema = z.object({
+  email:       emailField,
+  password:    z.string().min(8, "Password must be at least 8 characters").max(128),
+  displayName: z.string().min(1).max(80).transform((s) => s.trim()).optional(),
+});
+
+export const loginSchema = z.object({
+  email:    emailField,
+  password: z.string().min(1).max(128),
+});
+
 export const requestOtpSchema = z.object({
   email: emailField,
 });

@@ -40,6 +40,27 @@ export async function fetchMe(): Promise<AuthUser | null> {
   }
 }
 
+export interface RegisterResponse { ok: true; token: string; }
+export interface LoginResponse    { ok: true; token: string; }
+
+export async function register(email: string, password: string, displayName?: string): Promise<LoginResponse> {
+  const res = await apiFetch<LoginResponse>("/api/auth/register", {
+    method: "POST",
+    body:   JSON.stringify({ email, password, displayName }),
+  });
+  if (res.token) setStoredSessionToken(res.token);
+  return res;
+}
+
+export async function login(email: string, password: string): Promise<LoginResponse> {
+  const res = await apiFetch<LoginResponse>("/api/auth/login", {
+    method: "POST",
+    body:   JSON.stringify({ email, password }),
+  });
+  if (res.token) setStoredSessionToken(res.token);
+  return res;
+}
+
 export interface RequestOtpResponse {
   ok:      true;
   message: string;

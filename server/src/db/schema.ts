@@ -132,6 +132,7 @@ export const users = pgTable("users", {
   role:             text("role").notNull().default("user"),
   createdAt:        timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastLoginAt:      timestamp("last_login_at", { withTimezone: true }),
+  passwordHash:     text("password_hash"),
 });
 
 // ── Email OTPs ────────────────────────────────────────────────────────────────

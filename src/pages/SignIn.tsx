@@ -1,60 +1,36 @@
-// ── Sign-in page (email + OTP) ────────────────────────────────────────────────
-// Two-step form:
-//   1. Email → POST /api/auth/request-otp → "We sent a 6-digit code".
-//   2. Code  → POST /api/auth/verify-otp  → cookie set, navigate to ?next=...
-//
-// Compact, mobile-first card design. Same layout on every viewport — no
-// split-pane, no value-prop rail. The OTP step uses six digit inputs that
-// shrink to fit narrow screens.
+// ── Sign-in page (email + password) ──────────────────────────────────────────
+// Single-step form with Sign in / Create account tabs.
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ClipboardEvent,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { APP_TITLE, APP_SUBTITLE } from "../constants/app";
 import { FONT_STACK } from "../constants/theme";
-import {
-  requestOtp,
-  verifyOtp,
-  useAuth,
-  useInvalidateAuth,
-} from "../lib/auth";
+import { login, register, useAuth, useInvalidateAuth } from "../lib/auth";
 
-const RESEND_COOLDOWN_S = 60;
-const CODE_LENGTH       = 6;
-
-type Step = "email" | "code";
+type Mode = "signin" | "register";
 
 function safeNext(raw: string | null): string {
-  if (!raw)                  return "/app/overview";
-  if (!raw.startsWith("/"))  return "/app/overview";
-  if (raw.startsWith("//"))  return "/app/overview";
+  if (!raw)                 return "/app/overview";
+  if (!raw.startsWith("/")) return "/app/overview";
+  if (raw.startsWith("//")) return "/app/overview";
   return raw;
 }
 
 export default function SignIn() {
-  const navigate     = useNavigate();
-  const [params]     = useSearchParams();
-  const invalidate   = useInvalidateAuth();
+  const navigate   = useNavigate();
+  const [params]   = useSearchParams();
+  const invalidate = useInvalidateAuth();
   const { user, isLoading } = useAuth();
 
   const next = useMemo(() => safeNext(params.get("next")), [params]);
 
-  const [step,   setStep]   = useState<Step>("email");
-  const [email,  setEmail]  = useState("");
-  const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(""));
-  const [busy,   setBusy]   = useState(false);
-  const [error,  setError]  = useState<string | null>(null);
-  const [info,   setInfo]   = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(0);
-
-  const code = digits.join("");
+  const [mode,        setMode]        = useState<Mode>("signin");
+  const [email,       setEmail]       = useState("");
+  const [password,    setPassword]    = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [busy,        setBusy]        = useState(false);
+  const [error,       setError]       = useState<string | null>(null);
 
   useEffect(() => { document.title = `Sign in · ${APP_TITLE}`; }, []);
 
@@ -62,58 +38,40 @@ export default function SignIn() {
     if (!isLoading && user) navigate(next, { replace: true });
   }, [isLoading, user, navigate, next]);
 
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
+  function switchMode(m: Mode) {
+    setMode(m);
+    setError(null);
+    setPassword("");
+  }
 
-  async function onRequestOtp(e?: React.FormEvent) {
-    e?.preventDefault();
-    setError(null); setInfo(null);
-    const trimmed = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    const trimEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimEmail)) {
       setError("Enter a valid email address.");
       return;
     }
-    setBusy(true);
-    try {
-      await requestOtp(trimmed);
-      setEmail(trimmed);
-      setStep("code");
-      setDigits(Array(CODE_LENGTH).fill(""));
-      setInfo(`We just emailed a 6-digit code to ${trimmed}.`);
-      setCooldown(RESEND_COOLDOWN_S);
-    } catch (err) {
-      setError((err as Error).message || "Could not send the code.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onVerifyOtp(e?: React.FormEvent) {
-    e?.preventDefault();
-    setError(null); setInfo(null);
-    if (code.length !== CODE_LENGTH) {
-      setError("Enter the full 6-digit code.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
+
     setBusy(true);
     try {
-      await verifyOtp(email, code);
+      if (mode === "register") {
+        await register(trimEmail, password, displayName.trim() || undefined);
+      } else {
+        await login(trimEmail, password);
+      }
       await invalidate();
       navigate(next, { replace: true });
     } catch (err) {
-      setError((err as Error).message || "Sign-in failed.");
+      setError((err as Error).message || "Something went wrong. Try again.");
     } finally {
       setBusy(false);
     }
-  }
-
-  async function onResend() {
-    if (cooldown > 0 || busy) return;
-    setDigits(Array(CODE_LENGTH).fill(""));
-    await onRequestOtp();
   }
 
   return (
@@ -143,49 +101,99 @@ export default function SignIn() {
           marginTop: "clamp(8px, 4vw, 32px)",
           display: "flex", flexDirection: "column",
         }}>
+          {/* Tabs */}
+          <div style={{
+            display: "flex", gap: 4, marginBottom: 20,
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 10, padding: 4,
+          }}>
+            {(["signin", "register"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                style={{
+                  flex: 1, padding: "8px 12px", border: "none",
+                  borderRadius: 7,
+                  background: mode === m ? "var(--bg-panel)" : "transparent",
+                  boxShadow: mode === m ? "0 1px 4px rgba(0,0,0,0.25)" : "none",
+                  color: mode === m ? "var(--text-bright)" : "var(--text-muted)",
+                  fontFamily: "inherit", fontSize: 13.5, fontWeight: 700,
+                  cursor: "pointer", transition: "all 0.15s",
+                }}
+              >
+                {m === "signin" ? "Sign in" : "Create account"}
+              </button>
+            ))}
+          </div>
+
           <div style={{ marginBottom: 18 }}>
-            <div style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: 1.4,
-              color: "#a5b4fc", textTransform: "uppercase", marginBottom: 6,
-            }}>
-              {step === "email" ? "Sign in or sign up" : "Step 2 of 2"}
-            </div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text-heading)", letterSpacing: -0.3, lineHeight: 1.25 }}>
-              {step === "email" ? "Welcome — let's get you in" : "Enter your code"}
+              {mode === "signin" ? "Welcome back" : "Create your account"}
             </div>
             <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55, marginTop: 6 }}>
-              {step === "email"
-                ? "We'll email a one-time code. No password needed."
-                : <>Sent to <span style={{ color: "var(--text-bright)", fontWeight: 600 }}>{email}</span> — check your inbox.</>}
+              {mode === "signin"
+                ? "Sign in with your email and password."
+                : "Pick a password to keep your progress synced."}
             </div>
           </div>
 
-          {step === "email" ? (
-            <EmailStep
-              email={email} setEmail={setEmail}
-              busy={busy} error={error} info={info}
-              onSubmit={onRequestOtp}
+          <form onSubmit={onSubmit} noValidate>
+            {mode === "register" && (
+              <>
+                <FieldLabel>Display name <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(optional)</span></FieldLabel>
+                <input
+                  type="text"
+                  autoComplete="name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your name"
+                  disabled={busy}
+                  style={{ ...inputStyle(false), marginBottom: 14 }}
+                />
+              </>
+            )}
+
+            <FieldLabel>Email</FieldLabel>
+            <input
+              type="email"
+              autoComplete="email"
+              autoFocus
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              disabled={busy}
+              style={{ ...inputStyle(false), marginBottom: 14 }}
             />
-          ) : (
-            <CodeStep
-              digits={digits} setDigits={setDigits}
-              busy={busy} error={error} info={info}
-              cooldown={cooldown}
-              onSubmit={onVerifyOtp}
-              onResend={onResend}
-              onChangeEmail={() => {
-                setStep("email"); setDigits(Array(CODE_LENGTH).fill(""));
-                setError(null); setInfo(null);
-              }}
+
+            <FieldLabel>Password</FieldLabel>
+            <input
+              type="password"
+              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={mode === "register" ? "Min. 8 characters" : "Password"}
+              disabled={busy}
+              style={inputStyle(false)}
             />
-          )}
+
+            {error && <ErrorLine text={error} />}
+
+            <PrimaryButton type="submit" busy={busy} disabled={busy || !email.trim() || !password}>
+              {busy
+                ? (mode === "signin" ? "Signing in…" : "Creating account…")
+                : (mode === "signin" ? "Sign in" : "Create account")}
+            </PrimaryButton>
+          </form>
 
           <div style={{
             marginTop: 18, paddingTop: 14,
             borderTop: "1px solid var(--border-subtle)",
             fontSize: 11, color: "var(--text-muted)", lineHeight: 1.55,
           }}>
-            We only send transactional sign-in emails. Your email stays private.
+            Your progress and submissions are tied to your account.
           </div>
         </div>
       </main>
@@ -193,168 +201,7 @@ export default function SignIn() {
   );
 }
 
-// ── Email step ───────────────────────────────────────────────────────────────
-function EmailStep({
-  email, setEmail, busy, error, info, onSubmit,
-}: {
-  email:    string;
-  setEmail: (s: string) => void;
-  busy:     boolean;
-  error:    string | null;
-  info:     string | null;
-  onSubmit: (e?: React.FormEvent) => void | Promise<void>;
-}) {
-  return (
-    <form onSubmit={onSubmit} noValidate>
-      <FieldLabel>Email</FieldLabel>
-      <input
-        type="email"
-        autoComplete="email"
-        autoFocus
-        inputMode="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@example.com"
-        disabled={busy}
-        style={inputStyle(!!error)}
-      />
-      {error && <ErrorLine text={error} />}
-
-      <PrimaryButton type="submit" busy={busy} disabled={busy || !email.trim()}>
-        {busy ? "Sending code…" : "Email me a code"}
-      </PrimaryButton>
-
-      {info && <Notice text={info} />}
-    </form>
-  );
-}
-
-// ── Code step ────────────────────────────────────────────────────────────────
-function CodeStep({
-  digits, setDigits, busy, error, info, cooldown,
-  onSubmit, onResend, onChangeEmail,
-}: {
-  digits:        string[];
-  setDigits:     (d: string[]) => void;
-  busy:          boolean;
-  error:         string | null;
-  info:          string | null;
-  cooldown:      number;
-  onSubmit:      (e?: React.FormEvent) => void | Promise<void>;
-  onResend:      () => void | Promise<void>;
-  onChangeEmail: () => void;
-}) {
-  const refs = useRef<Array<HTMLInputElement | null>>([]);
-
-  function setAt(idx: number, value: string) {
-    const cleaned = value.replace(/\D/g, "");
-    if (!cleaned) {
-      setDigits(replaceAt(digits, idx, ""));
-      return;
-    }
-    if (cleaned.length === 1) {
-      setDigits(replaceAt(digits, idx, cleaned));
-      const nextIdx = Math.min(CODE_LENGTH - 1, idx + 1);
-      refs.current[nextIdx]?.focus();
-      return;
-    }
-    const next = [...digits];
-    for (let i = 0; i < cleaned.length && idx + i < CODE_LENGTH; i++) {
-      next[idx + i] = cleaned[i];
-    }
-    setDigits(next);
-    const filled = Math.min(CODE_LENGTH - 1, idx + cleaned.length);
-    refs.current[filled]?.focus();
-  }
-
-  function onKeyDown(idx: number, e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !digits[idx] && idx > 0) {
-      refs.current[idx - 1]?.focus();
-      setDigits(replaceAt(digits, idx - 1, ""));
-      e.preventDefault();
-      return;
-    }
-    if (e.key === "ArrowLeft" && idx > 0) {
-      refs.current[idx - 1]?.focus();
-      e.preventDefault();
-    }
-    if (e.key === "ArrowRight" && idx < CODE_LENGTH - 1) {
-      refs.current[idx + 1]?.focus();
-      e.preventDefault();
-    }
-  }
-
-  function onPaste(e: ClipboardEvent<HTMLInputElement>) {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "");
-    if (!text) return;
-    e.preventDefault();
-    const next = Array(CODE_LENGTH).fill("");
-    for (let i = 0; i < Math.min(text.length, CODE_LENGTH); i++) next[i] = text[i];
-    setDigits(next);
-    const filled = Math.min(CODE_LENGTH - 1, text.length - 1);
-    refs.current[Math.max(0, filled)]?.focus();
-  }
-
-  useEffect(() => {
-    refs.current[0]?.focus();
-  }, []);
-
-  return (
-    <form onSubmit={onSubmit} noValidate>
-      <FieldLabel>6-digit code</FieldLabel>
-      <div className="otp-row">
-        {digits.map((d, i) => (
-          <input
-            key={i}
-            ref={(el) => { refs.current[i] = el; }}
-            value={d}
-            onChange={(e) => setAt(i, e.target.value)}
-            onKeyDown={(e) => onKeyDown(i, e)}
-            onPaste={onPaste}
-            inputMode="numeric"
-            autoComplete={i === 0 ? "one-time-code" : "off"}
-            maxLength={1}
-            disabled={busy}
-            aria-label={`Digit ${i + 1}`}
-            className={"otp-digit" + (error ? " otp-digit--error" : "")}
-          />
-        ))}
-      </div>
-      {error && <ErrorLine text={error} />}
-
-      <PrimaryButton type="submit" busy={busy} disabled={busy || digits.join("").length !== CODE_LENGTH}>
-        {busy ? "Verifying…" : "Verify & sign in"}
-      </PrimaryButton>
-
-      <div style={{
-        display: "flex", justifyContent: "space-between",
-        gap: 8, marginTop: 12, fontSize: 12.5,
-        flexWrap: "wrap",
-      }}>
-        <button
-          type="button"
-          onClick={onResend}
-          disabled={busy || cooldown > 0}
-          style={ghostBtn(busy || cooldown > 0)}
-        >
-          {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-        </button>
-        <button
-          type="button"
-          onClick={onChangeEmail}
-          disabled={busy}
-          style={ghostBtn(busy)}
-        >
-          Change email
-        </button>
-      </div>
-
-      {info && <Notice text={info} />}
-    </form>
-  );
-}
-
-// ── Decorative + structural sub-components ──────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 function SignInHeader() {
   return (
     <header style={{
@@ -439,37 +286,10 @@ function PrimaryButton({
   );
 }
 
-function ghostBtn(disabled: boolean): React.CSSProperties {
-  return {
-    background: "transparent",
-    color: disabled ? "var(--text-dim)" : "var(--text-secondary)",
-    border: "none",
-    fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-    cursor: disabled ? "not-allowed" : "pointer",
-    padding: 0,
-    textDecoration: disabled ? "none" : "underline",
-    textDecorationColor: "var(--border)", textUnderlineOffset: 4,
-  };
-}
-
 function ErrorLine({ text }: { text: string }) {
   return (
     <div style={{ marginTop: 7, fontSize: 12, color: "#fca5a5", display: "flex", alignItems: "center", gap: 6 }}>
       <span aria-hidden>⚠</span>
-      {text}
-    </div>
-  );
-}
-
-function Notice({ text }: { text: string }) {
-  return (
-    <div style={{
-      marginTop: 12,
-      background: "#3730a31f",
-      border: "1px solid #6366f155",
-      color:  "#c7d2fe",
-      borderRadius: 9, padding: "9px 11px", fontSize: 12, lineHeight: 1.5,
-    }}>
       {text}
     </div>
   );
@@ -486,10 +306,4 @@ function Spinner() {
       }}
     />
   );
-}
-
-function replaceAt(arr: string[], idx: number, value: string): string[] {
-  const next = [...arr];
-  next[idx] = value;
-  return next;
 }

@@ -1,15 +1,13 @@
-// ── Auth routes (email OTP) ───────────────────────────────────────────────────
-// In-house, self-hosted authentication. The flow is:
-//   1. POST /request-otp { email }  → mail a 6-digit code, store its hash.
-//   2. POST /verify-otp  { email, code } → on success, set sd_session cookie.
-//   3. POST /logout                   → clear cookie.
-//   4. GET  /me                       → 200 user | 401.
-//
-// All cookies are HTTP-only, signed JWTs. SameSite=None;Secure in production
-// so they survive the GitHub Pages → Railway cross-origin hop.
+// ── Auth routes ───────────────────────────────────────────────────────────────
+// Password-based auth (register + login) plus legacy OTP routes (parked).
+//   1. POST /register  { email, password, displayName? } → session cookie
+//   2. POST /login     { email, password }               → session cookie
+//   3. POST /logout                                      → clear cookie
+//   4. GET  /me                                          → 200 user | 401
 
 import { Router, type Request, type Response } from "express";
 import crypto from "node:crypto";
+import bcrypt from "bcryptjs";
 import { db } from "../db/client.js";
 import { users, emailOtps } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
@@ -19,14 +17,88 @@ import {
   sessionCookieOptions,
   SESSION_COOKIE,
 } from "../lib/jwt.js";
-import { requestOtpSchema, verifyOtpSchema } from "../lib/schemas.js";
+import { requestOtpSchema, verifyOtpSchema, registerSchema, loginSchema } from "../lib/schemas.js";
 import {
   otpRequestLimiter,
   otpVerifyLimiter,
+  writeLimiter,
 } from "../middleware/rateLimiter.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
+
+const BCRYPT_ROUNDS = 12;
+
+// ── POST /api/auth/register ───────────────────────────────────────────────────
+router.post("/register", writeLimiter, async (req: Request, res: Response) => {
+  const parsed = registerSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
+    return;
+  }
+  const { email, password, displayName } = parsed.data;
+
+  try {
+    // Check if email already exists
+    const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+    if (existing) {
+      res.status(409).json({ error: "An account with this email already exists. Please sign in." });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const [created] = await db.insert(users).values({
+      email,
+      passwordHash,
+      displayName: displayName ?? email.split("@")[0] ?? "Member",
+      emailVerifiedAt: new Date(),
+      lastLoginAt: new Date(),
+    }).returning({ id: users.id, role: users.role });
+
+    const token = signSession({ sub: created.id, role: created.role as "user" | "admin" });
+    res.cookie(SESSION_COOKIE, token, sessionCookieOptions());
+    res.status(201).json({ ok: true, token });
+  } catch (err) {
+    console.error("register failed:", err);
+    res.status(500).json({ error: "Registration failed. Try again shortly." });
+  }
+});
+
+// ── POST /api/auth/login ──────────────────────────────────────────────────────
+router.post("/login", writeLimiter, async (req: Request, res: Response) => {
+  const parsed = loginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
+    return;
+  }
+  const { email, password } = parsed.data;
+
+  try {
+    const [user] = await db
+      .select({ id: users.id, role: users.role, passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    // Use constant-time check even when user doesn't exist to prevent timing attacks
+    const hash = user?.passwordHash ?? "$2a$12$invalidhashfortimingnonce00000000000000000000000000000";
+    const match = await bcrypt.compare(password, hash);
+
+    if (!user || !user.passwordHash || !match) {
+      res.status(401).json({ error: "Incorrect email or password." });
+      return;
+    }
+
+    await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+
+    const token = signSession({ sub: user.id, role: user.role as "user" | "admin" });
+    res.cookie(SESSION_COOKIE, token, sessionCookieOptions());
+    res.json({ ok: true, token });
+  } catch (err) {
+    console.error("login failed:", err);
+    res.status(500).json({ error: "Sign-in failed. Try again shortly." });
+  }
+});
 
 const OTP_TTL_MS         = 10 * 60 * 1000;   // 10 minutes
 const OTP_MIN_RESEND_MS  = 60 * 1000;        // 1 minute between resends to the same email
