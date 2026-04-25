@@ -7,11 +7,13 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import {
-  INTERVIEWS, CATEGORIES, COMPANIES,
-  EXPERIENCES, EXP_PLATFORMS, EXP_OUTCOMES,
+  CATEGORIES, COMPANIES,
+  EXP_PLATFORMS, EXP_OUTCOMES,
 } from "../data/interviews";
 import type { InterviewQ, InterviewExp, ExpPlatform, ExpOutcome } from "../data/interviews";
 import { loadSet, saveSet } from "../utils/localStorage";
+import { useFetch } from "../hooks/useFetch";
+import { buildInterviewsUrl, buildExperiencesUrl } from "../api/interviews";
 
 const REPO         = "pavan-gattupalli-savii/system-design-python-roadmap";
 const PRACTICE_KEY = "sd_practiced_v1";
@@ -203,6 +205,12 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const [myVotes,       setMyVotes]       = useState<Set<number>>(() => loadSet(EXP_VOTE_KEY));
   const [page,          setPage]          = useState(1);
 
+  // ── API fetch ────────────────────────────────────────────────────────
+  const expApiUrl = buildExperiencesUrl({ sort, limit: 200 });
+  const { data: expResp, loading: expLoading, error: expError } =
+    useFetch<{ data: InterviewExp[]; page: number; limit: number }>(expApiUrl);
+  const allExperiences = expResp?.data ?? [];
+
   const toggleVote = useCallback((id: number) => {
     setMyVotes((prev) => {
       const next = new Set(prev);
@@ -214,13 +222,13 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
 
   const companies = useMemo(() => {
     const s = new Set<string>();
-    EXPERIENCES.forEach((e) => s.add(e.company));
+    allExperiences.forEach((e) => s.add(e.company));
     return [...s].sort();
-  }, []);
+  }, [allExperiences]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    let res = EXPERIENCES.filter((e) => {
+    let res = allExperiences.filter((e) => {
       if (activePlat    && e.platform !== activePlat)    return false;
       if (activeComp    && e.company  !== activeComp)    return false;
       if (activeOutcome && e.outcome  !== activeOutcome) return false;
@@ -237,7 +245,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
     if (sort === "newest") res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
     if (sort === "alpha")  res = [...res].sort((a, b) => a.title.localeCompare(b.title));
     return res;
-  }, [search, activePlat, activeComp, activeOutcome, sort]);
+  }, [search, activePlat, activeComp, activeOutcome, sort, allExperiences]);
 
   const hasFilters = !!(search || activePlat || activeComp || activeOutcome);
 
@@ -354,13 +362,17 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
         background: "var(--bg-page)", borderBottom: "1px solid var(--border-subtle)",
         flexShrink: 0, display: "flex", justifyContent: "space-between",
       }}>
-        <span>{filtered.length} of {EXPERIENCES.length} experiences</span>
+        <span>{filtered.length} of {allExperiences.length} experiences</span>
         <span style={{ fontSize: 10, color: "var(--text-dim)" }}>save to bookmark · count reflects community rating</span>
       </div>
 
       {/* List */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        {filtered.length === 0 ? (
+        {expLoading ? (
+          <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>Loading experiences…</div>
+        ) : expError ? (
+          <div style={{ padding: 56, textAlign: "center", color: "#f87171", fontSize: 13 }}>Failed to load experiences: {expError}</div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
             No experiences match your filters.
           </div>
@@ -511,6 +523,12 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   const [expanded,      setExpanded]      = useState<Set<number>>(new Set());
   const [page,          setPage]          = useState(1);
 
+  // ── API fetch ────────────────────────────────────────────────────────
+  const qaApiUrl = buildInterviewsUrl({ sort, limit: 200 });
+  const { data: qaResp, loading: qaLoading, error: qaError } =
+    useFetch<{ data: InterviewQ[]; page: number; limit: number }>(qaApiUrl);
+  const allInterviews = qaResp?.data ?? [];
+
   const togglePracticed = useCallback((id: number) => {
     setPracticed((prev) => {
       const next = new Set(prev);
@@ -532,7 +550,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    let res = INTERVIEWS.filter((r) => {
+    let res = allInterviews.filter((r) => {
       if (activecat     && r.category !== activecat)              return false;
       if (activeDiff    && r.difficulty !== activeDiff)           return false;
       if (activeCompany && !r.companies.includes(activeCompany))  return false;
@@ -549,7 +567,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
     if (sort === "newest")     res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
     if (sort === "alpha")      res = [...res].sort((a, b) => a.title.localeCompare(b.title));
     return res;
-  }, [search, activecat, activeDiff, activeCompany, sort]);
+  }, [search, activecat, activeDiff, activeCompany, sort, allInterviews]);
 
   const hasFilters     = !!(search || activecat || activeDiff || activeCompany);
   const practicedCount = filtered.filter((q) => practiced.has(q.id)).length;
@@ -667,7 +685,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
         background: "var(--bg-page)", borderBottom: "1px solid var(--border-subtle)",
         flexShrink: 0, display: "flex", justifyContent: "space-between",
       }}>
-        <span>{filtered.length} of {INTERVIEWS.length} questions</span>
+        <span>{filtered.length} of {allInterviews.length} questions</span>
         <span style={{ color: practicedCount > 0 ? "#4ade80" : "var(--text-muted)" }}>
           ✓ {practicedCount} practiced
         </span>
@@ -675,7 +693,11 @@ function QASection({ isMobile }: { isMobile: boolean }) {
 
       {/* Question list */}
       <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "10px 10px" : "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        {filtered.length === 0 ? (
+        {qaLoading ? (
+          <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>Loading questions…</div>
+        ) : qaError ? (
+          <div style={{ padding: 56, textAlign: "center", color: "#f87171", fontSize: 13 }}>Failed to load questions: {qaError}</div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
             No questions match your filters.
           </div>

@@ -4,9 +4,11 @@
 // Upvotes: base count in readings.ts + one local browser vote per entry.
 
 import React, { useState, useMemo, useCallback } from "react";
-import { READINGS, POST_TYPES, DIFFICULTIES } from "../data/readings";
+import { POST_TYPES, DIFFICULTIES } from "../data/readings";
 import type { Reading } from "../data/readings";
 import { loadSet, saveSet } from "../utils/localStorage";
+import { useFetch } from "../hooks/useFetch";
+import { buildReadingsUrl } from "../api/readings";
 
 const REPO     = "pavan-gattupalli-savii/system-design-python-roadmap";
 const PR_URL   = `https://github.com/${REPO}/compare`;
@@ -78,7 +80,12 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
   const [sort,        setSort]        = useState<SortKey>("top");
   const [myVotes, setMyVotes] = useState<Set<number>>(() => loadSet(VOTE_KEY));
 
-  const topics = useMemo(() => allTopics(READINGS), []);
+  // ── API fetch ─────────────────────────────────────────────────────────────
+  const apiUrl = buildReadingsUrl({ sort, limit: 200 });
+  const { data: apiResp, loading, error: fetchError } = useFetch<{ data: Reading[]; page: number; limit: number }>(apiUrl);
+  const allReadings = apiResp?.data ?? [];
+
+  const topics = useMemo(() => allTopics(allReadings), [allReadings]);
 
   const toggleVote = useCallback((id: number) => {
     setMyVotes((prev) => {
@@ -99,7 +106,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    let res = READINGS.filter((r) => {
+    let res = allReadings.filter((r) => {
       if (activeTypes.size > 0 && !activeTypes.has(r.type)) return false;
       if (activeDiff  && r.difficulty !== activeDiff)        return false;
       if (activeTopic && !r.topics.includes(activeTopic))    return false;
@@ -117,7 +124,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
     if (sort === "alpha") res = [...res].sort((a, b) => a.title.localeCompare(b.title));
     if (sort === "newest")res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
     return res;
-  }, [search, activeTypes, activeDiff, activeTopic, sort, myVotes]);
+  }, [search, activeTypes, activeDiff, activeTopic, sort, myVotes, allReadings]);
 
   const hasFilters = activeTypes.size > 0 || activeTopic || activeDiff || search;
   const [page, setPage] = useState(1);
@@ -261,7 +268,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
         background: "var(--bg-page)", borderBottom: "1px solid var(--border-subtle)",
         flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
-        <span>{filtered.length} of {READINGS.length} readings</span>
+        <span>{filtered.length} of {allReadings.length} readings</span>
         <a href={FILE_URL} target="_blank" rel="noopener noreferrer"
           style={{ fontSize: 10, color: "var(--text-muted)", textDecoration: "none" }}>
           View source on GitHub →
@@ -270,7 +277,11 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
 
       {/* ── Table / Card list ────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>Loading readings…</div>
+        ) : fetchError ? (
+          <div style={{ padding: 56, textAlign: "center", color: "#f87171", fontSize: 13 }}>Failed to load readings: {fetchError}</div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
             No readings match your filters.
           </div>

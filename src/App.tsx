@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect }                              from "react";
 import "./App.css";
 
-import { ROADMAPS }                                                  from "./data/roadmap-index";
 import type { Language }                                             from "./data/roadmap-index";
 import { getAllWeeks, getPhaseStats }                                from "./utils/stats";
 import { APP_TITLE, APP_SUBTITLE, TABS, LANGUAGES, STORAGE_KEYS, TRACKER_URL } from "./constants/app";
@@ -10,6 +9,7 @@ import { FONT_STACK }                                               from "./cons
 import { useIsMobile }                                              from "./hooks/useIsMobile";
 import { useProgress }                                             from "./hooks/useProgress";
 import { usePanelResize }                                           from "./hooks/usePanelResize";
+import { useRoadmap }                                               from "./hooks/useRoadmap";
 import { TimelinePanel }                                            from "./components/TimelinePanel";
 import { DetailPanel }                                             from "./components/DetailPanel";
 import { SearchResults }                                            from "./components/SearchResults";
@@ -52,7 +52,7 @@ export default function App() {
   // ── Language selection ──────────────────────────────────────────────
   const [lang, setLang] = useState<Language>("python");
   const langDef       = LANGUAGES.find((l) => l.id === lang)!;
-  const activeRoadmap = ROADMAPS[lang];
+  const activeRoadmap = useRoadmap(lang);
   const channels      = CHANNELS_BY_LANG[lang];
   const storageKey    = STORAGE_KEYS[lang];
   const flatWeeks     = useMemo(() => getAllWeeks(activeRoadmap), [activeRoadmap]);
