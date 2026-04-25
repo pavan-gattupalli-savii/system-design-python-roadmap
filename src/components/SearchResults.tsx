@@ -3,6 +3,20 @@ import { sessionColors } from "../utils/stats";
 import { ResourceCard } from "./ResourceCard";
 import type { Phase } from "../data/models";
 
+type PhaseT   = Phase;
+type WeekT    = PhaseT["weeks"][number];
+type SessionT = WeekT["sessions"][number];
+type ResourceT = SessionT["resources"][number];
+
+interface SearchHit {
+  p:  PhaseT;
+  w:  WeekT;
+  s:  SessionT;
+  si: number;
+  r:  ResourceT;
+  ri: number;
+}
+
 interface Props {
   roadmap: Phase[];
   query: string;
@@ -13,10 +27,10 @@ interface Props {
 }
 
 export function SearchResults({ roadmap, query, onJumpToWeek, isMobile, completed, toggle }: Props) {
-  const results = useMemo(() => {
+  const results = useMemo<SearchHit[]>(() => {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
-    const found = [];
+    const found: SearchHit[] = [];
     roadmap.forEach((p) => {
       p.weeks.forEach((w) => {
         w.sessions.forEach((s, si) => {

@@ -1,54 +1,19 @@
 // ── READINGS TAB ──────────────────────────────────────────────────────────────
-// Community-curated resources, contributed via GitHub PRs.
+// Community-curated resources, contributed via the in-app submission form.
 // Filters: type · difficulty · topic · search. Sort: newest / top / A-Z.
-// Upvotes: base count in readings.ts + one local browser vote per entry.
+// Upvotes: per-user, persisted in the DB (see useMyInteractions).
 
 import React, { useState, useMemo, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { POST_TYPES, DIFFICULTIES } from "../data/readings";
 import type { Reading } from "../data/readings";
-import { loadSet, saveSet } from "../utils/localStorage";
-import { useFetch } from "../hooks/useFetch";
+import { apiFetch } from "../api/client";
 import { buildReadingsUrl } from "../api/readings";
+import { useAuth } from "../lib/auth";
+import { useMyInteractions } from "../hooks/useMyInteractions";
 
-const REPO     = "pavan-gattupalli-savii/system-design-python-roadmap";
-const PR_URL   = `https://github.com/${REPO}/compare`;
-const FILE_URL = `https://github.com/${REPO}/blob/main/src/data/readings.ts`;
-const VOTE_KEY = "sd_my_votes_v1";
-
-// Pre-filled issue body — always works via GitHub's ?body= parameter
-const _ISSUE_BODY = encodeURIComponent([
-  "## 📖 Reading Suggestion",
-  "",
-  "**Title**",
-  "<!-- Short human-readable title for the resource -->",
-  "",
-  "**URL**",
-  "<!-- Full https:// link -->",
-  "",
-  "**Type**",
-  "<!-- Pick one: Blog · YouTube · LinkedIn · Book · Paper · Course · Newsletter · Thread · Docs · Website · Podcast · Tool · Repo · Slide · Case Study -->",
-  "",
-  "**Difficulty**",
-  "<!-- Pick one: Beginner · Intermediate · Advanced -->",
-  "",
-  "**Topics / Tags**",
-  "<!-- Comma-separated lowercase kebab-case, e.g. `caching, redis, rate-limiting` -->",
-  "",
-  "**Your Name (Added By)**",
-  "",
-  "**Your GitHub Username** _(optional — used for avatar + profile link)_",
-  "",
-  "**Why it's useful** _(optional, one line)_",
-  "",
-  "---",
-  "",
-  "## Checklist",
-  "- [ ] Resource is publicly accessible",
-  "- [ ] URL is correct and working",
-  "- [ ] Topics are lowercase kebab-case",
-  "- [ ] Not a duplicate — I checked `src/data/readings.ts`",
-].join("\n"));
-const ISSUE_URL = `https://github.com/${REPO}/issues/new?labels=reading-suggestion&title=%5BReading%5D+&body=${_ISSUE_BODY}`;
+const SUBMIT_PATH = "/app/readings/submit";
 
 // ── Icon + colour maps ────────────────────────────────────────────────────────
 const TYPE_ICONS: Record<string, string> = {
@@ -78,23 +43,31 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
   const [activeDiff,  setActiveDiff]  = useState("");
   const [activeTopic, setActiveTopic] = useState("");
   const [sort,        setSort]        = useState<SortKey>("top");
-  const [myVotes, setMyVotes] = useState<Set<number>>(() => loadSet(VOTE_KEY));
+
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: interactions, toggleReadingUpvote } = useMyInteractions();
+  const myVotes = interactions.readingUpvotes;
 
   // ── API fetch ─────────────────────────────────────────────────────────────
   const apiUrl = buildReadingsUrl({ sort, limit: 200 });
-  const { data: apiResp, loading, error: fetchError } = useFetch<{ data: Reading[]; page: number; limit: number }>(apiUrl);
+  const { data: apiResp, isLoading: loading, error } = useQuery({
+    queryKey: ["readings", sort],
+    queryFn:  () => apiFetch<{ data: Reading[]; page: number; limit: number }>(apiUrl),
+  });
+  const fetchError = error instanceof Error ? error.message : null;
   const allReadings = apiResp?.data ?? [];
 
   const topics = useMemo(() => allTopics(allReadings), [allReadings]);
 
   const toggleVote = useCallback((id: number) => {
-    setMyVotes((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      saveSet(VOTE_KEY, next);
-      return next;
-    });
-  }, []);
+    if (!user) {
+      navigate("/sign-in?next=/app/readings");
+      return;
+    }
+    const isOn = !myVotes.has(id);
+    toggleReadingUpvote.mutate({ id, on: isOn });
+  }, [user, myVotes, toggleReadingUpvote, navigate]);
 
   function toggleType(t: string) {
     setActiveTypes((prev) => {
@@ -120,11 +93,11 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
         (r.notes || "").toLowerCase().includes(q)
       );
     });
-    if (sort === "top")   res = [...res].sort((a, b) => (b.upvotes + (myVotes.has(b.id) ? 1 : 0)) - (a.upvotes + (myVotes.has(a.id) ? 1 : 0)));
+    if (sort === "top")   res = [...res].sort((a, b) => b.upvotes - a.upvotes);
     if (sort === "alpha") res = [...res].sort((a, b) => a.title.localeCompare(b.title));
     if (sort === "newest")res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
     return res;
-  }, [search, activeTypes, activeDiff, activeTopic, sort, myVotes, allReadings]);
+  }, [search, activeTypes, activeDiff, activeTopic, sort, allReadings]);
 
   const hasFilters = activeTypes.size > 0 || activeTopic || activeDiff || search;
   const [page, setPage] = useState(1);
@@ -198,8 +171,8 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
               Clear
             </button>
           )}
-          <a
-            href={ISSUE_URL} target="_blank" rel="noopener noreferrer"
+          <Link
+            to={SUBMIT_PATH}
             style={{
               display: "inline-flex", alignItems: "center", gap: 5,
               background: "#6366f1", color: "#fff", border: "none", borderRadius: 7,
@@ -207,8 +180,8 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
               fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
             }}
           >
-            ＋ Suggest
-          </a>
+            ＋ Publish
+          </Link>
         </div>
 
         {/* Row 2 — Type chips */}
@@ -269,10 +242,9 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
         flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <span>{filtered.length} of {allReadings.length} readings</span>
-        <a href={FILE_URL} target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: 10, color: "var(--text-muted)", textDecoration: "none" }}>
-          View source on GitHub →
-        </a>
+        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+          Approved community submissions only
+        </span>
       </div>
 
       {/* ── Table / Card list ────────────────────────────────────────── */}
@@ -333,37 +305,18 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
         {/* ── Contribute footer ── */}
         <div style={{ padding: "28px 20px", textAlign: "center", borderTop: "1px solid var(--border-subtle)" }}>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>
-            Know a great resource? Contribute via GitHub — all reads are PR-reviewed.
+            Know a great resource? Submit it directly — admins review every entry before it appears here.
           </div>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <CtaLink href={ISSUE_URL}>🙋 Suggest via Issue</CtaLink>
-            <CtaLink href={PR_URL}>🔀 Open a Pull Request</CtaLink>
-          </div>
-          <div style={{ marginTop: 12, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            Approved PRs appear here after merge. Add your GitHub username to get an avatar and profile link!
-          </div>
+          <Link to={SUBMIT_PATH} style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: "transparent", border: "1px solid #6366f1", color: "#a5b4fc",
+            borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, textDecoration: "none",
+          }}>
+            ＋ Publish a reading
+          </Link>
         </div>
       </div>
     </div>
-  );
-}
-
-// ── CTA link ──────────────────────────────────────────────────────────────────
-function CtaLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href} target="_blank" rel="noopener noreferrer"
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        background: "transparent", border: "1px solid #6366f1", color: "#a5b4fc",
-        borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600,
-        textDecoration: "none", transition: "background 0.15s",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "#6366f115")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-    >
-      {children}
-    </a>
   );
 }
 
@@ -394,7 +347,7 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
       }}>
         <button
           onClick={() => toggleVote(r.id)}
-          title={voted ? "Saved in your browser — click to remove" : "Save this resource (stored locally in your browser)"}
+          title={voted ? "You upvoted this — click to remove" : "Upvote (sign in required)"}
           style={{
             display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2,
             background: voted ? "#6366f118" : "transparent",
@@ -516,7 +469,7 @@ function ReadingCard({ r, myVotes, toggleVote }: {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 2 }}>
         <button
           onClick={() => toggleVote(r.id)}
-          title={voted ? "Saved in your browser — click to remove" : "Save this resource (stored locally in your browser)"}
+          title={voted ? "You upvoted this — click to remove" : "Upvote (sign in required)"}
           style={{
             display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
             background: voted ? "#6366f118" : "transparent",

@@ -1,28 +1,12 @@
 // ── READINGS DATA ─────────────────────────────────────────────────────────────
-// Community-curated resource list. All contributions go through GitHub PRs.
+// Seed list of community-curated readings. New entries are submitted in-app via
+// `/app/readings/submit` and live in the `readings` table (joined to `users`
+// for author info). The exported `Reading` type still mirrors what the API
+// returns so the same components can render seed data and DB rows.
 //
-// HOW TO CONTRIBUTE:
-//   1. Fork the repo
-//   2. Add your entry below following the same shape (next id, all required fields)
-//   3. Open a Pull Request — maintainer reviews and merges
-//
-// UPVOTE SYSTEM:
-//   - `upvotes` is the official count, bumped by the maintainer from PR +1s
-//   - Readers can cast a local browser vote (stored in localStorage)
-//     which prevents double-voting per device
-//
-// FIELDS:
-//   id          — auto-increment (next available number)
-//   type        — one of POST_TYPES below
-//   title       — short human-readable title
-//   url         — full https:// link
-//   addedBy     — your display name
-//   githubUser  — (optional) your GitHub username — used for avatar + profile link
-//   topics      — lowercase kebab-case tags, e.g. ["redis", "caching"]
-//   difficulty  — "Beginner" | "Intermediate" | "Advanced" (optional)
-//   upvotes     — base count (start at 0 for new entries)
-//   addedOn     — ISO date YYYY-MM-DD
-//   notes       — (optional) one-line description / why it is useful
+// Upvotes are user-owned — they live in the `reading_upvotes` table and toggle
+// through `POST/DELETE /api/readings/:id/upvote`. There is no browser-local
+// voting any more.
 
 export interface Reading {
   id:          number;
@@ -31,6 +15,7 @@ export interface Reading {
   url:         string;
   addedBy:     string;
   githubUser?: string;
+  linkedin?:   string;
   topics:      string[];
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
   upvotes:     number;

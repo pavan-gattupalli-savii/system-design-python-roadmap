@@ -21,3 +21,8 @@ npm-debug.log*
 *.pdf
 *.xlsx
 *.xls
+
+# Stale .js compiled outputs that occasionally reappear next to the real .ts
+# sources (e.g. when an editor accidentally runs tsc with no outDir).
+src/**/*.js
+!src/**/*.config.js

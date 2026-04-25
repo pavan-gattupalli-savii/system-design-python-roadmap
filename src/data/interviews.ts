@@ -29,7 +29,7 @@ export interface InterviewQ {
   followUps?:  string[];
   addedOn:     string;
   /** Community-contributed answer documents (Google Docs, Gist links, etc.) */
-  answerDocs?: { label: string; url: string; by: string; addedOn: string }[];
+  answerDocs?: { id?: number; label: string; url: string; by: string; github?: string | null; addedOn: string }[];
 }
 
 export const CATEGORIES = [
@@ -340,9 +340,10 @@ export interface InterviewExp {
   company:     string;
   role:        string;
   title:       string;
-  url:          string;
+  url:         string;
   addedBy:     string;
   githubUser?: string;
+  linkedin?:   string;
   topics:      string[];
   outcome?:    ExpOutcome;
   upvotes:     number;

@@ -1,13 +1,18 @@
 // ── Interview Q&A routes ──────────────────────────────────────────────────────
 import { Router } from "express";
-import { sql, rawFragment } from "../db/client.js";
-import { adminAuth } from "../middleware/adminAuth.js";
-import { writeLimiter } from "../middleware/rateLimiter.js";
+import { db, cached } from "../db/client.js";
+import { interviewQuestions, answerDocs, users } from "../db/schema.js";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { writeLimiter, userWriteLimiter } from "../middleware/rateLimiter.js";
+import { sendCached } from "../middleware/cache.js";
+import { queryCache } from "../lib/cache.js";
+import { interviewSubmitSchema, answerDocSubmitSchema } from "../lib/schemas.js";
 
 const router = Router();
 
+
 // GET /api/interviews
-// Query params: category, difficulty, company, sort (difficulty|newest|alpha), page, limit
 router.get("/", async (req, res) => {
   try {
     const { category, difficulty, company, sort = "difficulty", page = "1", limit = "50" } = req.query as Record<string, string>;
@@ -15,76 +20,99 @@ router.get("/", async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const offset   = (pageNum - 1) * limitNum;
 
-    const orderBy =
-      sort === "newest" ? "q.added_on DESC, q.id DESC" :
-      sort === "alpha"  ? "q.title ASC, q.id DESC"     :
-      // default: sort by difficulty Easy→Medium→Hard
-      "CASE q.difficulty WHEN 'Easy' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Hard' THEN 3 END ASC, q.id DESC";
+    const cacheKey = `interviews:${category ?? ""}:${difficulty ?? ""}:${company ?? ""}:${sort}:${pageNum}:${limitNum}`;
 
-    const rows = await sql`
-      SELECT q.*,
-        COALESCE(
-          json_agg(
-            json_build_object('label', a.label, 'url', a.url, 'by', a.by, 'addedOn', a.added_on)
-            ORDER BY a.created_at
-          ) FILTER (WHERE a.id IS NOT NULL AND a.is_approved = true),
-          '[]'
-        ) AS answer_docs
-      FROM interview_questions q
-      LEFT JOIN answer_docs a ON a.question_id = q.id
-      WHERE q.is_approved = true
-        AND (${category   ?? null}::text IS NULL OR q.category   = ${category   ?? ""}::text)
-        AND (${difficulty ?? null}::text IS NULL OR q.difficulty = ${difficulty ?? ""}::text)
-        AND (${company    ?? null}::text IS NULL OR ${company    ?? ""}::text = ANY(q.companies))
-      GROUP BY q.id
-      ORDER BY ${sql(rawFragment(orderBy))}
-      LIMIT ${limitNum}
-      OFFSET ${offset}
-    `;
+    const data = await cached(cacheKey, async () => {
+      const conditions = [eq(interviewQuestions.isApproved, true)];
+      if (category)   conditions.push(eq(interviewQuestions.category, category));
+      if (difficulty) conditions.push(eq(interviewQuestions.difficulty, difficulty));
+      if (company)    conditions.push(sql`${company} = ANY(${interviewQuestions.companies})`);
 
-    const data = rows.map((q) => ({
-      id:          q.id,
-      category:    q.category,
-      title:       q.title,
-      difficulty:  q.difficulty,
-      companies:   q.companies,
-      topics:      q.topics,
-      hints:       q.hints,
-      followUps:   q.follow_ups,
-      addedOn:     q.added_on,
-      answerDocs:  q.answer_docs,
-    }));
+      const orderCols =
+        sort === "newest" ? [desc(interviewQuestions.addedOn), desc(interviewQuestions.id)] :
+        sort === "alpha"  ? [asc(interviewQuestions.title),    desc(interviewQuestions.id)] :
+        [asc(sql`CASE ${interviewQuestions.difficulty} WHEN 'Easy' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Hard' THEN 3 ELSE 4 END`), desc(interviewQuestions.id)];
 
-    res.json({ data, page: pageNum, limit: limitNum });
+      const questions = await db
+        .select()
+        .from(interviewQuestions)
+        .where(and(...conditions))
+        .orderBy(...orderCols)
+        .limit(limitNum)
+        .offset(offset);
+
+      const qIds = questions.map((q) => q.id);
+      const answers = qIds.length
+        ? await db
+            .select({
+              questionId:  answerDocs.questionId,
+              id:          answerDocs.id,
+              label:       answerDocs.label,
+              url:         answerDocs.url,
+              addedOn:     answerDocs.addedOn,
+              displayName: users.displayName,
+              github:      users.github,
+            })
+            .from(answerDocs)
+            .leftJoin(users, eq(answerDocs.submittedBy, users.id))
+            .where(eq(answerDocs.isApproved, true))
+        : [];
+
+      const answersByQ = new Map<number, typeof answers>();
+      for (const a of answers) {
+        if (!qIds.includes(a.questionId)) continue;
+        const arr = answersByQ.get(a.questionId) ?? [];
+        arr.push(a);
+        answersByQ.set(a.questionId, arr);
+      }
+
+      return questions.map((q) => ({
+        id:         q.id,
+        category:   q.category,
+        title:      q.title,
+        difficulty: q.difficulty,
+        companies:  q.companies,
+        topics:     q.topics,
+        hints:      q.hints,
+        followUps:  q.followUps,
+        addedOn:    q.addedOn,
+        answerDocs: (answersByQ.get(q.id) ?? []).map((a) => ({
+          id:      a.id,
+          label:   a.label,
+          url:     a.url,
+          by:      a.displayName ?? "Maintainer",
+          github:  a.github,
+          addedOn: a.addedOn,
+        })),
+      }));
+    });
+
+    sendCached(res, req, { data, page: pageNum, limit: limitNum });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch questions" });
   }
 });
 
-// POST /api/interviews/submit — community question submission
-router.post("/submit", writeLimiter, async (req, res) => {
+// POST /api/interviews/submit — auth-required community submission
+router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, res) => {
+  const parsed = interviewSubmitSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid submission" });
+    return;
+  }
+  const { category, title, difficulty, companies, topics, hints, followUps } = parsed.data;
+
   try {
-    const { category, title, difficulty, companies, topics, hints, followUps } = req.body as {
-      category: string; title: string; difficulty: string;
-      companies: string[]; topics: string[]; hints: string[]; followUps?: string[];
-    };
-
-    if (!category || !title || !difficulty || !Array.isArray(hints) || hints.length === 0) {
-      res.status(400).json({ error: "Missing required fields: category, title, difficulty, hints" });
-      return;
-    }
-
-    if (!["Easy", "Medium", "Hard"].includes(difficulty)) {
-      res.status(400).json({ error: "difficulty must be Easy, Medium, or Hard" });
-      return;
-    }
-
-    await sql`
-      INSERT INTO interview_questions (category, title, difficulty, companies, topics, hints, follow_ups, added_on, is_approved)
-      VALUES (${category}, ${title}, ${difficulty}, ${companies ?? []}, ${topics ?? []}, ${hints}, ${followUps ?? []}, NOW()::DATE, false)
-    `;
-
+    await db.insert(interviewQuestions).values({
+      category, title, difficulty, companies, topics, hints,
+      followUps,
+      addedOn:    new Date().toISOString().slice(0, 10),
+      isApproved: false,
+      submittedBy: req.user!.id,
+    });
+    queryCache.invalidate("interviews:");
+    queryCache.invalidate("bootstrap:");
     res.status(201).json({ message: "Question submitted — pending review" });
   } catch (err) {
     console.error(err);
@@ -92,27 +120,27 @@ router.post("/submit", writeLimiter, async (req, res) => {
   }
 });
 
-// POST /api/interviews/:id/answers — submit a community answer doc
-router.post("/:id/answers", writeLimiter, async (req, res) => {
+// POST /api/interviews/:id/answers — submit a community answer doc (auth required)
+router.post("/:id/answers", requireAuth, writeLimiter, userWriteLimiter, async (req, res) => {
+  const questionId = parseInt(req.params.id);
+  if (isNaN(questionId)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const parsed = answerDocSubmitSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid submission" });
+    return;
+  }
+  const { label, url } = parsed.data;
+
   try {
-    const questionId = parseInt(req.params.id);
-    if (isNaN(questionId)) { res.status(400).json({ error: "Invalid id" }); return; }
-
-    const { label, url, by } = req.body as { label: string; url: string; by: string };
-    if (!label || !url || !by) {
-      res.status(400).json({ error: "Missing required fields: label, url, by" });
-      return;
-    }
-    if (!url.startsWith("https://")) {
-      res.status(400).json({ error: "URL must start with https://" });
-      return;
-    }
-
-    await sql`
-      INSERT INTO answer_docs (question_id, label, url, by, added_on, is_approved)
-      VALUES (${questionId}, ${label}, ${url}, ${by}, NOW()::DATE, false)
-    `;
-
+    await db.insert(answerDocs).values({
+      questionId, label, url,
+      addedOn:    new Date().toISOString().slice(0, 10),
+      isApproved: false,
+      submittedBy: req.user!.id,
+    });
+    queryCache.invalidate("interviews:");
+    queryCache.invalidate("bootstrap:");
     res.status(201).json({ message: "Answer submitted — pending review" });
   } catch (err) {
     console.error(err);
@@ -121,14 +149,17 @@ router.post("/:id/answers", writeLimiter, async (req, res) => {
 });
 
 // PATCH /api/interviews/:id/approve — admin
-router.patch("/:id/approve", adminAuth, async (req, res) => {
+router.patch("/:id/approve", requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const rows = await sql`
-      UPDATE interview_questions SET is_approved = true WHERE id = ${id} RETURNING id
-    ` as { id: number }[];
-    if (!rows.length) { res.status(404).json({ error: "Not found" }); return; }
-    res.json({ approved: true, id });
+    const [updated] = await db
+      .update(interviewQuestions)
+      .set({ isApproved: true })
+      .where(eq(interviewQuestions.id, id))
+      .returning({ id: interviewQuestions.id });
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+    queryCache.invalidate("interviews:");
+    res.json({ approved: true, id: updated.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to approve" });

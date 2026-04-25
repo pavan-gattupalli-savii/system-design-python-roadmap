@@ -1,27 +1,50 @@
-// ── DB client (Neon serverless) ───────────────────────────────────────────────
-// Uses @neondatabase/serverless for HTTP-based connections that work
-// in serverless/edge environments AND traditional Node.js long-running servers.
+// ── DB client (Neon + Drizzle ORM) ───────────────────────────────────────────
+// Two layers:
+//   • `db`  — Drizzle ORM instance for type-safe CRUD (select/insert/update/delete)
+//   • `sql` — raw Neon tagged-template for complex queries (CTEs, json_agg, etc.)
+//
+// Both are lazily initialised so the module import doesn't throw when
+// DATABASE_URL is absent at start-up (Railway fix).
 
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
+import * as schema from "./schema.js";
 import "dotenv/config";
+import { queryCache } from "../lib/cache.js";
 
-let _sql: NeonQueryFunction<false, false> | undefined;
+type DrizzleDb = NeonHttpDatabase<typeof schema>;
 
-function getSql(): NeonQueryFunction<false, false> {
-  if (!_sql) {
+let _neon: NeonQueryFunction<false, false> | undefined;
+let _db:   DrizzleDb | undefined;
+
+function getNeon(): NeonQueryFunction<false, false> {
+  if (!_neon) {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
-    _sql = neon(connectionString);
+    _neon = neon(connectionString);
   }
-  return _sql;
+  return _neon;
 }
 
-// Tagged template literal that delegates to the lazily-created neon client.
-// Cast to NeonQueryFunction so callers can use sql.unsafe() for ORDER BY fragments.
+function getDb(): DrizzleDb {
+  if (!_db) _db = drizzle(getNeon(), { schema });
+  return _db;
+}
+
+// ── Drizzle ORM instance — type-safe queries ────────────────────────────────
+// Uses a Proxy for lazy init so the process doesn't crash on import when
+// DATABASE_URL is missing (the error surfaces only when the first query runs).
+export const db: DrizzleDb = new Proxy({} as DrizzleDb, {
+  get(_t, prop, receiver) {
+    return Reflect.get(getDb(), prop, receiver);
+  },
+});
+
+// ── Raw Neon SQL tag — for complex queries (CTEs, json_agg, etc.) ───────────
 export const sql = function (strings: TemplateStringsArray, ...values: unknown[]) {
-  return getSql()(strings, ...values);
+  return getNeon()(strings, ...values);
 } as NeonQueryFunction<false, false>;
 
 /**
@@ -35,11 +58,11 @@ export function rawFragment(s: string): TemplateStringsArray {
   return arr;
 }
 
-// Helper: run a query and return rows, typed
-export async function query<T = Record<string, unknown>>(
-  strings: TemplateStringsArray,
-  ...values: unknown[]
-): Promise<T[]> {
-  const result = await sql(strings, ...values);
-  return result as T[];
+/**
+ * Run `loader()` and memoise its result keyed on `cacheKey`.
+ * Backed by TTLCache.load (in-flight dedup + stale-while-revalidate).
+ */
+export async function cached<T>(cacheKey: string, loader: () => Promise<T>): Promise<T> {
+  const { data } = await queryCache.load(cacheKey, loader as () => Promise<unknown>);
+  return data as T;
 }

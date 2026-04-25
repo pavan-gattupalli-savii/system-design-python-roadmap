@@ -6,91 +6,20 @@
 // Both support search, filters, and save-to-browser (♡/♥ bookmarks).
 
 import React, { useState, useMemo, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   CATEGORIES, COMPANIES,
   EXP_PLATFORMS, EXP_OUTCOMES,
 } from "../data/interviews";
 import type { InterviewQ, InterviewExp, ExpPlatform, ExpOutcome } from "../data/interviews";
-import { loadSet, saveSet } from "../utils/localStorage";
-import { useFetch } from "../hooks/useFetch";
+import { apiFetch } from "../api/client";
 import { buildInterviewsUrl, buildExperiencesUrl } from "../api/interviews";
+import { useAuth } from "../lib/auth";
+import { useMyInteractions } from "../hooks/useMyInteractions";
 
-const REPO         = "pavan-gattupalli-savii/system-design-python-roadmap";
-const PRACTICE_KEY = "sd_practiced_v1";
-const EXP_VOTE_KEY = "sd_exp_votes_v1";
-
-// ── Issue URL builders ────────────────────────────────────────────────────────
-function buildIssueUrl(label: string, title: string, bodyLines: string[]): string {
-  const body = encodeURIComponent(bodyLines.join("\n"));
-  return `https://github.com/${REPO}/issues/new?labels=${label}&title=${encodeURIComponent(title)}&body=${body}`;
-}
-
-const QA_ISSUE_URL = buildIssueUrl("interview-question", "[Interview] ", [
-  "## 🎯 Interview Question Suggestion",
-  "",
-  "**Question (title)**",
-  "<!-- Write the question exactly as an interviewer would ask it -->",
-  "",
-  "**Category**",
-  "<!-- Pick one: System Design · Behavioral · Databases · Networking · Concepts · Architecture -->",
-  "",
-  "**Difficulty**",
-  "<!-- Pick one: Easy · Medium · Hard -->",
-  "",
-  "**Companies known to ask this**",
-  "<!-- e.g. Amazon, Google, Meta -->",
-  "",
-  "**Topics / Tags**",
-  "<!-- Comma-separated lowercase kebab-case, e.g. `caching, redis, hld` -->",
-  "",
-  "**Key hints (answer pointers)**",
-  "<!-- Bullet list of the main points a good answer must cover -->",
-  "- ",
-  "- ",
-  "- ",
-  "",
-  "**Follow-up questions** _(optional)_",
-  "- ",
-  "",
-  "---",
-  "## Checklist",
-  "- [ ] Question is clearly stated",
-  "- [ ] Hints are substantive, not vague",
-  "- [ ] Company list is realistic / verified",
-]);
-
-const EXP_ISSUE_URL = buildIssueUrl("interview-experience", "[Experience] ", [
-  "## 💬 Interview Experience Suggestion",
-  "",
-  "**Title**",
-  "<!-- e.g. 'Google L5 System Design — 3 rounds, got offer' -->",
-  "",
-  "**Company**",
-  "<!-- e.g. Google, Amazon, Meta -->",
-  "",
-  "**Role**",
-  "<!-- e.g. Senior SDE, Staff Engineer, E5 -->",
-  "",
-  "**Platform**",
-  "<!-- Pick one: YouTube · LinkedIn · Blog · Medium · Reddit · Dev.to · Blind · Twitter · Discord · Other -->",
-  "",
-  "**URL**",
-  "<!-- Full link to the post/video -->",
-  "",
-  "**Outcome**",
-  "<!-- Pick one: Offer · Rejected · Ongoing · Unknown -->",
-  "",
-  "**Topics / Tags**",
-  "<!-- Comma-separated lowercase kebab-case, e.g. `hld, behavioral, caching` -->",
-  "",
-  "**One-line summary** _(optional)_",
-  "<!-- What makes this post valuable? -->",
-  "",
-  "---",
-  "## Checklist",
-  "- [ ] Link is publicly accessible",
-  "- [ ] Not a duplicate — I checked existing experiences",
-]);
+const SUBMIT_QA_PATH   = "/app/interview/submit";
+const SUBMIT_EXP_PATH  = "/app/experiences/submit";
 
 // ── Colour / icon maps ────────────────────────────────────────────────────────
 const DIFF_COLOR: Record<string, { tx: string; bg: string }> = {
@@ -202,23 +131,30 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const [activeComp,    setActiveComp]    = useState("");
   const [activeOutcome, setActiveOutcome] = useState<ExpOutcome | "">("");
   const [sort,          setSort]          = useState<ExpSort>("top");
-  const [myVotes,       setMyVotes]       = useState<Set<number>>(() => loadSet(EXP_VOTE_KEY));
   const [page,          setPage]          = useState(1);
+
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: interactions, toggleExperienceUpvote } = useMyInteractions();
+  const myVotes = interactions.expUpvotes;
 
   // ── API fetch ────────────────────────────────────────────────────────
   const expApiUrl = buildExperiencesUrl({ sort, limit: 200 });
-  const { data: expResp, loading: expLoading, error: expError } =
-    useFetch<{ data: InterviewExp[]; page: number; limit: number }>(expApiUrl);
+  const { data: expResp, isLoading: expLoading, error: expErr } = useQuery({
+    queryKey: ["experiences", sort],
+    queryFn:  () => apiFetch<{ data: InterviewExp[]; page: number; limit: number }>(expApiUrl),
+  });
+  const expError = expErr instanceof Error ? expErr.message : null;
   const allExperiences = expResp?.data ?? [];
 
   const toggleVote = useCallback((id: number) => {
-    setMyVotes((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      saveSet(EXP_VOTE_KEY, next);
-      return next;
-    });
-  }, []);
+    if (!user) {
+      navigate("/sign-in?next=/app/interview");
+      return;
+    }
+    const isOn = !myVotes.has(id);
+    toggleExperienceUpvote.mutate({ id, on: isOn });
+  }, [user, myVotes, toggleExperienceUpvote, navigate]);
 
   const companies = useMemo(() => {
     const s = new Set<string>();
@@ -289,7 +225,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
               Clear
             </button>
           )}
-          <a href={EXP_ISSUE_URL} target="_blank" rel="noopener noreferrer" style={{
+          <Link to={SUBMIT_EXP_PATH} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             background: "#6366f1", color: "#fff", borderRadius: 7,
             padding: isMobile ? "6px 10px" : "6px 14px",
@@ -297,7 +233,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
             textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
           }}>
             ＋ Share
-          </a>
+          </Link>
         </div>
 
         {/* Row 2 — Platform chips */}
@@ -390,7 +326,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>
             Went through an interview recently? Share your experience — it helps others prepare.
           </div>
-          <a href={EXP_ISSUE_URL} target="_blank" rel="noopener noreferrer"
+          <Link to={SUBMIT_EXP_PATH}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
               background: "transparent", border: "1px solid #6366f1", color: "#a5b4fc",
@@ -400,7 +336,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             💬 Share Your Experience
-          </a>
+          </Link>
         </div>
       </div>
     </>
@@ -424,7 +360,7 @@ function ExperienceCard({ e, myVotes, toggleVote, isMobile }: {
       {/* Save button */}
       <button
         onClick={() => toggleVote(e.id)}
-        title={voted ? "Saved — click to remove" : "Save this experience"}
+        title={voted ? "You upvoted this — click to remove" : "Upvote (sign in required)"}
         style={{
           flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
           background: voted ? "#6366f118" : "transparent",
@@ -519,24 +455,31 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   const [activeDiff,    setActiveDiff]    = useState("");
   const [activeCompany, setActiveCompany] = useState("");
   const [sort,          setSort]          = useState<QASort>("difficulty");
-  const [practiced,     setPracticed]     = useState<Set<number>>(() => loadSet(PRACTICE_KEY));
   const [expanded,      setExpanded]      = useState<Set<number>>(new Set());
   const [page,          setPage]          = useState(1);
 
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: interactions, togglePracticed: togglePracticedMutation } = useMyInteractions();
+  const practiced = interactions.practiced;
+
   // ── API fetch ────────────────────────────────────────────────────────
   const qaApiUrl = buildInterviewsUrl({ sort, limit: 200 });
-  const { data: qaResp, loading: qaLoading, error: qaError } =
-    useFetch<{ data: InterviewQ[]; page: number; limit: number }>(qaApiUrl);
+  const { data: qaResp, isLoading: qaLoading, error: qaErr } = useQuery({
+    queryKey: ["interviews", sort],
+    queryFn:  () => apiFetch<{ data: InterviewQ[]; page: number; limit: number }>(qaApiUrl),
+  });
+  const qaError = qaErr instanceof Error ? qaErr.message : null;
   const allInterviews = qaResp?.data ?? [];
 
   const togglePracticed = useCallback((id: number) => {
-    setPracticed((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      saveSet(PRACTICE_KEY, next);
-      return next;
-    });
-  }, []);
+    if (!user) {
+      navigate("/sign-in?next=/app/interview");
+      return;
+    }
+    const isOn = !practiced.has(id);
+    togglePracticedMutation.mutate({ id, on: isOn });
+  }, [user, practiced, togglePracticedMutation, navigate]);
 
   const toggleExpanded = useCallback((id: number) => {
     setExpanded((prev) => {
@@ -612,15 +555,15 @@ function QASection({ isMobile }: { isMobile: boolean }) {
               Clear
             </button>
           )}
-          <a href={QA_ISSUE_URL} target="_blank" rel="noopener noreferrer" style={{
+          <Link to={SUBMIT_QA_PATH} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             background: "#6366f1", color: "#fff", borderRadius: 7,
             padding: isMobile ? "6px 10px" : "6px 14px",
             fontSize: isMobile ? 11 : 12, fontWeight: 600,
             textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
           }}>
-            ＋ Suggest
-          </a>
+            ＋ Publish
+          </Link>
         </div>
 
         {/* Row 2 — Category chips */}
@@ -719,9 +662,9 @@ function QASection({ isMobile }: { isMobile: boolean }) {
         {/* Footer */}
         <div style={{ padding: "24px 16px", textAlign: "center", borderTop: "1px solid var(--border-subtle)", marginTop: 8 }}>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>
-            Know a question that trips people up? Contribute via GitHub.
+            Know a question that trips people up? Submit it directly — admins review every entry.
           </div>
-          <a href={QA_ISSUE_URL} target="_blank" rel="noopener noreferrer"
+          <Link to={SUBMIT_QA_PATH}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
               background: "transparent", border: "1px solid #6366f1", color: "#a5b4fc",
@@ -731,7 +674,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             🙋 Suggest a Question
-          </a>
+          </Link>
         </div>
       </div>
     </>
@@ -746,19 +689,7 @@ function QuestionCard({
   togglePracticed: (id: number) => void; toggleExpanded: (id: number) => void; isMobile: boolean;
 }) {
   const ds = DIFF_COLOR[q.difficulty];
-
-  const answerIssueUrl = buildIssueUrl("answer-doc", "[Answer] " + q.title, [
-    "## 📝 Community Answer for: \"" + q.title + "\"",
-    "",
-    "**Your Answer Doc URL**",
-    "<!-- Google Doc / GitHub Gist / Notion / any public link -->",
-    "",
-    "**Label for the link** _(e.g. 'Detailed walkthrough with diagrams')_",
-    "",
-    "---",
-    "- [ ] Link is publicly accessible (view-only is fine)",
-    "- [ ] Your answer covers the key points listed in the question hints",
-  ]);
+  const answerSubmitPath = `/app/interview/${q.id}/answer`;
 
   return (
     <div style={{
@@ -884,17 +815,17 @@ function QuestionCard({
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)" }}>
                 Community Answers
               </div>
-              <a href={answerIssueUrl} target="_blank" rel="noopener noreferrer" style={{
+              <Link to={answerSubmitPath} style={{
                 fontSize: 10, color: "#818cf8", textDecoration: "none", fontWeight: 600,
                 border: "1px solid #6366f144", borderRadius: 4, padding: "2px 8px",
               }}>
                 + Share yours
-              </a>
+              </Link>
             </div>
             {q.answerDocs && q.answerDocs.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {q.answerDocs.map((doc, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div key={doc.id ?? i} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <a href={doc.url} target="_blank" rel="noopener noreferrer"
                       style={{ fontSize: 12, color: "var(--text-bright)", textDecoration: "none", fontWeight: 500 }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = "#818cf8")}
@@ -902,7 +833,26 @@ function QuestionCard({
                     >
                       📄 {doc.label} ↗
                     </a>
-                    <span style={{ fontSize: 10, color: "var(--text-dim)" }}>by {doc.by} · {doc.addedOn.slice(0, 7)}</span>
+                    <span style={{ fontSize: 10, color: "var(--text-dim)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      by
+                      {doc.github ? (
+                        <a
+                          href={`https://github.com/${doc.github}`} target="_blank" rel="noopener noreferrer"
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", textDecoration: "none" }}
+                        >
+                          <img
+                            src={`https://github.com/${doc.github}.png?size=16`}
+                            alt={doc.by}
+                            style={{ width: 12, height: 12, borderRadius: "50%" }}
+                          />
+                          {doc.by}
+                        </a>
+                      ) : (
+                        <span>{doc.by}</span>
+                      )}
+                      <span>·</span>
+                      <span>{doc.addedOn.slice(0, 7)}</span>
+                    </span>
                   </div>
                 ))}
               </div>

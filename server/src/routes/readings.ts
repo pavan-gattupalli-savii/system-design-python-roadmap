@@ -1,8 +1,13 @@
 // ── Readings routes ────────────────────────────────────────────────────────────
 import { Router } from "express";
-import { sql, rawFragment } from "../db/client.js";
-import { adminAuth } from "../middleware/adminAuth.js";
-import { writeLimiter } from "../middleware/rateLimiter.js";
+import { db, cached } from "../db/client.js";
+import { readings, users, readingUpvotes } from "../db/schema.js";
+import { sql, eq, and, desc, asc, type SQL } from "drizzle-orm";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { writeLimiter, userWriteLimiter } from "../middleware/rateLimiter.js";
+import { sendCached } from "../middleware/cache.js";
+import { queryCache } from "../lib/cache.js";
+import { readingSubmitSchema } from "../lib/schemas.js";
 
 const router = Router();
 
@@ -15,70 +20,87 @@ router.get("/", async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const offset   = (pageNum - 1) * limitNum;
 
-    // Build ORDER BY from validated sort value — never interpolated from user input
-    const orderBy =
-      sort === "newest" ? "added_on DESC, id DESC" :
-      sort === "alpha"  ? "title ASC, id DESC"    :
-                          "upvotes DESC, id DESC";  // default: top
+    const cacheKey = `readings:${type ?? ""}:${difficulty ?? ""}:${topic ?? ""}:${sort}:${pageNum}:${limitNum}`;
 
-    // Use explicit ::text casts so Postgres can resolve parameter types
-    let rows = await sql`
-      SELECT * FROM readings
-      WHERE is_approved = true
-        AND (${type       ?? null}::text IS NULL OR type       = ${type       ?? ""}::text)
-        AND (${difficulty ?? null}::text IS NULL OR difficulty = ${difficulty ?? ""}::text)
-        AND (${topic      ?? null}::text IS NULL OR ${topic    ?? ""}::text = ANY(topics))
-      ORDER BY ${sql(rawFragment(orderBy))}
-      LIMIT ${limitNum}
-      OFFSET ${offset}
-    `;
+    const data = await cached(cacheKey, async () => {
+      // Build WHERE conditions dynamically — no null-cast workaround needed
+      const conditions: SQL[] = [eq(readings.isApproved, true)];
+      if (type)       conditions.push(eq(readings.type, type));
+      if (difficulty) conditions.push(eq(readings.difficulty, difficulty));
+      if (topic)      conditions.push(sql`${topic} = ANY(${readings.topics})`);
 
-    // Map snake_case DB columns → camelCase for frontend compatibility
-    const data = rows.map((r) => ({
-      id:         r.id,
-      type:       r.type,
-      title:      r.title,
-      url:        r.url,
-      addedBy:    r.added_by,
-      githubUser: r.github_user ?? undefined,
-      topics:     r.topics,
-      difficulty: r.difficulty ?? undefined,
-      upvotes:    r.upvotes,
-      addedOn:    r.added_on,
-      notes:      r.notes ?? undefined,
-    }));
+      // Type-safe ORDER BY — no raw string injection
+      const orderCols =
+        sort === "newest" ? [desc(readings.addedOn), desc(readings.id)] :
+        sort === "alpha"  ? [asc(readings.title),    desc(readings.id)] :
+                            [desc(readings.upvotes), desc(readings.id)]; // default: top
 
-    res.json({ data, page: pageNum, limit: limitNum });
+      const rows = await db
+        .select({
+          id:          readings.id,
+          type:        readings.type,
+          title:       readings.title,
+          url:         readings.url,
+          topics:      readings.topics,
+          difficulty:  readings.difficulty,
+          upvotes:     readings.upvotes,
+          addedOn:     readings.addedOn,
+          notes:       readings.notes,
+          displayName: users.displayName,
+          github:      users.github,
+          linkedin:    users.linkedin,
+        })
+        .from(readings)
+        .leftJoin(users, eq(readings.submittedBy, users.id))
+        .where(and(...conditions))
+        .orderBy(...orderCols)
+        .limit(limitNum)
+        .offset(offset);
+
+      return rows.map((r) => ({
+        id:         r.id,
+        type:       r.type,
+        title:      r.title,
+        url:        r.url,
+        addedBy:    r.displayName ?? "Maintainer",
+        githubUser: r.github ?? undefined,
+        linkedin:   r.linkedin ?? undefined,
+        topics:     r.topics,
+        difficulty: r.difficulty ?? undefined,
+        upvotes:    r.upvotes,
+        addedOn:    r.addedOn,
+        notes:      r.notes ?? undefined,
+      }));
+    });
+
+    sendCached(res, req, { data, page: pageNum, limit: limitNum });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch readings" });
   }
 });
 
-// POST /api/readings/submit — community submission (lands as is_approved=false)
-router.post("/submit", writeLimiter, async (req, res) => {
+// POST /api/readings/submit — auth-required community submission (lands as is_approved=false)
+router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, res) => {
+  const parsed = readingSubmitSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid submission" });
+    return;
+  }
+  const { type, title, url, topics, difficulty, notes } = parsed.data;
+
   try {
-    const { type, title, url, addedBy, githubUser, topics, difficulty, notes } = req.body as {
-      type: string; title: string; url: string; addedBy: string;
-      githubUser?: string; topics: string[]; difficulty?: string; notes?: string;
-    };
-
-    if (!type || !title || !url || !addedBy || !Array.isArray(topics)) {
-      res.status(400).json({ error: "Missing required fields: type, title, url, addedBy, topics" });
-      return;
-    }
-
-    // Sanitise URL — must be https
-    if (!url.startsWith("https://")) {
-      res.status(400).json({ error: "URL must start with https://" });
-      return;
-    }
-
-    await sql`
-      INSERT INTO readings (type, title, url, added_by, github_user, topics, difficulty, notes, upvotes, added_on, is_approved)
-      VALUES (${type}, ${title}, ${url}, ${addedBy}, ${githubUser ?? null}, ${topics}, ${difficulty ?? null}, ${notes ?? null}, 0, NOW()::DATE, false)
-    `;
-
+    await db.insert(readings).values({
+      type, title, url, topics,
+      difficulty: difficulty ?? null,
+      notes:      notes ?? null,
+      upvotes:    0,
+      addedOn:    new Date().toISOString().slice(0, 10),
+      isApproved: false,
+      submittedBy: req.user!.id,
+    });
+    queryCache.invalidate("readings:");
+    queryCache.invalidate("bootstrap:");
     res.status(201).json({ message: "Submission received — pending review" });
   } catch (err) {
     console.error(err);
@@ -86,35 +108,70 @@ router.post("/submit", writeLimiter, async (req, res) => {
   }
 });
 
-// POST /api/readings/:id/upvote — increment upvote count
-router.post("/:id/upvote", writeLimiter, async (req, res) => {
+// POST /api/readings/:id/upvote — toggle on (auth required)
+router.post("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-    const rows = await sql`
-      UPDATE readings SET upvotes = upvotes + 1
-      WHERE id = ${id} AND is_approved = true
-      RETURNING upvotes
-    ` as { upvotes: number }[];
+    await db.insert(readingUpvotes)
+      .values({ userId: req.user!.id, readingId: id })
+      .onConflictDoNothing();
 
-    if (!rows.length) { res.status(404).json({ error: "Not found" }); return; }
-    res.json({ upvotes: rows[0].upvotes });
+    const [updated] = await db
+      .update(readings)
+      .set({ upvotes: sql`${readings.upvotes} + 1` })
+      .where(and(eq(readings.id, id), eq(readings.isApproved, true)))
+      .returning({ upvotes: readings.upvotes });
+
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+    queryCache.invalidate("readings:");
+    queryCache.invalidate("bootstrap:");
+    res.json({ upvoted: true, upvotes: updated.upvotes });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to upvote" });
   }
 });
 
-// PATCH /api/readings/:id/approve — admin only
-router.patch("/:id/approve", adminAuth, async (req, res) => {
+// DELETE /api/readings/:id/upvote — toggle off
+router.delete("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const rows = await sql`
-      UPDATE readings SET is_approved = true WHERE id = ${id} RETURNING id
-    ` as { id: number }[];
-    if (!rows.length) { res.status(404).json({ error: "Not found" }); return; }
-    res.json({ approved: true, id });
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+    await db.delete(readingUpvotes)
+      .where(and(eq(readingUpvotes.userId, req.user!.id), eq(readingUpvotes.readingId, id)));
+
+    const [updated] = await db
+      .update(readings)
+      .set({ upvotes: sql`GREATEST(${readings.upvotes} - 1, 0)` })
+      .where(and(eq(readings.id, id), eq(readings.isApproved, true)))
+      .returning({ upvotes: readings.upvotes });
+
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+    queryCache.invalidate("readings:");
+    queryCache.invalidate("bootstrap:");
+    res.json({ upvoted: false, upvotes: updated.upvotes });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to remove upvote" });
+  }
+});
+
+// PATCH /api/readings/:id/approve — admin only
+router.patch("/:id/approve", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [updated] = await db
+      .update(readings)
+      .set({ isApproved: true })
+      .where(eq(readings.id, id))
+      .returning({ id: readings.id });
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+    queryCache.invalidate("readings:");
+    queryCache.invalidate("bootstrap:");
+    res.json({ approved: true, id: updated.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to approve" });
