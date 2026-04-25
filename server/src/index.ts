@@ -13,6 +13,10 @@ import roadmapRouter from "./routes/roadmap.js";
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3001");
 
+// Railway (and most PaaS) sit behind a reverse proxy that sets X-Forwarded-For.
+// Tell Express to trust 1 hop so rate-limiting & IP detection work correctly.
+app.set("trust proxy", 1);
+
 // ── Security headers ──────────────────────────────────────────────────────────
 app.use(helmet());
 

@@ -138,10 +138,21 @@ async function migrate() {
   console.log("  ✓ roadmap_resources");
 
   // ── Indexes ───────────────────────────────────────────────────────────────
-  await sql`CREATE INDEX IF NOT EXISTS idx_readings_approved  ON readings(is_approved)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_iq_approved        ON interview_questions(is_approved)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_exp_approved       ON experiences(is_approved)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_rphase_lang        ON roadmap_phases(language)`;
+  // Approved-only filters (most common WHERE clause)
+  await sql`CREATE INDEX IF NOT EXISTS idx_readings_approved     ON readings(is_approved)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_iq_approved           ON interview_questions(is_approved)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_exp_approved          ON experiences(is_approved)`;
+
+  // Roadmap join chain: language → phases → weeks → sessions → resources
+  await sql`CREATE INDEX IF NOT EXISTS idx_rphase_lang           ON roadmap_phases(language)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_rweeks_phase_id       ON roadmap_weeks(phase_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_rsessions_week_id     ON roadmap_sessions(week_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_rresources_session_id ON roadmap_resources(session_id)`;
+
+  // Sort order / ordering indexes
+  await sql`CREATE INDEX IF NOT EXISTS idx_readings_upvotes      ON readings(upvotes DESC) WHERE is_approved = true`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_exp_upvotes           ON experiences(upvotes DESC) WHERE is_approved = true`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_answer_docs_qid       ON answer_docs(question_id)`;
 
   console.log("✅ Migration complete");
 }
