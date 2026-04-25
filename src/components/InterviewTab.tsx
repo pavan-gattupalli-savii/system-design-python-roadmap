@@ -674,7 +674,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
       </div>
 
       {/* Question list */}
-      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "10px 10px" : "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "10px 10px" : "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
         {filtered.length === 0 ? (
           <div style={{ padding: 56, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
             No questions match your filters.
@@ -744,6 +744,7 @@ function QuestionCard({
       border: "1px solid " + (isPracticed ? "#4ade8044" : "var(--border-subtle)"),
       borderLeft: "3px solid " + (isPracticed ? "#4ade80" : ds.tx),
       borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s",
+      flexShrink: 0,
     }}>
       {/* Header */}
       <div onClick={() => toggleExpanded(q.id)} style={{
