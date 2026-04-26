@@ -98,6 +98,8 @@ export default function SubmitExperience() {
       title="Share an interview experience"
       subtitle="Link to a write-up, video, or post that walks through what you went through. Helpful posts highlight company, role, and what you’d do differently."
       isMobile={ctx.isMobile}
+      backLabel="Back to Interview"
+      backHref="/app/interview"
       footer={
         <FormFooter isMobile={ctx.isMobile}>
           <FormButton onClick={() => navigate("/app/interview")}>Cancel</FormButton>

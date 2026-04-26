@@ -127,10 +127,9 @@ export function useMyInteractions() {
       if (context?.prev) qc.setQueryData(QK, context.prev);
       if (context?.prevReadings) restoreQueries(qc, context.prevReadings);
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["readings"] });
-      qc.invalidateQueries({ queryKey: ["bootstrap"] });
-    },
+    // No list invalidation on settled — onSuccess already reconciles the exact
+    // count from the server response. Invalidating would trigger a refetch that
+    // hits the browser's HTTP cache (max-age=300s) and overwrite the correct count.
   });
 
   // ── Experience upvote toggle ──────────────────────────────────────────────
@@ -163,10 +162,7 @@ export function useMyInteractions() {
       if (context?.prev) qc.setQueryData(QK, context.prev);
       if (context?.prevExperiences) restoreQueries(qc, context.prevExperiences);
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["experiences"] });
-      qc.invalidateQueries({ queryKey: ["bootstrap"] });
-    },
+    // No list invalidation on settled — same reason as readings above.
   });
 
   // ── Practiced toggle ──────────────────────────────────────────────────────
