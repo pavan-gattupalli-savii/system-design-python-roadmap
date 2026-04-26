@@ -1,6 +1,6 @@
 // ── My Profile page ───────────────────────────────────────────────────────────
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { patchMe } from "../api/me";
@@ -39,11 +39,11 @@ const STAT_ICONS: Record<string, string> = {
   answers: "📝",
 };
 
-const statKeys: { key: "readings" | "interviews" | "experiences" | "answers"; label: string }[] = [
-  { key: "readings",    label: "Readings"    },
-  { key: "interviews",  label: "Questions"   },
-  { key: "experiences", label: "Experiences" },
-  { key: "answers",     label: "Answers"     },
+const statKeys: { key: "readings" | "interviews" | "experiences" | "answers"; label: string; href: string }[] = [
+  { key: "readings",    label: "Readings",    href: "/app/readings"  },
+  { key: "interviews",  label: "Questions",   href: "/app/interview" },
+  { key: "experiences", label: "Experiences", href: "/app/interview" },
+  { key: "answers",     label: "Answers",     href: "/app/interview" },
 ];
 
 export default function MyProfile() {
@@ -203,17 +203,27 @@ export default function MyProfile() {
             gridTemplateColumns: `repeat(${ctx.isMobile ? 2 : 4}, 1fr)`,
             borderTop: "1px solid var(--border-subtle)",
           }}>
-            {statKeys.map(({ key, label }, i) => {
+            {statKeys.map(({ key, label, href }, i) => {
               const pub  = profile?.published[key] ?? 0;
               const pend = profile?.pending[key]   ?? 0;
               const isLastRow = ctx.isMobile ? i >= 2 : false;
               const isOddRight = ctx.isMobile && i % 2 === 1;
               return (
-                <div key={key} style={{
-                  padding: "14px 16px",
-                  borderRight: !isOddRight && i < statKeys.length - 1 ? "1px solid var(--border-subtle)" : undefined,
-                  borderTop: isLastRow ? "1px solid var(--border-subtle)" : undefined,
-                }}>
+                <Link
+                  key={key}
+                  to={href}
+                  style={{
+                    display: "block",
+                    padding: "14px 16px",
+                    borderRight: !isOddRight && i < statKeys.length - 1 ? "1px solid var(--border-subtle)" : undefined,
+                    borderTop: isLastRow ? "1px solid var(--border-subtle)" : undefined,
+                    textDecoration: "none",
+                    cursor: "pointer",
+                    transition: "background 0.13s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
                   <div style={{ fontSize: 18, marginBottom: 4 }}>{STAT_ICONS[key]}</div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-heading)", lineHeight: 1 }}>
                     {pub}
@@ -229,7 +239,7 @@ export default function MyProfile() {
                       {pend} pending
                     </div>
                   )}
-                </div>
+                </Link>
               );
             })}
           </div>
