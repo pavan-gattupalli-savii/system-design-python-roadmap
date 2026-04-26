@@ -124,7 +124,7 @@ async function warmup(): Promise<void> {
             id: readings.id, type: readings.type, title: readings.title, url: readings.url,
             displayName: users.displayName, github: users.github,
             topics: readings.topics, difficulty: readings.difficulty,
-            upvotes: readings.upvotes, addedOn: readings.addedOn, notes: readings.notes,
+            upvotes: readings.upvotes, createdAt: readings.createdAt, notes: readings.notes,
           })
           .from(readings)
           .leftJoin(users, eq(readings.submittedBy, users.id))
@@ -135,7 +135,7 @@ async function warmup(): Promise<void> {
           id: r.id, type: r.type, title: r.title, url: r.url,
           addedBy: r.displayName ?? "Maintainer", githubUser: r.github ?? undefined,
           topics: r.topics, difficulty: r.difficulty ?? undefined,
-          upvotes: r.upvotes, addedOn: r.addedOn, notes: r.notes ?? undefined,
+          upvotes: r.upvotes, createdAt: r.createdAt, notes: r.notes ?? undefined,
         }));
       }),
 
@@ -153,13 +153,13 @@ async function warmup(): Promise<void> {
         const qIds = questions.map((q) => q.id);
         const answers = qIds.length
           ? await db
-              .select({ questionId: answerDocs.questionId, id: answerDocs.id, label: answerDocs.label, url: answerDocs.url, addedOn: answerDocs.addedOn, displayName: users.displayName, github: users.github })
+              .select({ questionId: answerDocs.questionId, id: answerDocs.id, label: answerDocs.label, url: answerDocs.url, createdAt: answerDocs.createdAt, displayName: users.displayName, github: users.github })
               .from(answerDocs)
               .leftJoin(users, eq(answerDocs.submittedBy, users.id))
               .where(eq(answerDocs.isApproved, true))
           : [];
 
-        const byQ = new Map<number, typeof answers>();
+        const byQ = new Map<string, typeof answers>();
         for (const a of answers) {
           if (!qIds.includes(a.questionId)) continue;
           const arr = byQ.get(a.questionId) ?? [];
@@ -170,8 +170,8 @@ async function warmup(): Promise<void> {
         return questions.map((q) => ({
           id: q.id, category: q.category, title: q.title, difficulty: q.difficulty,
           companies: q.companies, topics: q.topics, hints: q.hints,
-          followUps: q.followUps, addedOn: q.addedOn,
-          answerDocs: (byQ.get(q.id) ?? []).map((a) => ({ id: a.id, label: a.label, url: a.url, by: a.displayName ?? "Maintainer", github: a.github, addedOn: a.addedOn })),
+          followUps: q.followUps, createdAt: q.createdAt,
+          answerDocs: (byQ.get(q.id) ?? []).map((a) => ({ id: a.id, label: a.label, url: a.url, by: a.displayName ?? "Maintainer", github: a.github, createdAt: a.createdAt })),
         }));
       }),
 
@@ -181,7 +181,7 @@ async function warmup(): Promise<void> {
             id: experiences.id, title: experiences.title, url: experiences.url,
             platform: experiences.platform, company: experiences.company, role: experiences.role,
             outcome: experiences.outcome, topics: experiences.topics, notes: experiences.notes,
-            upvotes: experiences.upvotes, addedOn: experiences.addedOn,
+            upvotes: experiences.upvotes, createdAt: experiences.createdAt,
             displayName: users.displayName, github: users.github,
           })
           .from(experiences)
@@ -194,7 +194,7 @@ async function warmup(): Promise<void> {
           company: e.company, role: e.role, outcome: e.outcome ?? undefined,
           topics: e.topics, notes: e.notes ?? undefined, upvotes: e.upvotes,
           addedBy: e.displayName ?? "Maintainer", githubUser: e.github ?? undefined,
-          addedOn: e.addedOn,
+          createdAt: e.createdAt,
         }));
       }),
     ]);
