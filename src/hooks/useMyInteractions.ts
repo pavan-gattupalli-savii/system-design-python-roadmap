@@ -13,14 +13,14 @@ import { apiFetch } from "../api/client";
 import { useAuth } from "../lib/auth";
 
 interface UpvotesResponse {
-  readings:    number[];
-  experiences: number[];
+  readings:    string[];
+  experiences: string[];
 }
 
 export interface MyInteractions {
-  readingUpvotes: Set<number>;
-  expUpvotes:     Set<number>;
-  practiced:      Set<number>;
+  readingUpvotes: Set<string>;
+  expUpvotes:     Set<string>;
+  practiced:      Set<string>;
 }
 
 const QK = ["me", "interactions"] as const;
@@ -28,7 +28,7 @@ const QK = ["me", "interactions"] as const;
 async function fetchInteractions(): Promise<MyInteractions> {
   const [upvotes, practiced] = await Promise.all([
     apiFetch<UpvotesResponse>("/api/me/upvotes"),
-    apiFetch<number[]>("/api/me/practiced"),
+    apiFetch<string[]>("/api/me/practiced"),
   ]);
   return {
     readingUpvotes: new Set(upvotes.readings),
@@ -56,7 +56,7 @@ export function useMyInteractions() {
 
   function patchSet(
     field: "readingUpvotes" | "expUpvotes" | "practiced",
-    id:    number,
+    id:    string,
     add:   boolean,
   ) {
     qc.setQueryData<MyInteractions>(QK, (prev) => {
@@ -69,7 +69,7 @@ export function useMyInteractions() {
 
   // ── Reading upvote toggle ─────────────────────────────────────────────────
   const toggleReadingUpvote = useMutation({
-    mutationFn: async ({ id, on }: { id: number; on: boolean }) => {
+    mutationFn: async ({ id, on }: { id: string; on: boolean }) => {
       const data = await apiFetch<{ upvoted: boolean; upvotes: number }>(
         `/api/readings/${id}/upvote`,
         { method: on ? "POST" : "DELETE" },
@@ -93,7 +93,7 @@ export function useMyInteractions() {
 
   // ── Experience upvote toggle ──────────────────────────────────────────────
   const toggleExperienceUpvote = useMutation({
-    mutationFn: async ({ id, on }: { id: number; on: boolean }) => {
+    mutationFn: async ({ id, on }: { id: string; on: boolean }) => {
       const data = await apiFetch<{ upvoted: boolean; upvotes: number }>(
         `/api/experiences/${id}/upvote`,
         { method: on ? "POST" : "DELETE" },
@@ -117,7 +117,7 @@ export function useMyInteractions() {
 
   // ── Practiced toggle ──────────────────────────────────────────────────────
   const togglePracticed = useMutation({
-    mutationFn: async ({ id, on }: { id: number; on: boolean }) => {
+    mutationFn: async ({ id, on }: { id: string; on: boolean }) => {
       await apiFetch<{ ok: true }>("/api/me/practiced", {
         method: "POST",
         body:   JSON.stringify({ questionId: id, done: on }),

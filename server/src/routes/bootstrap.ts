@@ -30,7 +30,7 @@ router.get("/", async (req, res) => {
           .select({
             id: readings.id, type: readings.type, title: readings.title, url: readings.url,
             topics: readings.topics, difficulty: readings.difficulty,
-            upvotes: readings.upvotes, addedOn: readings.addedOn, notes: readings.notes,
+            upvotes: readings.upvotes, createdAt: readings.createdAt, notes: readings.notes,
             displayName: users.displayName, github: users.github, linkedin: users.linkedin,
           })
           .from(readings)
@@ -49,7 +49,7 @@ router.get("/", async (req, res) => {
           topics:     r.topics,
           difficulty: r.difficulty ?? undefined,
           upvotes:    r.upvotes,
-          addedOn:    r.addedOn,
+          createdAt:  r.createdAt,
           notes:      r.notes ?? undefined,
         }));
       }),
@@ -74,7 +74,6 @@ router.get("/", async (req, res) => {
                 id:          answerDocs.id,
                 label:       answerDocs.label,
                 url:         answerDocs.url,
-                addedOn:     answerDocs.addedOn,
                 createdAt:   answerDocs.createdAt,
                 displayName: users.displayName,
                 github:      users.github,
@@ -84,7 +83,7 @@ router.get("/", async (req, res) => {
               .where(eq(answerDocs.isApproved, true))
           : [];
 
-        const answersByQ = new Map<number, typeof answers>();
+        const answersByQ = new Map<string, typeof answers>();
         for (const a of answers) {
           if (!qIds.includes(a.questionId)) continue;
           const arr = answersByQ.get(a.questionId) ?? [];
@@ -101,14 +100,14 @@ router.get("/", async (req, res) => {
           topics:     q.topics,
           hints:      q.hints,
           followUps:  q.followUps,
-          addedOn:    q.addedOn,
+          createdAt:  q.createdAt,
           answerDocs: (answersByQ.get(q.id) ?? []).map((a) => ({
             id:      a.id,
             label:   a.label,
             url:     a.url,
             by:      a.displayName ?? "Maintainer",
             github:  a.github,
-            addedOn: a.addedOn,
+            createdAt: a.createdAt,
           })),
         }));
       }),
@@ -119,7 +118,7 @@ router.get("/", async (req, res) => {
             id: experiences.id, title: experiences.title, url: experiences.url,
             platform: experiences.platform, company: experiences.company, role: experiences.role,
             outcome: experiences.outcome, topics: experiences.topics, notes: experiences.notes,
-            upvotes: experiences.upvotes, addedOn: experiences.addedOn,
+            upvotes: experiences.upvotes, createdAt: experiences.createdAt,
             displayName: users.displayName, github: users.github, linkedin: users.linkedin,
           })
           .from(experiences)
@@ -141,7 +140,7 @@ router.get("/", async (req, res) => {
           addedBy:    e.displayName ?? "Maintainer",
           githubUser: e.github ?? undefined,
           linkedin:   e.linkedin ?? undefined,
-          addedOn:    e.addedOn,
+          createdAt:  e.createdAt,
         }));
       }),
     ]);

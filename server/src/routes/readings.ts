@@ -15,7 +15,7 @@ const router = Router();
 // Query params: type, difficulty, topic, sort (top|newest|alpha), page, limit
 router.get("/", async (req, res) => {
   try {
-    const { type, difficulty, topic, sort = "top", page = "1", limit = "50" } = req.query as Record<string, string>;
+    const { type, difficulty, topic, sort = "newest", page = "1", limit = "50" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const offset   = (pageNum - 1) * limitNum;
@@ -31,9 +31,9 @@ router.get("/", async (req, res) => {
 
       // Type-safe ORDER BY — no raw string injection
       const orderCols =
-        sort === "newest" ? [desc(readings.addedOn), desc(readings.id)] :
-        sort === "alpha"  ? [asc(readings.title),    desc(readings.id)] :
-                            [desc(readings.upvotes), desc(readings.id)]; // default: top
+        sort === "newest" ? [desc(readings.createdAt), desc(readings.id)] :
+        sort === "alpha"  ? [asc(readings.title),     desc(readings.id)] :
+                            [desc(readings.upvotes),  desc(readings.id)]; // default: top
 
       const rows = await db
         .select({
@@ -44,7 +44,7 @@ router.get("/", async (req, res) => {
           topics:      readings.topics,
           difficulty:  readings.difficulty,
           upvotes:     readings.upvotes,
-          addedOn:     readings.addedOn,
+          createdAt:   readings.createdAt,
           notes:       readings.notes,
           displayName: users.displayName,
           github:      users.github,
@@ -68,7 +68,7 @@ router.get("/", async (req, res) => {
         topics:     r.topics,
         difficulty: r.difficulty ?? undefined,
         upvotes:    r.upvotes,
-        addedOn:    r.addedOn,
+        createdAt:  r.createdAt,
         notes:      r.notes ?? undefined,
       }));
     });
@@ -95,7 +95,6 @@ router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, 
       difficulty: difficulty ?? null,
       notes:      notes ?? null,
       upvotes:    0,
-      addedOn:    new Date().toISOString().slice(0, 10),
       isApproved: false,
       submittedBy: req.user!.id,
     });
@@ -111,8 +110,8 @@ router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, 
 // POST /api/readings/:id/upvote — toggle on (auth required)
 router.post("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+    const id = req.params.id;
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
 
     await db.insert(readingUpvotes)
       .values({ userId: req.user!.id, readingId: id })
@@ -137,8 +136,8 @@ router.post("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
 // DELETE /api/readings/:id/upvote — toggle off
 router.delete("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+    const id = req.params.id;
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
 
     await db.delete(readingUpvotes)
       .where(and(eq(readingUpvotes.userId, req.user!.id), eq(readingUpvotes.readingId, id)));
@@ -162,7 +161,7 @@ router.delete("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
 // PATCH /api/readings/:id/approve — admin only
 router.patch("/:id/approve", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     const [updated] = await db
       .update(readings)
       .set({ isApproved: true })

@@ -67,7 +67,7 @@ export const progressUpdateSchema = z.object({
 });
 
 export const practiceToggleSchema = z.object({
-  questionId: z.number().int().positive(),
+  questionId: z.string().uuid(),
   done:       z.boolean(),
 });
 

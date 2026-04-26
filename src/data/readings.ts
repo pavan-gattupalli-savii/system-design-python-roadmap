@@ -9,7 +9,7 @@
 // voting any more.
 
 export interface Reading {
-  id:          number;
+  id:          string;
   type:        string;
   title:       string;
   url:         string;
@@ -19,7 +19,7 @@ export interface Reading {
   topics:      string[];
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
   upvotes:     number;
-  addedOn:     string;
+  createdAt:   string;
   notes?:      string;
 }
 
@@ -33,7 +33,7 @@ export const POST_TYPES = [
 ] as const;
 
 // ── Readings data ─────────────────────────────────────────────────────────────
-export const READINGS: Reading[] = [
+export const READINGS = [
   {
     id: 1,
     type: "Blog",
@@ -122,4 +122,4 @@ export const READINGS: Reading[] = [
     upvotes: 8,
     addedOn: "2025-04-18",
   },
-];
+] as unknown as Reading[];

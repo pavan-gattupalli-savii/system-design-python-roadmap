@@ -19,7 +19,7 @@
 //   addedOn     — ISO date YYYY-MM-DD
 
 export interface InterviewQ {
-  id:          number;
+  id:          string;
   category:    string;
   title:       string;
   difficulty:  "Easy" | "Medium" | "Hard";
@@ -27,9 +27,9 @@ export interface InterviewQ {
   topics:      string[];
   hints:       string[];
   followUps?:  string[];
-  addedOn:     string;
+  createdAt:   string;
   /** Community-contributed answer documents (Google Docs, Gist links, etc.) */
-  answerDocs?: { id?: number; label: string; url: string; by: string; github?: string | null; addedOn: string }[];
+  answerDocs?: { id?: string; label: string; url: string; by: string; github?: string | null; createdAt: string }[];
 }
 
 export const CATEGORIES = [
@@ -48,7 +48,7 @@ export const COMPANIES = [
 ] as const;
 
 // ── Interview questions ───────────────────────────────────────────────────────
-export const INTERVIEWS: InterviewQ[] = [
+export const INTERVIEWS = [
   {
     id: 1,
     category: "System Design",
@@ -311,7 +311,7 @@ export const INTERVIEWS: InterviewQ[] = [
     ],
     addedOn: "2026-04-25",
   },
-];
+] as unknown as InterviewQ[];
 
 // ── Interview Experiences ─────────────────────────────────────────────────────
 // Real interview experience posts shared on LinkedIn, YouTube, blogs etc.
@@ -335,7 +335,7 @@ export const EXP_PLATFORMS: ExpPlatform[] = [
 export const EXP_OUTCOMES: ExpOutcome[] = ["Offer", "Rejected", "Ongoing", "Unknown"];
 
 export interface InterviewExp {
-  id:          number;
+  id:          string;
   platform:    ExpPlatform;
   company:     string;
   role:        string;
@@ -347,11 +347,11 @@ export interface InterviewExp {
   topics:      string[];
   outcome?:    ExpOutcome;
   upvotes:     number;
-  addedOn:     string;
+  createdAt:   string;
   notes?:      string;
 }
 
-export const EXPERIENCES: InterviewExp[] = [
+export const EXPERIENCES = [
   {
     id: 1,
     platform: "LinkedIn",
@@ -422,4 +422,4 @@ export const EXPERIENCES: InterviewExp[] = [
     addedOn: "2026-03-28",
     notes: "Focus on idempotency and distributed transactions. Stripe goes very deep on correctness.",
   },
-];
+] as unknown as InterviewExp[];

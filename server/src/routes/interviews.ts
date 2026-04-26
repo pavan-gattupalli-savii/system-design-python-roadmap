@@ -15,7 +15,7 @@ const router = Router();
 // GET /api/interviews
 router.get("/", async (req, res) => {
   try {
-    const { category, difficulty, company, sort = "difficulty", page = "1", limit = "50" } = req.query as Record<string, string>;
+    const { category, difficulty, company, sort = "newest", page = "1", limit = "50" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const offset   = (pageNum - 1) * limitNum;
@@ -29,8 +29,8 @@ router.get("/", async (req, res) => {
       if (company)    conditions.push(sql`${company} = ANY(${interviewQuestions.companies})`);
 
       const orderCols =
-        sort === "newest" ? [desc(interviewQuestions.addedOn), desc(interviewQuestions.id)] :
-        sort === "alpha"  ? [asc(interviewQuestions.title),    desc(interviewQuestions.id)] :
+        sort === "newest" ? [desc(interviewQuestions.createdAt), desc(interviewQuestions.id)] :
+        sort === "alpha"  ? [asc(interviewQuestions.title),      desc(interviewQuestions.id)] :
         [asc(sql`CASE ${interviewQuestions.difficulty} WHEN 'Easy' THEN 1 WHEN 'Medium' THEN 2 WHEN 'Hard' THEN 3 ELSE 4 END`), desc(interviewQuestions.id)];
 
       const questions = await db
@@ -49,7 +49,7 @@ router.get("/", async (req, res) => {
               id:          answerDocs.id,
               label:       answerDocs.label,
               url:         answerDocs.url,
-              addedOn:     answerDocs.addedOn,
+              createdAt:   answerDocs.createdAt,
               displayName: users.displayName,
               github:      users.github,
             })
@@ -58,7 +58,7 @@ router.get("/", async (req, res) => {
             .where(eq(answerDocs.isApproved, true))
         : [];
 
-      const answersByQ = new Map<number, typeof answers>();
+      const answersByQ = new Map<string, typeof answers>();
       for (const a of answers) {
         if (!qIds.includes(a.questionId)) continue;
         const arr = answersByQ.get(a.questionId) ?? [];
@@ -75,14 +75,14 @@ router.get("/", async (req, res) => {
         topics:     q.topics,
         hints:      q.hints,
         followUps:  q.followUps,
-        addedOn:    q.addedOn,
+        createdAt:  q.createdAt,
         answerDocs: (answersByQ.get(q.id) ?? []).map((a) => ({
           id:      a.id,
           label:   a.label,
           url:     a.url,
           by:      a.displayName ?? "Maintainer",
           github:  a.github,
-          addedOn: a.addedOn,
+          createdAt: a.createdAt,
         })),
       }));
     });
@@ -107,7 +107,6 @@ router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, 
     await db.insert(interviewQuestions).values({
       category, title, difficulty, companies, topics, hints,
       followUps,
-      addedOn:    new Date().toISOString().slice(0, 10),
       isApproved: false,
       submittedBy: req.user!.id,
     });
@@ -122,8 +121,8 @@ router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, 
 
 // POST /api/interviews/:id/answers — submit a community answer doc (auth required)
 router.post("/:id/answers", requireAuth, writeLimiter, userWriteLimiter, async (req, res) => {
-  const questionId = parseInt(req.params.id);
-  if (isNaN(questionId)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const questionId = req.params.id;
+  if (!questionId) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const parsed = answerDocSubmitSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -135,7 +134,6 @@ router.post("/:id/answers", requireAuth, writeLimiter, userWriteLimiter, async (
   try {
     await db.insert(answerDocs).values({
       questionId, label, url,
-      addedOn:    new Date().toISOString().slice(0, 10),
       isApproved: false,
       submittedBy: req.user!.id,
     });
@@ -151,7 +149,7 @@ router.post("/:id/answers", requireAuth, writeLimiter, userWriteLimiter, async (
 // PATCH /api/interviews/:id/approve — admin
 router.patch("/:id/approve", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     const [updated] = await db
       .update(interviewQuestions)
       .set({ isApproved: true })

@@ -130,7 +130,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const [activePlat,    setActivePlat]    = useState<ExpPlatform | "">("");
   const [activeComp,    setActiveComp]    = useState("");
   const [activeOutcome, setActiveOutcome] = useState<ExpOutcome | "">("");
-  const [sort,          setSort]          = useState<ExpSort>("top");
+  const [sort,          setSort]          = useState<ExpSort>("newest");
   const [page,          setPage]          = useState(1);
 
   const navigate = useNavigate();
@@ -147,7 +147,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const expError = expErr instanceof Error ? expErr.message : null;
   const allExperiences = expResp?.data ?? [];
 
-  const toggleVote = useCallback((id: number) => {
+  const toggleVote = useCallback((id: string) => {
     if (!user) {
       navigate("/sign-in?next=/app/interview");
       return;
@@ -178,7 +178,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
       );
     });
     if (sort === "top")    res = [...res].sort((a, b) => b.upvotes - a.upvotes);
-    if (sort === "newest") res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
+    if (sort === "newest") res = [...res].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     if (sort === "alpha")  res = [...res].sort((a, b) => a.title.localeCompare(b.title));
     return res;
   }, [search, activePlat, activeComp, activeOutcome, sort, allExperiences]);
@@ -402,8 +402,8 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
 
 // ── Experience card ───────────────────────────────────────────────────────────
 function ExperienceCard({ e, myVotes, toggleVote, isMobile }: {
-  e: InterviewExp; myVotes: Set<number>;
-  toggleVote: (id: number) => void; isMobile: boolean;
+  e: InterviewExp; myVotes: Set<string>;
+  toggleVote: (id: string) => void; isMobile: boolean;
 }) {
   const voted = myVotes.has(e.id);
   const os    = e.outcome ? OUTCOME_STYLE[e.outcome] : null;
@@ -461,7 +461,7 @@ function ExperienceCard({ e, myVotes, toggleVote, isMobile }: {
             </span>
           )}
           <span style={{ fontSize: 10, color: "var(--text-dim)", marginLeft: "auto" }}>
-            {e.addedOn.slice(0, 7)}
+            {(e.createdAt ?? "").slice(0, 7)}
           </span>
         </div>
 
@@ -511,8 +511,8 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   const [activecat,     setActiveCat]     = useState("");
   const [activeDiff,    setActiveDiff]    = useState("");
   const [activeCompany, setActiveCompany] = useState("");
-  const [sort,          setSort]          = useState<QASort>("difficulty");
-  const [expanded,      setExpanded]      = useState<Set<number>>(new Set());
+  const [sort,          setSort]          = useState<QASort>("newest");
+  const [expanded,      setExpanded]      = useState<Set<string>>(new Set());
   const [page,          setPage]          = useState(1);
 
   const navigate = useNavigate();
@@ -529,7 +529,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   const qaError = qaErr instanceof Error ? qaErr.message : null;
   const allInterviews = qaResp?.data ?? [];
 
-  const togglePracticed = useCallback((id: number) => {
+  const togglePracticed = useCallback((id: string) => {
     if (!user) {
       navigate("/sign-in?next=/app/interview");
       return;
@@ -538,7 +538,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
     togglePracticedMutation.mutate({ id, on: isOn });
   }, [user, practiced, togglePracticedMutation, navigate]);
 
-  const toggleExpanded = useCallback((id: number) => {
+  const toggleExpanded = useCallback((id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -564,7 +564,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
       );
     });
     if (sort === "difficulty") res = [...res].sort((a, b) => DIFF_ORDER[a.difficulty] - DIFF_ORDER[b.difficulty]);
-    if (sort === "newest")     res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
+    if (sort === "newest")     res = [...res].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     if (sort === "alpha")      res = [...res].sort((a, b) => a.title.localeCompare(b.title));
     return res;
   }, [search, activecat, activeDiff, activeCompany, sort, allInterviews]);
@@ -800,7 +800,7 @@ function QuestionCard({
   q, isPracticed, isExpanded, togglePracticed, toggleExpanded, isMobile,
 }: {
   q: InterviewQ; isPracticed: boolean; isExpanded: boolean;
-  togglePracticed: (id: number) => void; toggleExpanded: (id: number) => void; isMobile: boolean;
+  togglePracticed: (id: string) => void; toggleExpanded: (id: string) => void; isMobile: boolean;
 }) {
   const ds = DIFF_COLOR[q.difficulty];
   const answerSubmitPath = `/app/interview/${q.id}/answer`;
@@ -965,7 +965,7 @@ function QuestionCard({
                         <span>{doc.by}</span>
                       )}
                       <span>·</span>
-                      <span>{doc.addedOn.slice(0, 7)}</span>
+                      <span>{(doc.createdAt ?? "").slice(0, 7)}</span>
                     </span>
                   </div>
                 ))}

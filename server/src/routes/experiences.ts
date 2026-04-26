@@ -14,7 +14,7 @@ const router = Router();
 // GET /api/experiences
 router.get("/", async (req, res) => {
   try {
-    const { platform, company, outcome, sort = "top", page = "1", limit = "50" } = req.query as Record<string, string>;
+    const { platform, company, outcome, sort = "newest", page = "1", limit = "50" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const offset   = (pageNum - 1) * limitNum;
@@ -28,9 +28,9 @@ router.get("/", async (req, res) => {
       if (outcome)  conditions.push(eq(experiences.outcome, outcome));
 
       const orderCols =
-        sort === "newest" ? [desc(experiences.addedOn), desc(experiences.id)] :
-        sort === "alpha"  ? [asc(experiences.title),    desc(experiences.id)] :
-                            [desc(experiences.upvotes), desc(experiences.id)];
+        sort === "newest" ? [desc(experiences.createdAt), desc(experiences.id)] :
+        sort === "alpha"  ? [asc(experiences.title),      desc(experiences.id)] :
+                            [desc(experiences.upvotes),   desc(experiences.id)];
 
       const rows = await db
         .select({
@@ -44,7 +44,7 @@ router.get("/", async (req, res) => {
           topics:      experiences.topics,
           notes:       experiences.notes,
           upvotes:     experiences.upvotes,
-          addedOn:     experiences.addedOn,
+          createdAt:   experiences.createdAt,
           displayName: users.displayName,
           github:      users.github,
           linkedin:    users.linkedin,
@@ -70,7 +70,7 @@ router.get("/", async (req, res) => {
         addedBy:    e.displayName ?? "Maintainer",
         githubUser: e.github ?? undefined,
         linkedin:   e.linkedin ?? undefined,
-        addedOn:    e.addedOn,
+        createdAt:  e.createdAt,
       }));
     });
 
@@ -97,7 +97,6 @@ router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, 
       topics,
       notes:      notes ?? null,
       upvotes:    0,
-      addedOn:    new Date().toISOString().slice(0, 10),
       isApproved: false,
       submittedBy: req.user!.id,
     });
@@ -113,8 +112,8 @@ router.post("/submit", requireAuth, writeLimiter, userWriteLimiter, async (req, 
 // POST /api/experiences/:id/upvote — toggle on (auth required)
 router.post("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+    const id = req.params.id;
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
 
     await db.insert(experienceUpvotes)
       .values({ userId: req.user!.id, experienceId: id })
@@ -139,8 +138,8 @@ router.post("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
 // DELETE /api/experiences/:id/upvote — toggle off
 router.delete("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+    const id = req.params.id;
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
 
     await db.delete(experienceUpvotes)
       .where(and(eq(experienceUpvotes.userId, req.user!.id), eq(experienceUpvotes.experienceId, id)));
@@ -164,7 +163,7 @@ router.delete("/:id/upvote", requireAuth, writeLimiter, async (req, res) => {
 // PATCH /api/experiences/:id/approve — admin
 router.patch("/:id/approve", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     const [updated] = await db
       .update(experiences)
       .set({ isApproved: true })

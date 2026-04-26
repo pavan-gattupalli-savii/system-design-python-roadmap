@@ -42,7 +42,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set());
   const [activeDiff,  setActiveDiff]  = useState("");
   const [activeTopic, setActiveTopic] = useState("");
-  const [sort,        setSort]        = useState<SortKey>("top");
+  const [sort,        setSort]        = useState<SortKey>("newest");
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -60,7 +60,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
 
   const topics = useMemo(() => allTopics(allReadings), [allReadings]);
 
-  const toggleVote = useCallback((id: number) => {
+  const toggleVote = useCallback((id: string) => {
     if (!user) {
       navigate("/sign-in?next=/app/readings");
       return;
@@ -95,7 +95,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
     });
     if (sort === "top")   res = [...res].sort((a, b) => b.upvotes - a.upvotes);
     if (sort === "alpha") res = [...res].sort((a, b) => a.title.localeCompare(b.title));
-    if (sort === "newest")res = [...res].sort((a, b) => b.addedOn.localeCompare(a.addedOn));
+    if (sort === "newest")res = [...res].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return res;
   }, [search, activeTypes, activeDiff, activeTopic, sort, allReadings]);
 
@@ -388,7 +388,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
 
 // ── Desktop table row ──────────────────────────────────────────────────────────
 function TableRow({ r, idx, myVotes, toggleVote }: {
-  r: Reading; idx: number; myVotes: Set<number>; toggleVote: (id: number) => void;
+  r: Reading; idx: number; myVotes: Set<string>; toggleVote: (id: string) => void;
 }) {
   const voted  = myVotes.has(r.id);
   const ds     = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
@@ -513,7 +513,7 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
         color: "var(--text-muted)", whiteSpace: "nowrap", fontSize: 11,
         borderRight: "1px solid var(--border-subtle)", borderRadius: "0 8px 8px 0",
       }}>
-        {r.addedOn.slice(0, 7)}
+        {(r.createdAt ?? "").slice(0, 7)}
       </td>
     </tr>
   );
@@ -521,7 +521,7 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
 
 // ── Mobile card ────────────────────────────────────────────────────────────────
 function ReadingCard({ r, myVotes, toggleVote }: {
-  r: Reading; myVotes: Set<number>; toggleVote: (id: number) => void;
+  r: Reading; myVotes: Set<string>; toggleVote: (id: string) => void;
 }) {
   const voted = myVotes.has(r.id);
   const ds    = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
@@ -570,7 +570,7 @@ function ReadingCard({ r, myVotes, toggleVote }: {
             </span>
           )}
           <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: "auto" }}>
-            {r.addedOn.slice(0, 7)}
+            {(r.createdAt ?? "").slice(0, 7)}
           </span>
         </div>
 

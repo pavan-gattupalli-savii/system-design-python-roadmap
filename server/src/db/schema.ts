@@ -4,9 +4,10 @@
 // (passed as the first argument to each column helper).
 
 import {
-  pgTable, serial, text, integer, boolean, date, timestamp, uuid,
+  pgTable, serial, text, integer, boolean, timestamp, uuid,
   primaryKey, customType,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // citext — case-insensitive text (requires the citext Postgres extension)
 const citext = customType<{ data: string; driverData: string }>({
@@ -15,16 +16,13 @@ const citext = customType<{ data: string; driverData: string }>({
 
 // ── Community: Readings ──────────────────────────────────────────────────────
 export const readings = pgTable("readings", {
-  id:          serial("id").primaryKey(),
+  id:          uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   type:        text("type").notNull(),
   title:       text("title").notNull(),
   url:         text("url").notNull(),
-  addedBy:     text("added_by"),
-  githubUser:  text("github_user"),
   topics:      text("topics").array().notNull().default([]),
   difficulty:  text("difficulty"),
   upvotes:     integer("upvotes").notNull().default(0),
-  addedOn:     date("added_on").notNull(),
   notes:       text("notes"),
   isApproved:  boolean("is_approved").notNull().default(true),
   createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -33,7 +31,7 @@ export const readings = pgTable("readings", {
 
 // ── Community: Interview questions ───────────────────────────────────────────
 export const interviewQuestions = pgTable("interview_questions", {
-  id:          serial("id").primaryKey(),
+  id:          uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   category:    text("category").notNull(),
   title:       text("title").notNull(),
   difficulty:  text("difficulty").notNull(),
@@ -41,7 +39,6 @@ export const interviewQuestions = pgTable("interview_questions", {
   topics:      text("topics").array().notNull().default([]),
   hints:       text("hints").array().notNull().default([]),
   followUps:   text("follow_ups").array().notNull().default([]),
-  addedOn:     date("added_on").notNull(),
   isApproved:  boolean("is_approved").notNull().default(true),
   createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   submittedBy: uuid("submitted_by"),
@@ -49,12 +46,10 @@ export const interviewQuestions = pgTable("interview_questions", {
 
 // ── Community: Answer docs (linked to interview questions) ───────────────────
 export const answerDocs = pgTable("answer_docs", {
-  id:          serial("id").primaryKey(),
-  questionId:  integer("question_id").notNull(),
+  id:          uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
+  questionId:  uuid("question_id").notNull(),
   label:       text("label").notNull(),
   url:         text("url").notNull(),
-  by:          text("by"),
-  addedOn:     date("added_on").notNull(),
   isApproved:  boolean("is_approved").notNull().default(true),
   createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   submittedBy: uuid("submitted_by"),
@@ -62,7 +57,7 @@ export const answerDocs = pgTable("answer_docs", {
 
 // ── Community: Interview experiences ────────────────────────────────────────
 export const experiences = pgTable("experiences", {
-  id:          serial("id").primaryKey(),
+  id:          uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
   title:       text("title").notNull(),
   url:         text("url").notNull(),
   platform:    text("platform").notNull(),
@@ -72,9 +67,6 @@ export const experiences = pgTable("experiences", {
   topics:      text("topics").array().notNull().default([]),
   notes:       text("notes"),
   upvotes:     integer("upvotes").notNull().default(0),
-  addedBy:     text("added_by"),
-  githubUser:  text("github_user"),
-  addedOn:     date("added_on").notNull(),
   isApproved:  boolean("is_approved").notNull().default(true),
   createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   submittedBy: uuid("submitted_by"),
@@ -161,7 +153,7 @@ export const readingUpvotes = pgTable(
   "reading_upvotes",
   {
     userId:    uuid("user_id").notNull(),
-    readingId: integer("reading_id").notNull(),
+    readingId: uuid("reading_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.readingId] })],
@@ -172,7 +164,7 @@ export const experienceUpvotes = pgTable(
   "experience_upvotes",
   {
     userId:       uuid("user_id").notNull(),
-    experienceId: integer("experience_id").notNull(),
+    experienceId: uuid("experience_id").notNull(),
     createdAt:    timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.experienceId] })],
@@ -183,7 +175,7 @@ export const userPracticedQuestions = pgTable(
   "user_practiced_questions",
   {
     userId:      uuid("user_id").notNull(),
-    questionId:  integer("question_id").notNull(),
+    questionId:  uuid("question_id").notNull(),
     practicedAt: timestamp("practiced_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.questionId] })],

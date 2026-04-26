@@ -22,7 +22,7 @@ export function buildReadingsUrl(params: {
   return `/api/readings${q.size ? "?" + q.toString() : ""}`;
 }
 
-export async function upvoteReading(id: number): Promise<{ upvotes: number }> {
+export async function upvoteReading(id: string): Promise<{ upvotes: number }> {
   return apiFetch(`/api/readings/${id}/upvote`, { method: "POST" });
 }
 

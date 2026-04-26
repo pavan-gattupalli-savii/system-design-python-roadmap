@@ -74,12 +74,12 @@ router.get("/pending", async (_req, res) => {
 router.patch("/:kind/:id/approve", async (req, res) => {
   const parsed = adminKindSchema.safeParse(req.params.kind);
   if (!parsed.success) { res.status(400).json({ error: "Invalid kind" }); return; }
-  const id = parseInt(req.params.id);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const id = req.params.id;
+  if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
 
   try {
     const kind = parsed.data;
-    let row: { id: number } | undefined;
+    let row: { id: string } | undefined;
     if (kind === "readings") {
       [row] = await db.update(readings).set({ isApproved: true }).where(eq(readings.id, id)).returning({ id: readings.id });
     } else if (kind === "interviews") {
@@ -103,12 +103,12 @@ router.patch("/:kind/:id/approve", async (req, res) => {
 router.delete("/:kind/:id", async (req, res) => {
   const parsed = adminKindSchema.safeParse(req.params.kind);
   if (!parsed.success) { res.status(400).json({ error: "Invalid kind" }); return; }
-  const id = parseInt(req.params.id);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const id = req.params.id;
+  if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
 
   try {
     const kind = parsed.data;
-    let row: { id: number } | undefined;
+    let row: { id: string } | undefined;
     if (kind === "readings") {
       [row] = await db.delete(readings).where(eq(readings.id, id)).returning({ id: readings.id });
     } else if (kind === "interviews") {

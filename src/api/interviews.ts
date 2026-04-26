@@ -33,11 +33,11 @@ export function buildExperiencesUrl(params: {
   return `/api/experiences${q.size ? "?" + q.toString() : ""}`;
 }
 
-export async function upvoteExperience(id: number): Promise<{ upvotes: number }> {
+export async function upvoteExperience(id: string): Promise<{ upvotes: number }> {
   return apiFetch(`/api/experiences/${id}/upvote`, { method: "POST" });
 }
 
-export async function submitAnswerDoc(questionId: number, payload: {
+export async function submitAnswerDoc(questionId: string, payload: {
   label: string; url: string; by: string;
 }): Promise<{ message: string }> {
   return apiFetch(`/api/interviews/${questionId}/answers`, { method: "POST", body: JSON.stringify(payload) });
