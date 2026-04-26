@@ -6,7 +6,7 @@
 //
 // Backed by two tiny GETs (`/api/me/upvotes`, `/api/me/practiced`) merged into
 // one React Query entry so callers re-render once. Mutation helpers do an
-// optimistic toggle + roll back on failure.
+// optimistic toggle (including the displayed count) + roll back on failure.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../api/client";
@@ -25,6 +25,10 @@ export interface MyInteractions {
 
 const QK = ["me", "interactions"] as const;
 
+// Minimal shapes for optimistic cache patching — avoids importing full types
+type WithUpvotes = { id: string; upvotes: number; [k: string]: unknown };
+type PagedList   = { data: WithUpvotes[]; page: number; limit: number };
+
 async function fetchInteractions(): Promise<MyInteractions> {
   const [upvotes, practiced] = await Promise.all([
     apiFetch<UpvotesResponse>("/api/me/upvotes"),
@@ -42,6 +46,32 @@ const EMPTY: MyInteractions = {
   expUpvotes:     new Set(),
   practiced:      new Set(),
 };
+
+/** Patch a single item's upvote count in every matching paged-list query. */
+function patchCount(
+  qc: ReturnType<typeof useQueryClient>,
+  queryKey: unknown[],
+  id: string,
+  newCount: number,
+) {
+  qc.setQueriesData<PagedList>({ queryKey }, (old) => {
+    if (!old) return old;
+    return { ...old, data: old.data.map((r) => r.id === id ? { ...r, upvotes: newCount } : r) };
+  });
+}
+
+/** Snapshot every paged-list entry so we can roll back on error. */
+function snapshotQueries(qc: ReturnType<typeof useQueryClient>, queryKey: unknown[]) {
+  return qc.getQueriesData<PagedList>({ queryKey });
+}
+
+/** Restore snapshotted paged-list entries. */
+function restoreQueries(
+  qc: ReturnType<typeof useQueryClient>,
+  snapshots: [readonly unknown[], PagedList | undefined][],
+) {
+  snapshots.forEach(([key, data]) => { if (data !== undefined) qc.setQueryData(key as unknown[], data); });
+}
 
 export function useMyInteractions() {
   const { user } = useAuth();
@@ -78,12 +108,24 @@ export function useMyInteractions() {
     },
     onMutate: async ({ id, on }) => {
       await qc.cancelQueries({ queryKey: QK });
-      const prev = qc.getQueryData<MyInteractions>(QK);
+      await qc.cancelQueries({ queryKey: ["readings"] });
+      const prev         = qc.getQueryData<MyInteractions>(QK);
+      const prevReadings = snapshotQueries(qc, ["readings"]);
       patchSet("readingUpvotes", id, on);
-      return { prev };
+      // Optimistically adjust the displayed count by ±1
+      qc.setQueriesData<PagedList>({ queryKey: ["readings"] }, (old) => {
+        if (!old) return old;
+        return { ...old, data: old.data.map((r) => r.id === id ? { ...r, upvotes: r.upvotes + (on ? 1 : -1) } : r) };
+      });
+      return { prev, prevReadings };
+    },
+    onSuccess: (data, { id }) => {
+      // Reconcile with the exact count the server returned
+      patchCount(qc, ["readings"], id, data.upvotes);
     },
     onError: (_err, _vars, context) => {
       if (context?.prev) qc.setQueryData(QK, context.prev);
+      if (context?.prevReadings) restoreQueries(qc, context.prevReadings);
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["readings"] });
@@ -102,12 +144,24 @@ export function useMyInteractions() {
     },
     onMutate: async ({ id, on }) => {
       await qc.cancelQueries({ queryKey: QK });
-      const prev = qc.getQueryData<MyInteractions>(QK);
+      await qc.cancelQueries({ queryKey: ["experiences"] });
+      const prev            = qc.getQueryData<MyInteractions>(QK);
+      const prevExperiences = snapshotQueries(qc, ["experiences"]);
       patchSet("expUpvotes", id, on);
-      return { prev };
+      // Optimistically adjust the displayed count by ±1
+      qc.setQueriesData<PagedList>({ queryKey: ["experiences"] }, (old) => {
+        if (!old) return old;
+        return { ...old, data: old.data.map((e) => e.id === id ? { ...e, upvotes: e.upvotes + (on ? 1 : -1) } : e) };
+      });
+      return { prev, prevExperiences };
+    },
+    onSuccess: (data, { id }) => {
+      // Reconcile with the exact count the server returned
+      patchCount(qc, ["experiences"], id, data.upvotes);
     },
     onError: (_err, _vars, context) => {
       if (context?.prev) qc.setQueryData(QK, context.prev);
+      if (context?.prevExperiences) restoreQueries(qc, context.prevExperiences);
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["experiences"] });

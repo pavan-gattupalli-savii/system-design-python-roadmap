@@ -132,6 +132,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const [activeOutcome, setActiveOutcome] = useState<ExpOutcome | "">("");
   const [sort,          setSort]          = useState<ExpSort>("newest");
   const [page,          setPage]          = useState(1);
+  const [showFilters,   setShowFilters]   = useState(false);
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -183,7 +184,10 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
     return res;
   }, [search, activePlat, activeComp, activeOutcome, sort, allExperiences]);
 
+  const activeFilterCount = (activePlat ? 1 : 0) + (activeComp ? 1 : 0) + (activeOutcome ? 1 : 0);
   const hasFilters = !!(search || activePlat || activeComp || activeOutcome);
+
+  function clearAll() { setSearch(""); setActivePlat(""); setActiveComp(""); setActiveOutcome(""); }
 
   // Reset to page 1 when filters change
   React.useEffect(() => { setPage(1); }, [search, activePlat, activeComp, activeOutcome, sort]);
@@ -195,53 +199,16 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
       {/* Toolbar */}
       <div style={{
         background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)",
-        padding: isMobile ? "10px 12px" : "12px 20px", flexShrink: 0,
-        display: "flex", flexDirection: "column", gap: 10,
+        padding: isMobile ? "10px 12px" : "10px 20px", flexShrink: 0,
+        display: "flex", flexDirection: "column", gap: 8,
       }}>
-        {/* Row 1 — search + sort + share */}
-        {isMobile ? (
-          <>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
-              <input
-                className="search-input"
-                placeholder="Search company, role, topic…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Escape" && setSearch("")}
-                style={{ flex: 1 }}
-              />
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <select value={sort} onChange={(e) => setSort(e.target.value as ExpSort)} style={{
-                flex: 1,
-                background: "var(--bg-card)", border: "1px solid var(--border)",
-                color: "var(--text-secondary)", borderRadius: 6, padding: "6px 8px",
-                fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-              }}>
-                <option value="top">♥ Top</option>
-                <option value="newest">🕐 Newest</option>
-                <option value="alpha">A→Z</option>
-              </select>
-              {hasFilters && (
-                <button
-                  onClick={() => { setSearch(""); setActivePlat(""); setActiveComp(""); setActiveOutcome(""); }}
-                  style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
-                  Clear
-                </button>
-              )}
-              <Link to={SUBMIT_EXP_PATH} style={{
-                display: "inline-flex", alignItems: "center", gap: 4,
-                background: "#6366f1", color: "#fff", borderRadius: 7,
-                padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
-              }}>
-                + Share
-              </Link>
-            </div>
-          </>
-        ) : (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {/* Single row */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{
+            flex: 1, display: "flex", alignItems: "center", gap: 8,
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 8, padding: "0 10px", height: 36,
+          }}>
             <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
             <input
               className="search-input"
@@ -249,104 +216,142 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && setSearch("")}
-              style={{ flex: 1 }}
+              style={{
+                flex: 1, background: "transparent", border: "none", outline: "none",
+                color: "var(--text-bright)", fontSize: 13, fontFamily: "inherit",
+              }}
             />
-            <select value={sort} onChange={(e) => setSort(e.target.value as ExpSort)} style={{
-              background: "var(--bg-card)", border: "1px solid var(--border)",
-              color: "var(--text-secondary)", borderRadius: 6, padding: "5px 8px",
-              fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
-            }}>
-              <option value="top">♥ Top</option>
-              <option value="newest">🕐 Newest</option>
-              <option value="alpha">A→Z</option>
-            </select>
-            {hasFilters && (
-              <button
-                onClick={() => { setSearch(""); setActivePlat(""); setActiveComp(""); setActiveOutcome(""); }}
-                style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
-                Clear
-              </button>
+            {search && (
+              <button onClick={() => setSearch("")} style={{
+                background: "transparent", border: "none", color: "var(--text-muted)",
+                cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1, flexShrink: 0,
+              }}>✕</button>
             )}
-            <Link to={SUBMIT_EXP_PATH} style={{
+          </div>
+          <select value={sort} onChange={(e) => setSort(e.target.value as ExpSort)} style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            color: "var(--text-secondary)", borderRadius: 8, height: 36, padding: "0 8px",
+            fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+          }}>
+            <option value="newest">🕐 Newest</option>
+            <option value="top">♥ Top</option>
+            <option value="alpha">A→Z</option>
+          </select>
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            style={{
               display: "inline-flex", alignItems: "center", gap: 5,
-              background: "#6366f1", color: "#fff", borderRadius: 7,
-              padding: "6px 14px", fontSize: 12, fontWeight: 600,
-              textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
-            }}>
-              ＋ Share
-            </Link>
+              background: showFilters || activeFilterCount > 0 ? "#6366f122" : "var(--bg-card)",
+              border: "1px solid " + (showFilters || activeFilterCount > 0 ? "#6366f1" : "var(--border)"),
+              color: showFilters || activeFilterCount > 0 ? "#a5b4fc" : "var(--text-secondary)",
+              borderRadius: 8, height: 36, padding: "0 12px", fontSize: 12, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
+            }}
+          >
+            <span>⚙</span>
+            {!isMobile && <span>Filters</span>}
+            {activeFilterCount > 0 && (
+              <span style={{
+                background: "#6366f1", color: "#fff", borderRadius: "50%",
+                width: 16, height: 16, fontSize: 10, fontWeight: 700,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+              }}>{activeFilterCount}</span>
+            )}
+          </button>
+          {hasFilters && (
+            <button onClick={clearAll} style={{
+              background: "transparent", border: "1px solid var(--border)",
+              color: "var(--text-muted)", borderRadius: 8, height: 36, padding: "0 10px",
+              fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            }}>Clear</button>
+          )}
+          <Link to={SUBMIT_EXP_PATH} style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            background: "#6366f1", color: "#fff", borderRadius: 8, height: 36,
+            padding: "0 14px", fontSize: 12, fontWeight: 600,
+            textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+          }}>
+            ＋ {isMobile ? "" : "Share"}
+          </Link>
+        </div>
+
+        {/* Expandable filter panel */}
+        {showFilters && (
+          <div style={{
+            display: "flex", flexDirection: "column", gap: 8,
+            background: "var(--bg-panel)", border: "1px solid var(--border-subtle)",
+            borderRadius: 10, padding: "10px 12px",
+          }}>
+            {/* Platform */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Platform</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {EXP_PLATFORMS.map((p) => {
+                  const active = activePlat === p;
+                  return (
+                    <button key={p} onClick={() => setActivePlat(active ? "" : p)} style={{
+                      background: active ? "#6366f1" : "transparent",
+                      border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
+                      color: active ? "#fff" : "var(--text-secondary)",
+                      borderRadius: 20, padding: "4px 11px", fontSize: 11,
+                      cursor: "pointer", fontFamily: "inherit",
+                      fontWeight: active ? 600 : 400, transition: "all 0.12s", whiteSpace: "nowrap",
+                    }}>
+                      {PLATFORM_ICON[p]} {p}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}>
+              {/* Outcome */}
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Outcome</div>
+                <div style={{ display: "flex", gap: 5 }}>
+                  {EXP_OUTCOMES.map((o) => {
+                    const active = activeOutcome === o;
+                    const os = OUTCOME_STYLE[o];
+                    return (
+                      <button key={o} onClick={() => setActiveOutcome(active ? "" : o)} style={{
+                        background: active ? os.bg : "transparent",
+                        border: "1px solid " + (active ? os.tx + "66" : "var(--border-subtle)"),
+                        color: active ? os.tx : "var(--text-muted)",
+                        borderRadius: 6, padding: "4px 12px", fontSize: 11,
+                        cursor: "pointer", fontFamily: "inherit",
+                        fontWeight: active ? 700 : 400, transition: "all 0.12s", whiteSpace: "nowrap",
+                      }}>{o}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Company */}
+              {companies.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Company</div>
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                    {companies.map((c) => {
+                      const active = activeComp === c;
+                      return (
+                        <button key={c} onClick={() => setActiveComp(active ? "" : c)} style={{
+                          background: active ? "#0ea5e922" : "transparent",
+                          border: "1px solid " + (active ? "#0ea5e9" : "var(--border-subtle)"),
+                          color: active ? "#0ea5e9" : "var(--text-muted)",
+                          borderRadius: 6, padding: "4px 10px", fontSize: 11,
+                          cursor: "pointer", fontFamily: "inherit",
+                          fontWeight: active ? 700 : 400, transition: "all 0.12s", whiteSpace: "nowrap",
+                        }}>
+                          {COMPANY_LOGOS[c] || "🏢"} {c}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Row 2 — Platform chips (scrollable on mobile) */}
-        <div style={{
-          display: "flex", gap: 5,
-          overflowX: isMobile ? "auto" : undefined,
-          flexWrap: isMobile ? "nowrap" : "wrap",
-          WebkitOverflowScrolling: "touch" as never,
-          paddingBottom: isMobile ? 2 : 0,
-        }}>
-          {EXP_PLATFORMS.map((p) => {
-            const active = activePlat === p;
-            return (
-              <button key={p} onClick={() => setActivePlat(active ? "" : p)} style={{
-                background: active ? "#6366f1" : "transparent",
-                border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
-                color: active ? "#fff" : "var(--text-secondary)",
-                borderRadius: 20, padding: "4px 11px", fontSize: 11,
-                cursor: "pointer", fontFamily: "inherit",
-                fontWeight: active ? 600 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>
-                {PLATFORM_ICON[p]} {p}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Row 3 — Outcome + Company (scrollable on mobile) */}
-        <div style={{
-          display: "flex", gap: 5, alignItems: "center",
-          overflowX: isMobile ? "auto" : undefined,
-          flexWrap: isMobile ? "nowrap" : "wrap",
-          WebkitOverflowScrolling: "touch" as never,
-          paddingBottom: isMobile ? 2 : 0,
-        }}>
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Outcome:</span>
-          {EXP_OUTCOMES.map((o) => {
-            const active = activeOutcome === o;
-            const os = OUTCOME_STYLE[o];
-            return (
-              <button key={o} onClick={() => setActiveOutcome(active ? "" : o)} style={{
-                background: active ? os.bg : "transparent",
-                border: "1px solid " + (active ? os.tx + "66" : "var(--border-subtle)"),
-                color: active ? os.tx : "var(--text-muted)",
-                borderRadius: 4, padding: "2px 10px", fontSize: 10,
-                cursor: "pointer", fontFamily: "inherit",
-                fontWeight: active ? 700 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>{o}</button>
-            );
-          })}
-          <span style={{ width: 1, height: 12, background: "var(--border-subtle)", margin: "0 4px", display: "inline-block", flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Company:</span>
-          {companies.map((c) => {
-            const active = activeComp === c;
-            return (
-              <button key={c} onClick={() => setActiveComp(active ? "" : c)} style={{
-                background: active ? "#0ea5e922" : "transparent",
-                border: "1px solid " + (active ? "#0ea5e9" : "var(--border-subtle)"),
-                color: active ? "#0ea5e9" : "var(--text-muted)",
-                borderRadius: 4, padding: "2px 8px", fontSize: 10,
-                cursor: "pointer", fontFamily: "inherit",
-                fontWeight: active ? 700 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>
-                {COMPANY_LOGOS[c] || "🏢"} {c}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Count bar */}
@@ -514,6 +519,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   const [sort,          setSort]          = useState<QASort>("newest");
   const [expanded,      setExpanded]      = useState<Set<string>>(new Set());
   const [page,          setPage]          = useState(1);
+  const [showFilters,   setShowFilters]   = useState(false);
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -569,8 +575,11 @@ function QASection({ isMobile }: { isMobile: boolean }) {
     return res;
   }, [search, activecat, activeDiff, activeCompany, sort, allInterviews]);
 
+  const activeFilterCount = (activecat ? 1 : 0) + (activeDiff ? 1 : 0) + (activeCompany ? 1 : 0);
   const hasFilters     = !!(search || activecat || activeDiff || activeCompany);
   const practicedCount = filtered.filter((q) => practiced.has(q.id)).length;
+
+  function clearAll() { setSearch(""); setActiveCat(""); setActiveDiff(""); setActiveCompany(""); }
 
   // Reset to page 1 when filters change
   React.useEffect(() => { setPage(1); }, [search, activecat, activeDiff, activeCompany, sort]);
@@ -582,53 +591,16 @@ function QASection({ isMobile }: { isMobile: boolean }) {
       {/* Toolbar */}
       <div style={{
         background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)",
-        padding: isMobile ? "10px 12px" : "12px 20px", flexShrink: 0,
-        display: "flex", flexDirection: "column", gap: 10,
+        padding: isMobile ? "10px 12px" : "10px 20px", flexShrink: 0,
+        display: "flex", flexDirection: "column", gap: 8,
       }}>
-        {/* Row 1 */}
-        {isMobile ? (
-          <>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
-              <input
-                className="search-input"
-                placeholder="Search question, topic, company…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Escape" && setSearch("")}
-                style={{ flex: 1 }}
-              />
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <select value={sort} onChange={(e) => setSort(e.target.value as QASort)} style={{
-                flex: 1,
-                background: "var(--bg-card)", border: "1px solid var(--border)",
-                color: "var(--text-secondary)", borderRadius: 6, padding: "6px 8px",
-                fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-              }}>
-                <option value="difficulty">📶 Difficulty</option>
-                <option value="newest">🕐 Newest</option>
-                <option value="alpha">A→Z</option>
-              </select>
-              {hasFilters && (
-                <button
-                  onClick={() => { setSearch(""); setActiveCat(""); setActiveDiff(""); setActiveCompany(""); }}
-                  style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
-                  Clear
-                </button>
-              )}
-              <Link to={SUBMIT_QA_PATH} style={{
-                display: "inline-flex", alignItems: "center", gap: 4,
-                background: "#6366f1", color: "#fff", borderRadius: 7,
-                padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
-              }}>
-                + Publish
-              </Link>
-            </div>
-          </>
-        ) : (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {/* Single row */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{
+            flex: 1, display: "flex", alignItems: "center", gap: 8,
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 8, padding: "0 10px", height: 36,
+          }}>
             <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
             <input
               className="search-input"
@@ -636,104 +608,140 @@ function QASection({ isMobile }: { isMobile: boolean }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && setSearch("")}
-              style={{ flex: 1 }}
+              style={{
+                flex: 1, background: "transparent", border: "none", outline: "none",
+                color: "var(--text-bright)", fontSize: 13, fontFamily: "inherit",
+              }}
             />
-            <select value={sort} onChange={(e) => setSort(e.target.value as QASort)} style={{
-              background: "var(--bg-card)", border: "1px solid var(--border)",
-              color: "var(--text-secondary)", borderRadius: 6, padding: "5px 8px",
-              fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
-            }}>
-              <option value="difficulty">📶 Difficulty</option>
-              <option value="newest">🕐 Newest</option>
-              <option value="alpha">A→Z</option>
-            </select>
-            {hasFilters && (
-              <button
-                onClick={() => { setSearch(""); setActiveCat(""); setActiveDiff(""); setActiveCompany(""); }}
-                style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
-                Clear
-              </button>
+            {search && (
+              <button onClick={() => setSearch("")} style={{
+                background: "transparent", border: "none", color: "var(--text-muted)",
+                cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1, flexShrink: 0,
+              }}>✕</button>
             )}
-            <Link to={SUBMIT_QA_PATH} style={{
+          </div>
+          <select value={sort} onChange={(e) => setSort(e.target.value as QASort)} style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            color: "var(--text-secondary)", borderRadius: 8, height: 36, padding: "0 8px",
+            fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+          }}>
+            <option value="difficulty">📶 Difficulty</option>
+            <option value="newest">🕐 Newest</option>
+            <option value="alpha">A→Z</option>
+          </select>
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            style={{
               display: "inline-flex", alignItems: "center", gap: 5,
-              background: "#6366f1", color: "#fff", borderRadius: 7,
-              padding: "6px 14px", fontSize: 12, fontWeight: 600,
-              textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
-            }}>
-              ＋ Publish
-            </Link>
+              background: showFilters || activeFilterCount > 0 ? "#6366f122" : "var(--bg-card)",
+              border: "1px solid " + (showFilters || activeFilterCount > 0 ? "#6366f1" : "var(--border)"),
+              color: showFilters || activeFilterCount > 0 ? "#a5b4fc" : "var(--text-secondary)",
+              borderRadius: 8, height: 36, padding: "0 12px", fontSize: 12, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
+            }}
+          >
+            <span>⚙</span>
+            {!isMobile && <span>Filters</span>}
+            {activeFilterCount > 0 && (
+              <span style={{
+                background: "#6366f1", color: "#fff", borderRadius: "50%",
+                width: 16, height: 16, fontSize: 10, fontWeight: 700,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+              }}>{activeFilterCount}</span>
+            )}
+          </button>
+          {hasFilters && (
+            <button onClick={clearAll} style={{
+              background: "transparent", border: "1px solid var(--border)",
+              color: "var(--text-muted)", borderRadius: 8, height: 36, padding: "0 10px",
+              fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            }}>Clear</button>
+          )}
+          <Link to={SUBMIT_QA_PATH} style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            background: "#6366f1", color: "#fff", borderRadius: 8, height: 36,
+            padding: "0 14px", fontSize: 12, fontWeight: 600,
+            textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+          }}>
+            ＋ {isMobile ? "" : "Publish"}
+          </Link>
+        </div>
+
+        {/* Expandable filter panel */}
+        {showFilters && (
+          <div style={{
+            display: "flex", flexDirection: "column", gap: 8,
+            background: "var(--bg-panel)", border: "1px solid var(--border-subtle)",
+            borderRadius: 10, padding: "10px 12px",
+          }}>
+            {/* Category */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Category</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {(CATEGORIES as readonly string[]).map((c) => {
+                  const active = activecat === c;
+                  return (
+                    <button key={c} onClick={() => setActiveCat(active ? "" : c)} style={{
+                      background: active ? "#6366f1" : "transparent",
+                      border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
+                      color: active ? "#fff" : "var(--text-secondary)",
+                      borderRadius: 20, padding: "4px 11px", fontSize: 11,
+                      cursor: "pointer", fontFamily: "inherit",
+                      fontWeight: active ? 600 : 400, transition: "all 0.12s", whiteSpace: "nowrap",
+                    }}>
+                      {CAT_ICON[c] || "🏷"} {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}>
+              {/* Level */}
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Level</div>
+                <div style={{ display: "flex", gap: 5 }}>
+                  {(["Easy", "Medium", "Hard"] as const).map((d) => {
+                    const active = activeDiff === d;
+                    const ds = DIFF_COLOR[d];
+                    return (
+                      <button key={d} onClick={() => setActiveDiff(active ? "" : d)} style={{
+                        background: active ? ds.bg : "transparent",
+                        border: "1px solid " + (active ? ds.tx + "66" : "var(--border-subtle)"),
+                        color: active ? ds.tx : "var(--text-muted)",
+                        borderRadius: 6, padding: "4px 12px", fontSize: 11,
+                        cursor: "pointer", fontFamily: "inherit",
+                        fontWeight: active ? 700 : 400, transition: "all 0.12s", whiteSpace: "nowrap",
+                      }}>{d}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Company */}
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Company</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  {(COMPANIES as readonly string[]).map((c) => {
+                    const active = activeCompany === c;
+                    return (
+                      <button key={c} onClick={() => setActiveCompany(active ? "" : c)} style={{
+                        background: active ? "#0ea5e922" : "transparent",
+                        border: "1px solid " + (active ? "#0ea5e9" : "var(--border-subtle)"),
+                        color: active ? "#0ea5e9" : "var(--text-muted)",
+                        borderRadius: 6, padding: "4px 10px", fontSize: 11,
+                        cursor: "pointer", fontFamily: "inherit",
+                        fontWeight: active ? 700 : 400, transition: "all 0.12s", whiteSpace: "nowrap",
+                      }}>
+                        {COMPANY_LOGOS[c] || "🏢"} {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         )}
-
-        {/* Row 2 — Category chips (scrollable on mobile) */}
-        <div style={{
-          display: "flex", gap: 5,
-          overflowX: isMobile ? "auto" : undefined,
-          flexWrap: isMobile ? "nowrap" : "wrap",
-          WebkitOverflowScrolling: "touch" as never,
-          paddingBottom: isMobile ? 2 : 0,
-        }}>
-          {(CATEGORIES as readonly string[]).map((c) => {
-            const active = activecat === c;
-            return (
-              <button key={c} onClick={() => setActiveCat(active ? "" : c)} style={{
-                background: active ? "#6366f1" : "transparent",
-                border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
-                color: active ? "#fff" : "var(--text-secondary)",
-                borderRadius: 20, padding: "4px 11px", fontSize: 11,
-                cursor: "pointer", fontFamily: "inherit",
-                fontWeight: active ? 600 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>
-                {CAT_ICON[c] || "🏷"} {c}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Row 3 — Difficulty + Company (scrollable on mobile) */}
-        <div style={{
-          display: "flex", gap: 5, alignItems: "center",
-          overflowX: isMobile ? "auto" : undefined,
-          flexWrap: isMobile ? "nowrap" : "wrap",
-          WebkitOverflowScrolling: "touch" as never,
-          paddingBottom: isMobile ? 2 : 0,
-        }}>
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Level:</span>
-          {(["Easy", "Medium", "Hard"] as const).map((d) => {
-            const active = activeDiff === d;
-            const ds = DIFF_COLOR[d];
-            return (
-              <button key={d} onClick={() => setActiveDiff(active ? "" : d)} style={{
-                background: active ? ds.bg : "transparent",
-                border: "1px solid " + (active ? ds.tx + "66" : "var(--border-subtle)"),
-                color: active ? ds.tx : "var(--text-muted)",
-                borderRadius: 4, padding: "2px 10px", fontSize: 10,
-                cursor: "pointer", fontFamily: "inherit",
-                fontWeight: active ? 700 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>{d}</button>
-            );
-          })}
-          <span style={{ width: 1, height: 12, background: "var(--border-subtle)", margin: "0 4px", display: "inline-block", flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Company:</span>
-          {(COMPANIES as readonly string[]).map((c) => {
-            const active = activeCompany === c;
-            return (
-              <button key={c} onClick={() => setActiveCompany(active ? "" : c)} style={{
-                background: active ? "#0ea5e922" : "transparent",
-                border: "1px solid " + (active ? "#0ea5e9" : "var(--border-subtle)"),
-                color: active ? "#0ea5e9" : "var(--text-muted)",
-                borderRadius: 4, padding: "2px 8px", fontSize: 10,
-                cursor: "pointer", fontFamily: "inherit",
-                fontWeight: active ? 700 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>
-                {COMPANY_LOGOS[c] || "🏢"} {c}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Stats bar */}

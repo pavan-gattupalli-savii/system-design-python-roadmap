@@ -6,7 +6,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export function FormShell({
-  title, subtitle, children, isMobile, backLabel, backHref,
+  title, subtitle, children, isMobile, backLabel, backHref, footer,
 }: {
   title:      string;
   subtitle?:  string;
@@ -16,13 +16,17 @@ export function FormShell({
   backLabel?: string;
   /** If provided, back button links here; otherwise calls navigate(-1) */
   backHref?:  string;
+  /** Footer rendered outside the scroll area (no more sticky overlap) */
+  footer?:    ReactNode;
 }) {
   const navigate = useNavigate();
   return (
-    <div style={{
-      flex: 1, overflowY: "auto",
-      padding: isMobile ? "16px 14px 96px" : "24px 28px 96px",
-    }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Scrollable form content */}
+      <div style={{
+        flex: 1, overflowY: "auto",
+        padding: isMobile ? "16px 14px" : "24px 28px",
+      }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         {backLabel && (
           backHref
@@ -70,6 +74,9 @@ export function FormShell({
         )}
         {children}
       </div>
+      </div>
+      {/* Footer — outside the scroll container, never overlaps form fields */}
+      {footer}
     </div>
   );
 }
@@ -132,13 +139,11 @@ export function FieldGrid({
   );
 }
 
-/** Sticky bottom action bar that stays in view on long forms. */
+/** Action bar fixed below the form — always visible, never overlaps content. */
 export function FormFooter({ children, isMobile }: { children: ReactNode; isMobile: boolean }) {
   return (
     <div style={{
-      position: "sticky", bottom: 0,
-      marginTop: 16,
-      marginInline: isMobile ? -14 : -24,
+      flexShrink: 0,
       padding: isMobile ? "10px 14px" : "12px 24px",
       background: "var(--bg-page)",
       borderTop: "1px solid var(--border-subtle)",
@@ -151,12 +156,14 @@ export function FormFooter({ children, isMobile }: { children: ReactNode; isMobi
 }
 
 export function FormButton({
-  primary = false, type = "button", disabled, onClick, children,
+  primary = false, type = "button", disabled, onClick, form, children,
 }: {
   primary?: boolean;
   type?:    "button" | "submit";
   disabled?: boolean;
   onClick?: () => void;
+  /** HTML form attribute — links button to a form by id when placed outside <form> */
+  form?:    string;
   children: ReactNode;
 }) {
   return (
@@ -164,6 +171,7 @@ export function FormButton({
       type={type}
       disabled={disabled}
       onClick={onClick}
+      form={form}
       style={{
         background:  primary ? (disabled ? "#6366f155" : "#6366f1") : "transparent",
         color:       primary ? "#fff" : "var(--text-secondary)",

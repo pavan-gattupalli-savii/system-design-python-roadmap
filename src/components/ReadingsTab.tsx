@@ -38,11 +38,12 @@ function allTopics(rs: Reading[]): string[] {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
-  const [search,      setSearch]      = useState("");
-  const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set());
-  const [activeDiff,  setActiveDiff]  = useState("");
-  const [activeTopic, setActiveTopic] = useState("");
-  const [sort,        setSort]        = useState<SortKey>("newest");
+  const [search,        setSearch]        = useState("");
+  const [activeTypes,   setActiveTypes]   = useState<Set<string>>(new Set());
+  const [activeDiff,    setActiveDiff]    = useState("");
+  const [activeTopic,   setActiveTopic]   = useState("");
+  const [sort,          setSort]          = useState<SortKey>("newest");
+  const [showFilters,   setShowFilters]   = useState(false);
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -99,7 +100,13 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
     return res;
   }, [search, activeTypes, activeDiff, activeTopic, sort, allReadings]);
 
-  const hasFilters = activeTypes.size > 0 || activeTopic || activeDiff || search;
+  const activeFilterCount = activeTypes.size + (activeDiff ? 1 : 0) + (activeTopic ? 1 : 0);
+  const hasFilters = activeFilterCount > 0 || !!search;
+
+  function clearAll() {
+    setSearch(""); setActiveTypes(new Set()); setActiveTopic(""); setActiveDiff("");
+  }
+
   const [page, setPage] = useState(1);
   const READINGS_PAGE_SIZE = 15;
 
@@ -135,170 +142,183 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
       {/* ── Toolbar ─────────────────────────────────────────────────── */}
       <div style={{
         background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)",
-        padding: isMobile ? "10px 12px" : "12px 20px", flexShrink: 0,
-        display: "flex", flexDirection: "column", gap: 10,
+        padding: isMobile ? "10px 12px" : "10px 20px", flexShrink: 0,
+        display: "flex", flexDirection: "column", gap: 8,
       }}>
 
-        {/* Row 1 — Search (full width on mobile) + sort + actions */}
-        {isMobile ? (
-          <>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
-              <input
-                className="search-input"
-                placeholder="Search title, author, tag, type…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Escape" && setSearch("")}
-                style={{ flex: 1 }}
-              />
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-                style={{
-                  flex: 1,
-                  background: "var(--bg-card)", border: "1px solid var(--border)",
-                  color: "var(--text-secondary)", borderRadius: 6, padding: "6px 8px",
-                  fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-                }}
-              >
-                <option value="top">▲ Top</option>
-                <option value="newest">🕐 Newest</option>
-                <option value="alpha">A→Z</option>
-              </select>
-              {hasFilters && (
-                <button
-                  onClick={() => { setSearch(""); setActiveTypes(new Set()); setActiveTopic(""); setActiveDiff(""); }}
-                  style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
-                >
-                  Clear
-                </button>
-              )}
-              <Link
-                to={SUBMIT_PATH}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 4,
-                  background: "#6366f1", color: "#fff", border: "none", borderRadius: 7,
-                  padding: "6px 14px", fontSize: 12,
-                  fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
-                }}
-              >
-                + Publish
-              </Link>
-            </div>
-          </>
-        ) : (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {/* Single row — search + sort + filters toggle + actions */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {/* Search input — consistent across mobile/desktop */}
+          <div style={{
+            flex: 1, display: "flex", alignItems: "center", gap: 8,
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 8, padding: "0 10px", height: 36,
+          }}>
             <span style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
             <input
               className="search-input"
-              placeholder="Search title, author, tag, type…"
+              placeholder="Search title, topic, type, notes…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && setSearch("")}
-              style={{ flex: 1 }}
+              style={{
+                flex: 1, background: "transparent", border: "none", outline: "none",
+                color: "var(--text-bright)", fontSize: 13, fontFamily: "inherit",
+              }}
             />
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
-              style={{
-                background: "var(--bg-card)", border: "1px solid var(--border)",
-                color: "var(--text-secondary)", borderRadius: 6, padding: "5px 8px",
-                fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
-              }}
-            >
-              <option value="top">▲ Top</option>
-              <option value="newest">🕐 Newest</option>
-              <option value="alpha">A→Z</option>
-            </select>
-            {hasFilters && (
-              <button
-                onClick={() => { setSearch(""); setActiveTypes(new Set()); setActiveTopic(""); setActiveDiff(""); }}
-                style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
-              >
-                Clear
-              </button>
+            {search && (
+              <button onClick={() => setSearch("")} style={{
+                background: "transparent", border: "none", color: "var(--text-muted)",
+                cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1, flexShrink: 0,
+              }}>✕</button>
             )}
-            <Link
-              to={SUBMIT_PATH}
+          </div>
+
+          {/* Sort */}
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            style={{
+              background: "var(--bg-card)", border: "1px solid var(--border)",
+              color: "var(--text-secondary)", borderRadius: 8, padding: "0 8px",
+              height: 36, fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            }}
+          >
+            <option value="newest">🕐 Newest</option>
+            <option value="top">▲ Top</option>
+            <option value="alpha">A→Z</option>
+          </select>
+
+          {/* Filters toggle */}
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              background: showFilters || activeFilterCount > 0 ? "#6366f122" : "var(--bg-card)",
+              border: "1px solid " + (showFilters || activeFilterCount > 0 ? "#6366f1" : "var(--border)"),
+              color: showFilters || activeFilterCount > 0 ? "#a5b4fc" : "var(--text-secondary)",
+              borderRadius: 8, height: 36, padding: "0 12px", fontSize: 12, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
+            }}
+          >
+            <span>⚙</span>
+            {!isMobile && <span>Filters</span>}
+            {activeFilterCount > 0 && (
+              <span style={{
+                background: "#6366f1", color: "#fff", borderRadius: "50%",
+                width: 16, height: 16, fontSize: 10, fontWeight: 700,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+              }}>{activeFilterCount}</span>
+            )}
+          </button>
+
+          {/* Clear — only when filters active */}
+          {hasFilters && (
+            <button
+              onClick={clearAll}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                background: "#6366f1", color: "#fff", border: "none", borderRadius: 7,
-                padding: "6px 14px", fontSize: 12,
-                fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+                background: "transparent", border: "1px solid var(--border)",
+                color: "var(--text-muted)", borderRadius: 8, height: 36, padding: "0 10px",
+                fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
               }}
             >
-              ＋ Publish
-            </Link>
+              Clear
+            </button>
+          )}
+
+          {/* Publish */}
+          <Link
+            to={SUBMIT_PATH}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              background: "#6366f1", color: "#fff", borderRadius: 8, height: 36,
+              padding: "0 14px", fontSize: 12, fontWeight: 600,
+              textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap",
+            }}
+          >
+            ＋ {isMobile ? "" : "Publish"}
+          </Link>
+        </div>
+
+        {/* Expandable filter panel */}
+        {showFilters && (
+          <div style={{
+            display: "flex", flexDirection: "column", gap: 8,
+            background: "var(--bg-panel)", border: "1px solid var(--border-subtle)",
+            borderRadius: 10, padding: "10px 12px",
+          }}>
+            {/* Type chips */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Type</div>
+              <div style={{
+                display: "flex", gap: 5, flexWrap: "wrap",
+              }}>
+                {POST_TYPES.map((t) => {
+                  const active = activeTypes.has(t);
+                  return (
+                    <button key={t} onClick={() => toggleType(t)} style={{
+                      background: active ? "#6366f1" : "transparent",
+                      border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
+                      color: active ? "#fff" : "var(--text-secondary)",
+                      borderRadius: 20, padding: "4px 11px", fontSize: 11, cursor: "pointer",
+                      fontFamily: "inherit", fontWeight: active ? 600 : 400, transition: "all 0.12s",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {TYPE_ICONS[t] || "📌"} {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Level + Topic on same row */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Level</div>
+                <div style={{ display: "flex", gap: 5 }}>
+                  {DIFFICULTIES.map((d) => {
+                    const active = activeDiff === d;
+                    const ds = DIFF_STYLE[d] || { bg: "transparent", tx: "var(--text-muted)" };
+                    return (
+                      <button key={d} onClick={() => setActiveDiff(active ? "" : d)} style={{
+                        background: active ? ds.bg : "transparent",
+                        border: "1px solid " + (active ? ds.tx + "66" : "var(--border-subtle)"),
+                        color: active ? ds.tx : "var(--text-muted)",
+                        borderRadius: 6, padding: "4px 12px", fontSize: 11, cursor: "pointer",
+                        fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
+                        whiteSpace: "nowrap",
+                      }}>{d}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {topics.length > 0 && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Topic</div>
+                  <div style={{
+                    display: "flex", gap: 5, flexWrap: "wrap",
+                    maxHeight: 72, overflowY: "auto",
+                  }}>
+                    {topics.map((t) => {
+                      const active = activeTopic === t;
+                      return (
+                        <button key={t} onClick={() => setActiveTopic(active ? "" : t)} style={{
+                          background: active ? "#0ea5e922" : "transparent",
+                          border: "1px solid " + (active ? "#0ea5e9" : "var(--border-subtle)"),
+                          color: active ? "#0ea5e9" : "var(--text-muted)",
+                          borderRadius: 6, padding: "3px 9px", fontSize: 10, cursor: "pointer",
+                          fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
+                          whiteSpace: "nowrap",
+                        }}>#{t}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Row 2 — Type chips (scrollable on mobile) */}
-        <div style={{
-          display: "flex", gap: 5,
-          overflowX: isMobile ? "auto" : undefined,
-          flexWrap: isMobile ? "nowrap" : "wrap",
-          WebkitOverflowScrolling: "touch" as never,
-          paddingBottom: isMobile ? 2 : 0,
-        }}>
-          {POST_TYPES.map((t) => {
-            const active = activeTypes.has(t);
-            return (
-              <button key={t} onClick={() => toggleType(t)} style={{
-                background: active ? "#6366f1" : "transparent",
-                border: "1px solid " + (active ? "#6366f1" : "var(--border)"),
-                color: active ? "#fff" : "var(--text-secondary)",
-                borderRadius: 20, padding: "4px 11px", fontSize: 11, cursor: "pointer",
-                fontFamily: "inherit", fontWeight: active ? 600 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>
-                {TYPE_ICONS[t] || "📌"} {t}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Row 3 — Difficulty + Topic filters (scrollable on mobile) */}
-        <div style={{
-          display: "flex", gap: 5, alignItems: "center",
-          overflowX: isMobile ? "auto" : undefined,
-          flexWrap: isMobile ? "nowrap" : "wrap",
-          WebkitOverflowScrolling: "touch" as never,
-          paddingBottom: isMobile ? 2 : 0,
-        }}>
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Level:</span>
-          {DIFFICULTIES.map((d) => {
-            const active = activeDiff === d;
-            const ds = DIFF_STYLE[d] || { bg: "transparent", tx: "var(--text-muted)" };
-            return (
-              <button key={d} onClick={() => setActiveDiff(active ? "" : d)} style={{
-                background: active ? ds.bg : "transparent",
-                border: "1px solid " + (active ? ds.tx + "66" : "var(--border-subtle)"),
-                color: active ? ds.tx : "var(--text-muted)",
-                borderRadius: 4, padding: "2px 10px", fontSize: 10, cursor: "pointer",
-                fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>{d}</button>
-            );
-          })}
-          <span style={{ width: 1, height: 12, background: "var(--border-subtle)", margin: "0 4px", display: "inline-block", flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", marginRight: 2, flexShrink: 0 }}>Topic:</span>
-          {topics.map((t) => {
-            const active = activeTopic === t;
-            return (
-              <button key={t} onClick={() => setActiveTopic(active ? "" : t)} style={{
-                background: active ? "#0ea5e922" : "transparent",
-                border: "1px solid " + (active ? "#0ea5e9" : "var(--border-subtle)"),
-                color: active ? "#0ea5e9" : "var(--text-muted)",
-                borderRadius: 4, padding: "2px 8px", fontSize: 10, cursor: "pointer",
-                fontFamily: "inherit", fontWeight: active ? 700 : 400, transition: "all 0.12s",
-                flexShrink: 0, whiteSpace: "nowrap",
-              }}>#{t}</button>
-            );
-          })}
-        </div>
       </div>
 
       {/* ── Result count bar ─────────────────────────────────────────── */}

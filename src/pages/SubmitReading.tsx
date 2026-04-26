@@ -109,10 +109,18 @@ export default function SubmitReading() {
       isMobile={ctx.isMobile}
       backLabel="Back to Readings"
       backHref="/app/readings"
+      footer={
+        <FormFooter isMobile={ctx.isMobile}>
+          <FormButton onClick={() => navigate("/app/readings")}>Cancel</FormButton>
+          <FormButton type="submit" form="submitReadingForm" primary disabled={submitting}>
+            {submitting ? "Submitting…" : "Submit for review"}
+          </FormButton>
+        </FormFooter>
+      }
     >
       <PostingAs displayName={displayName} email={user?.email} github={github} />
 
-      <form onSubmit={submit}>
+      <form id="submitReadingForm" onSubmit={submit}>
         <Field label="Title" error={errors.title}>
           <input style={fieldInput} value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="Designing data-intensive applications: chapter 5"/>
         </Field>
@@ -144,12 +152,6 @@ export default function SubmitReading() {
           <textarea style={{ ...fieldInput, minHeight: 70 }} value={form.notes} onChange={(e) => update("notes", e.target.value)} placeholder="Why is this useful?"/>
         </Field>
 
-        <FormFooter isMobile={ctx.isMobile}>
-          <FormButton onClick={() => navigate("/app/readings")}>Cancel</FormButton>
-          <FormButton type="submit" primary disabled={submitting}>
-            {submitting ? "Submitting…" : "Submit for review"}
-          </FormButton>
-        </FormFooter>
       </form>
     </FormShell>
   );

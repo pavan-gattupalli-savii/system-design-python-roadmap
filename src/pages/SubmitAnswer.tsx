@@ -77,10 +77,18 @@ export default function SubmitAnswer() {
       title={`Share an answer for question #${id}`}
       subtitle="Drop a link to a write-up, gist, video or doc that walks through your answer. Admins approve before it shows up below the question."
       isMobile={ctx.isMobile}
+      footer={
+        <FormFooter isMobile={ctx.isMobile}>
+          <FormButton onClick={() => navigate(-1)}>Cancel</FormButton>
+          <FormButton type="submit" form="submitAnswerForm" primary disabled={submitting}>
+            {submitting ? "Submitting…" : "Submit for review"}
+          </FormButton>
+        </FormFooter>
+      }
     >
       <PostingAs displayName={displayName} email={user?.email} github={github} />
 
-      <form onSubmit={submit}>
+      <form id="submitAnswerForm" onSubmit={submit}>
         <Field label="Label" hint='e.g. "My write-up" or "Video walkthrough"' error={errors.label}>
           <input style={fieldInput} value={form.label} onChange={(e) => update("label", e.target.value)} placeholder="My take on this question"/>
         </Field>
@@ -88,13 +96,6 @@ export default function SubmitAnswer() {
         <Field label="URL (https only)" error={errors.url}>
           <input style={fieldInput} value={form.url} onChange={(e) => update("url", e.target.value)} placeholder="https://..."/>
         </Field>
-
-        <FormFooter isMobile={ctx.isMobile}>
-          <FormButton onClick={() => navigate(-1)}>Cancel</FormButton>
-          <FormButton type="submit" primary disabled={submitting}>
-            {submitting ? "Submitting…" : "Submit for review"}
-          </FormButton>
-        </FormFooter>
       </form>
     </FormShell>
   );

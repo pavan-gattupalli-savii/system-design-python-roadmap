@@ -96,12 +96,20 @@ export default function SubmitExperience() {
   return (
     <FormShell
       title="Share an interview experience"
-      subtitle="Link to a write-up, video, or post that walks through what you went through. Helpful posts highlight company, role, and what you'd do differently."
+      subtitle="Link to a write-up, video, or post that walks through what you went through. Helpful posts highlight company, role, and what you’d do differently."
       isMobile={ctx.isMobile}
+      footer={
+        <FormFooter isMobile={ctx.isMobile}>
+          <FormButton onClick={() => navigate("/app/interview")}>Cancel</FormButton>
+          <FormButton type="submit" form="submitExpForm" primary disabled={submitting}>
+            {submitting ? "Submitting…" : "Submit for review"}
+          </FormButton>
+        </FormFooter>
+      }
     >
       <PostingAs displayName={displayName} email={user?.email} github={github} />
 
-      <form onSubmit={submit}>
+      <form id="submitExpForm" onSubmit={submit}>
         <Field label="Title" error={errors.title}>
           <input style={fieldInput} value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="My system design loop at Stripe (E5)"/>
         </Field>
@@ -141,12 +149,6 @@ export default function SubmitExperience() {
           <textarea style={{ ...fieldInput, minHeight: 70 }} value={form.notes} onChange={(e) => update("notes", e.target.value)} placeholder="What pushed the bar / what tripped you up?"/>
         </Field>
 
-        <FormFooter isMobile={ctx.isMobile}>
-          <FormButton onClick={() => navigate(-1)}>Cancel</FormButton>
-          <FormButton type="submit" primary disabled={submitting}>
-            {submitting ? "Submitting…" : "Submit for review"}
-          </FormButton>
-        </FormFooter>
       </form>
     </FormShell>
   );

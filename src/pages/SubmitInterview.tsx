@@ -113,10 +113,18 @@ export default function SubmitInterview() {
       isMobile={ctx.isMobile}
       backLabel="Back to Interview Questions"
       backHref="/app/interview"
+      footer={
+        <FormFooter isMobile={ctx.isMobile}>
+          <FormButton onClick={() => navigate("/app/interview")}>Cancel</FormButton>
+          <FormButton type="submit" form="submitInterviewForm" primary disabled={submitting}>
+            {submitting ? "Submitting…" : "Submit for review"}
+          </FormButton>
+        </FormFooter>
+      }
     >
       <PostingAs displayName={displayName} email={user?.email} github={github} />
 
-      <form onSubmit={submit}>
+      <form id="submitInterviewForm" onSubmit={submit}>
         <Field label="Question (write it the way an interviewer would ask)" error={errors.title}>
           <textarea style={{ ...fieldInput, minHeight: 70 }} value={form.title} onChange={(e) => update("title", e.target.value)} placeholder='Design a distributed rate limiter for an API gateway.'/>
         </Field>
@@ -153,12 +161,6 @@ export default function SubmitInterview() {
           <textarea style={{ ...fieldInput, minHeight: 70 }} value={form.followUps} onChange={(e) => update("followUps", e.target.value)} placeholder={"How would you handle traffic spikes?\nHow do you prevent abuse from a single tenant?"}/>
         </Field>
 
-        <FormFooter isMobile={ctx.isMobile}>
-          <FormButton onClick={() => navigate("/app/interview")}>Cancel</FormButton>
-          <FormButton type="submit" primary disabled={submitting}>
-            {submitting ? "Submitting…" : "Submit for review"}
-          </FormButton>
-        </FormFooter>
       </form>
     </FormShell>
   );
