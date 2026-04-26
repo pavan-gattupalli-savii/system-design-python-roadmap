@@ -6,7 +6,7 @@ import { db } from "../db/client.js";
 import { readings, interviewQuestions, experiences, answerDocs, users } from "../db/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
-import { queryCache } from "../lib/cache.js";
+import { queryCache, responseCache, roadmapCache } from "../lib/cache.js";
 import { adminKindSchema } from "../lib/schemas.js";
 
 const router = Router();
@@ -124,6 +124,14 @@ router.delete("/:kind/:id", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Failed to reject" });
   }
+});
+
+// POST /api/admin/flush-cache — wipe all in-memory caches immediately.
+router.post("/flush-cache", (_req, res) => {
+  queryCache.invalidate();
+  responseCache.invalidate();
+  roadmapCache.invalidate();
+  res.json({ flushed: true });
 });
 
 export default router;
