@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { TYPES } from "../data/types";
 import { getPhaseStats } from "../utils/stats";
 import { TRACKER_URL } from "../constants/app";
+import { DailyTopicCard } from "./DailyTopicCard";
 import type { Phase, Channel } from "../data/models";
 
 interface Props {
@@ -36,6 +37,9 @@ export function TrackerTab({ roadmap, channels, completed, reset, isMobile, isDa
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "14px" : "24px 32px" }}>
+
+      {/* ── Daily Topic Card ── */}
+      <DailyTopicCard isMobile={isMobile} />
 
       {/* ── Overall progress ── */}
       <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 12, padding: "18px 22px", marginBottom: 16 }}>

@@ -245,6 +245,18 @@ async function migrate() {
   `;
   console.log("  ✓ user_practiced_questions");
 
+  // ── Daily topic completions ────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS daily_completions (
+      user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      topic_date   TEXT NOT NULL,
+      completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, topic_date)
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_daily_completions_user ON daily_completions(user_id, topic_date DESC)`;
+  console.log("  ✓ daily_completions");
+
   // ── Indexes ───────────────────────────────────────────────────────────────
   await sql`CREATE INDEX IF NOT EXISTS idx_readings_approved     ON readings(is_approved)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_iq_approved           ON interview_questions(is_approved)`;

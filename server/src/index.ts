@@ -17,6 +17,7 @@ import bootstrapRouter   from "./routes/bootstrap.js";
 import meRouter          from "./routes/me.js";
 import adminRouter       from "./routes/admin.js";
 import authRouter        from "./routes/auth.js";
+import dailyTopicRouter  from "./routes/dailyTopic.js";
 
 
 const app = express();
@@ -82,6 +83,7 @@ app.use("/api/experiences", readLimiter, experiencesRouter);
 app.use("/api/roadmap",     readLimiter, roadmapRouter);
 app.use("/api/me",          readLimiter, meRouter);
 app.use("/api/admin",       readLimiter, adminRouter);
+app.use("/api/daily-topic", readLimiter, dailyTopicRouter);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

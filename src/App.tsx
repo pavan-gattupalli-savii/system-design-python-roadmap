@@ -24,6 +24,7 @@ const SubmitAnswer     = lazy(() => import("./pages/SubmitAnswer"));
 const MyProfile        = lazy(() => import("./pages/MyProfile"));
 const AdminQueue       = lazy(() => import("./pages/AdminQueue"));
 const ResourcesByTypePage = lazy(() => import("./pages/ResourcesByTypePage"));
+const DailyTopicPage   = lazy(() => import("./pages/DailyTopicPage"));
 
 function PageFallback() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/app" element={<Layout />}>
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview"           element={<OverviewPage />} />
+          <Route path="daily"              element={<DailyTopicPage />} />
           <Route path="resources/:type"    element={<ResourcesByTypePage />} />
           <Route path="roadmap"            element={<RoadmapPage />} />
           <Route path="roadmap/phase/:p"   element={<RoadmapPage />} />

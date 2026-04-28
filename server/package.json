@@ -12,6 +12,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate": "tsx scripts/migrate.ts",
+    "migrate:daily": "tsx scripts/migrate-daily.ts",
     "seed": "tsx scripts/seed.ts",
     "promote-admin": "tsx scripts/promote-admin.ts",
     "db:studio": "drizzle-kit studio",

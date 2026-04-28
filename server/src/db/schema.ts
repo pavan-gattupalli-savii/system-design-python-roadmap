@@ -180,3 +180,16 @@ export const userPracticedQuestions = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.questionId] })],
 );
+
+// ── Daily topic completions ────────────────────────────────────────────────────
+// Records which UTC dates a user marked the daily topic as "read".
+// `topicDate` is stored as "YYYY-MM-DD" text to avoid timezone edge cases.
+export const dailyCompletions = pgTable(
+  "daily_completions",
+  {
+    userId:      uuid("user_id").notNull(),
+    topicDate:   text("topic_date").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.topicDate] })],
+);

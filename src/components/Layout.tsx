@@ -20,6 +20,7 @@ import OnboardingModal from "./OnboardingModal";
 
 const APP_TABS = [
   { id: "overview",  label: "Overview",   path: "/app/overview"  },
+  { id: "daily",     label: "🔥 Daily",   path: "/app/daily"     },
   { id: "roadmap",   label: "Roadmap",    path: "/app/roadmap"   },
   { id: "readings",  label: "Readings",   path: "/app/readings"  },
   { id: "interview", label: "Interview",  path: "/app/interview" },
