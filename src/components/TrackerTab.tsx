@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { TYPES } from "../data/types";
 import { getPhaseStats } from "../utils/stats";
 import { TRACKER_URL } from "../constants/app";
@@ -115,12 +116,31 @@ export function TrackerTab({ roadmap, channels, completed, reset, isMobile, isDa
       </div>
 
       {/* ── Resource type legend ── */}
-      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Resource Types</div>
+      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Resource Types — <span style={{ fontWeight: 400, letterSpacing: 0 }}>click to browse</span></div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
         {Object.entries(TYPES).map(([name, tc]) => (
-          <span key={name} style={{ fontSize: 11, color: tc.tx, background: tc.bg, border: "1px solid " + tc.tx + "25", borderRadius: 6, padding: "4px 10px" }}>
+          <Link
+            key={name}
+            to={`/app/resources/${encodeURIComponent(name)}`}
+            style={{
+              fontSize: 11, color: tc.tx, background: tc.bg,
+              border: "1px solid " + tc.tx + "25", borderRadius: 6, padding: "4px 10px",
+              textDecoration: "none", cursor: "pointer", transition: "all 0.15s",
+              display: "inline-flex", alignItems: "center", gap: 4,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = tc.tx + "80";
+              e.currentTarget.style.background  = tc.bg.replace(/..$/,  "88");
+              e.currentTarget.style.transform   = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = tc.tx + "25";
+              e.currentTarget.style.background  = tc.bg;
+              e.currentTarget.style.transform   = "translateY(0)";
+            }}
+          >
             {tc.icon} {name}
-          </span>
+          </Link>
         ))}
       </div>
 
