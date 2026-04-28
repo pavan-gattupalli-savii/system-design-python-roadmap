@@ -10,8 +10,8 @@
 import { sql } from "../src/db/client.js";
 import { READINGS } from "../../src/data/readings.js";
 import { INTERVIEWS, EXPERIENCES } from "../../src/data/interviews.js";
-import { pythonRoadmap } from "../../src/data/roadmap-python.js";
-import { javaRoadmap } from "../../src/data/roadmap-java.js";
+import { pythonRoadmap } from "../data/roadmap-python.js";
+import { javaRoadmap } from "../data/roadmap-java.js";
 
 // ── Seed readings ─────────────────────────────────────────────────────────────
 async function seedReadings() {

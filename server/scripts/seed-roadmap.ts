@@ -11,8 +11,8 @@
 // in-memory cache so users see the changes immediately.
 
 import { sql } from "../src/db/client.js";
-import { pythonRoadmap } from "../../src/data/roadmap-python.js";
-import { javaRoadmap }   from "../../src/data/roadmap-java.js";
+import { pythonRoadmap } from "../data/roadmap-python.js";
+import { javaRoadmap }   from "../data/roadmap-java.js";
 
 async function seedRoadmapLanguage(language: "python" | "java", phases: typeof pythonRoadmap) {
   let phaseCount = 0, weekCount = 0, sessionCount = 0, resourceCount = 0;

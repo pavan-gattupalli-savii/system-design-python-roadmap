@@ -49,9 +49,11 @@ export default function Home() {
           <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{APP_SUBTITLE}</div>
         </Link>
         <nav style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Link to="/app/overview" style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none" }}>
-            Browse roadmap
-          </Link>
+          {!isMobile && (
+            <Link to="/app/overview" style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none" }}>
+              Browse roadmap
+            </Link>
+          )}
           {user ? (
             <Link to="/app/me" style={{
               background: "#6366f1", color: "#fff", borderRadius: 7,

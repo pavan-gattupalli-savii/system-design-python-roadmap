@@ -176,7 +176,7 @@ export default function MyProfile() {
                   }}>Admin</span>
                 )}
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{email}</div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email}</div>
             </div>
 
             {/* Meta links */}
@@ -184,6 +184,7 @@ export default function MyProfile() {
               display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
               fontSize: 11, color: "var(--text-muted)",
               paddingTop: ctx.isMobile ? 0 : 38,
+              width: ctx.isMobile ? "100%" : undefined,
             }}>
               <span>Member since {sinceLabel}</span>
               {gh && (
