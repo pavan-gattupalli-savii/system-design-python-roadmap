@@ -17,6 +17,7 @@ import { apiFetch } from "../api/client";
 import { buildInterviewsUrl, buildExperiencesUrl } from "../api/interviews";
 import { useAuth } from "../lib/auth";
 import { useMyInteractions } from "../hooks/useMyInteractions";
+import { useBookmarks } from "../hooks/useBookmarks";
 
 const SUBMIT_QA_PATH   = "/app/interview/submit";
 const SUBMIT_EXP_PATH  = "/app/experiences/submit";
@@ -138,6 +139,8 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   const { user } = useAuth();
   const { data: interactions, toggleExperienceUpvote } = useMyInteractions();
   const myVotes = interactions.expUpvotes;
+  const { bookmarks, toggleBookmark } = useBookmarks();
+  const myExpBookmarks = bookmarks.experience;
 
   // ── API fetch ────────────────────────────────────────────────────────
   const expApiUrl = buildExperiencesUrl({ sort, limit: 200 });
@@ -377,7 +380,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "8px 12px" }}>
             {pagedExp.map((e) => (
-              <ExperienceCard key={e.id} e={e} myVotes={myVotes} toggleVote={toggleVote} isMobile={isMobile} />
+              <ExperienceCard key={e.id} e={e} myVotes={myVotes} toggleVote={toggleVote} isMobile={isMobile} isBookmarked={myExpBookmarks.has(e.id)} toggleBookmark={(id) => toggleBookmark("experience", id, "/app/interview")} />
             ))}
           </div>
         )}
@@ -406,9 +409,10 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
 }
 
 // ── Experience card ───────────────────────────────────────────────────────────
-function ExperienceCard({ e, myVotes, toggleVote, isMobile }: {
+function ExperienceCard({ e, myVotes, toggleVote, isMobile, isBookmarked, toggleBookmark }: {
   e: InterviewExp; myVotes: Set<string>;
   toggleVote: (id: string) => void; isMobile: boolean;
+  isBookmarked: boolean; toggleBookmark: (id: string) => void;
 }) {
   const voted = myVotes.has(e.id);
   const os    = e.outcome ? OUTCOME_STYLE[e.outcome] : null;
@@ -434,6 +438,20 @@ function ExperienceCard({ e, myVotes, toggleVote, isMobile }: {
       >
         <span style={{ fontSize: 15, lineHeight: 1 }}>{voted ? "♥" : "♡"}</span>
         <span>{e.upvotes}</span>
+      </button>
+
+      {/* Bookmark star */}
+      <button
+        onClick={() => toggleBookmark(e.id)}
+        title={isBookmarked ? "Remove bookmark" : "Bookmark this experience"}
+        style={{
+          flexShrink: 0, background: "transparent", border: "none",
+          color: isBookmarked ? "#f59e0b" : "var(--text-muted)",
+          cursor: "pointer", fontSize: 18, padding: "8px 4px", lineHeight: 1,
+          marginTop: 2, transition: "color 0.15s",
+        }}
+      >
+        {isBookmarked ? "★" : "☆"}
       </button>
 
       {/* Content */}
@@ -525,6 +543,8 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   const { user } = useAuth();
   const { data: interactions, togglePracticed: togglePracticedMutation } = useMyInteractions();
   const practiced = interactions.practiced;
+  const { bookmarks, toggleBookmark } = useBookmarks();
+  const myQBookmarks = bookmarks.question;
 
   // ── API fetch ────────────────────────────────────────────────────────
   const qaApiUrl = buildInterviewsUrl({ sort, limit: 200 });
@@ -775,6 +795,8 @@ function QASection({ isMobile }: { isMobile: boolean }) {
               togglePracticed={togglePracticed}
               toggleExpanded={toggleExpanded}
               isMobile={isMobile}
+              isBookmarked={myQBookmarks.has(q.id)}
+              toggleBookmark={(id) => toggleBookmark("question", id, "/app/interview")}
             />
           ))
         )}
@@ -805,10 +827,11 @@ function QASection({ isMobile }: { isMobile: boolean }) {
 
 // ── Question card ─────────────────────────────────────────────────────────────
 function QuestionCard({
-  q, isPracticed, isExpanded, togglePracticed, toggleExpanded, isMobile,
+  q, isPracticed, isExpanded, togglePracticed, toggleExpanded, isMobile, isBookmarked, toggleBookmark,
 }: {
   q: InterviewQ; isPracticed: boolean; isExpanded: boolean;
   togglePracticed: (id: string) => void; toggleExpanded: (id: string) => void; isMobile: boolean;
+  isBookmarked: boolean; toggleBookmark: (id: string) => void;
 }) {
   const ds = DIFF_COLOR[q.difficulty];
   const answerSubmitPath = `/app/interview/${q.id}/answer`;
@@ -896,6 +919,20 @@ function QuestionCard({
         <div style={{ flexShrink: 0, fontSize: 12, color: "var(--text-muted)", marginTop: 4, transition: "transform 0.2s", transform: isExpanded ? "rotate(180deg)" : "none" }}>
           ▼
         </div>
+
+        {/* Bookmark star */}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleBookmark(q.id); }}
+          title={isBookmarked ? "Remove bookmark" : "Bookmark this question"}
+          style={{
+            flexShrink: 0, background: "transparent", border: "none",
+            color: isBookmarked ? "#f59e0b" : "var(--text-muted)",
+            cursor: "pointer", fontSize: 16, padding: "4px", lineHeight: 1,
+            marginTop: 2, transition: "color 0.15s",
+          }}
+        >
+          {isBookmarked ? "★" : "☆"}
+        </button>
       </div>
 
       {/* Expanded body */}

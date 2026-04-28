@@ -9,6 +9,7 @@ import { FormButton, fieldInput } from "../components/FormShell";
 import type { LayoutContext } from "../components/Layout";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
+import BookmarksTab from "../components/BookmarksTab";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function memberSince(iso?: string): string {
@@ -52,7 +53,7 @@ export default function MyProfile() {
   const qc   = useQueryClient();
   const { data: profile, isLoading } = useMyProfile();
 
-  const [tab, setTab] = useState<"info" | "prefs">("info");
+  const [tab, setTab] = useState<"info" | "prefs" | "bookmarks">("info");
   const [form, setForm] = useState<ProfileForm>({ displayName: "", github: "", linkedin: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -270,7 +271,7 @@ export default function MyProfile() {
           padding: 4,
           marginBottom: 20,
         }}>
-          {(["info", "prefs"] as const).map((t) => (
+          {(["info", "prefs", "bookmarks"] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -292,7 +293,7 @@ export default function MyProfile() {
                 boxShadow: tab === t ? "0 1px 6px #6366f133" : "none",
               }}
             >
-              {t === "info" ? "✏️  Edit Profile" : "⚙️  Preferences"}
+              {t === "info" ? "✏️  Edit Profile" : t === "prefs" ? "⚙️  Preferences" : "★ Bookmarks"}
             </button>
           ))}
         </div>
@@ -388,6 +389,8 @@ export default function MyProfile() {
             </div>
           </SectionCard>
         )}
+
+        {tab === "bookmarks" && <BookmarksTab />}
 
       </div>
     </div>

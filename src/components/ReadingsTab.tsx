@@ -12,6 +12,7 @@ import { apiFetch } from "../api/client";
 import { buildReadingsUrl } from "../api/readings";
 import { useAuth } from "../lib/auth";
 import { useMyInteractions } from "../hooks/useMyInteractions";
+import { useBookmarks } from "../hooks/useBookmarks";
 
 const SUBMIT_PATH = "/app/readings/submit";
 
@@ -49,6 +50,8 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
   const { user } = useAuth();
   const { data: interactions, toggleReadingUpvote } = useMyInteractions();
   const myVotes = interactions.readingUpvotes;
+  const { bookmarks, toggleBookmark } = useBookmarks();
+  const myBookmarks = bookmarks.reading;
 
   // ── API fetch ─────────────────────────────────────────────────────────────
   const apiUrl = buildReadingsUrl({ sort, limit: 200 });
@@ -345,7 +348,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
           </div>
         ) : isMobile ? (
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {pagedReadings.map((r) => <ReadingCard key={r.id} r={r} myVotes={myVotes} toggleVote={toggleVote} />)}
+            {pagedReadings.map((r) => <ReadingCard key={r.id} r={r} myVotes={myVotes} toggleVote={toggleVote} isBookmarked={myBookmarks.has(r.id)} toggleBookmark={(id) => toggleBookmark("reading", id, "/app/readings")} />)}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -356,6 +359,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
             }}>
               <colgroup>
                 <col style={{ width: 52 }} />
+                <col style={{ width: 42 }} />
                 <col style={{ width: 106 }} />
                 <col style={{ width: 230 }} />
                 <col style={{ width: 92 }} />
@@ -365,7 +369,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
               </colgroup>
               <thead>
                 <tr>
-                  {(["♡", "Type", "Title / Link", "Level", "Added By", "Topics", "Date"] as string[]).map((h, i) => (
+                  {(["♡", "★", "Type", "Title / Link", "Level", "Added By", "Topics", "Date"] as string[]).map((h, i) => (
                     <th key={h} style={{
                       padding: i === 0 ? "10px 6px 8px" : "10px 14px 8px",
                       textAlign: i === 0 ? "center" : "left",
@@ -379,7 +383,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
               </thead>
               <tbody>
                 {pagedReadings.map((r, idx) => (
-                  <TableRow key={r.id} r={r} idx={idx} myVotes={myVotes} toggleVote={toggleVote} />
+                  <TableRow key={r.id} r={r} idx={idx} myVotes={myVotes} toggleVote={toggleVote} isBookmarked={myBookmarks.has(r.id)} toggleBookmark={(id) => toggleBookmark("reading", id, "/app/readings")} />
                 ))}
               </tbody>
             </table>
@@ -407,8 +411,9 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
 }
 
 // ── Desktop table row ──────────────────────────────────────────────────────────
-function TableRow({ r, idx, myVotes, toggleVote }: {
+function TableRow({ r, idx, myVotes, toggleVote, isBookmarked, toggleBookmark }: {
   r: Reading; idx: number; myVotes: Set<string>; toggleVote: (id: string) => void;
+  isBookmarked: boolean; toggleBookmark: (id: string) => void;
 }) {
   const voted  = myVotes.has(r.id);
   const ds     = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
@@ -540,8 +545,9 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
 }
 
 // ── Mobile card ────────────────────────────────────────────────────────────────
-function ReadingCard({ r, myVotes, toggleVote }: {
+function ReadingCard({ r, myVotes, toggleVote, isBookmarked, toggleBookmark }: {
   r: Reading; myVotes: Set<string>; toggleVote: (id: string) => void;
+  isBookmarked: boolean; toggleBookmark: (id: string) => void;
 }) {
   const voted = myVotes.has(r.id);
   const ds    = r.difficulty ? DIFF_STYLE[r.difficulty] : null;
@@ -567,6 +573,19 @@ function ReadingCard({ r, myVotes, toggleVote }: {
         >
           <span style={{ fontSize: 16, lineHeight: 1 }}>{voted ? "♥" : "♡"}</span>
           <span style={{ fontSize: 12 }}>{r.upvotes}</span>
+        </button>
+        {/* Bookmark star below upvote */}
+        <button
+          onClick={() => toggleBookmark(r.id)}
+          title={isBookmarked ? "Remove bookmark" : "Bookmark this reading"}
+          style={{
+            marginTop: 6, background: "transparent", border: "none",
+            color: isBookmarked ? "#f59e0b" : "var(--text-muted)",
+            cursor: "pointer", fontSize: 16, padding: "4px", lineHeight: 1,
+            transition: "color 0.15s",
+          }}
+        >
+          {isBookmarked ? "★" : "☆"}
         </button>
       </div>
 

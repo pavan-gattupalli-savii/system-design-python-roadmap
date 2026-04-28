@@ -2,6 +2,7 @@ import { TYPES } from "../data/types";
 import { resId } from "../utils/stats";
 import { getResourceUrl } from "../utils/url";
 import type { Resource } from "../data/models";
+import { useBookmarks } from "../hooks/useBookmarks";
 
 interface Props {
   phase: number;
@@ -19,6 +20,8 @@ export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isM
   const isDone = completed.has(id);
   const tc    = TYPES[res.type] ?? TYPES["Article"];
   const url   = getResourceUrl(res);
+  const { bookmarks, toggleBookmark } = useBookmarks();
+  const isBookmarked = bookmarks.roadmap_resource.has(id);
 
   return (
     <div
@@ -79,6 +82,20 @@ export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isM
           style={{ marginTop: 2 }}
         >
           <span style={{ fontSize: 18, lineHeight: 1 }}>{isDone ? "✅" : "⬜"}</span>
+        </button>
+
+        {/* Bookmark star */}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleBookmark("roadmap_resource", id); }}
+          title={isBookmarked ? "Remove bookmark" : "Bookmark this resource"}
+          style={{
+            background: "transparent", border: "none",
+            color: isBookmarked ? "#f59e0b" : "var(--text-muted)",
+            cursor: "pointer", fontSize: 16, padding: "4px", lineHeight: 1,
+            marginTop: 2, transition: "color 0.15s",
+          }}
+        >
+          {isBookmarked ? "★" : "☆"}
         </button>
       </div>
     </div>
