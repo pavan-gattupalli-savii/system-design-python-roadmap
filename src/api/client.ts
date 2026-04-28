@@ -4,10 +4,11 @@
 // browsers that block third-party cookies entirely, we also fall back to a
 // Bearer token persisted in localStorage by the sign-in flow.
 
-const BASE =
+const BASE = (
   (import.meta.env.VITE_API_BASE as string | undefined) ??
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  "http://localhost:3001";
+  "http://localhost:3001"
+).replace(/\/$/, "");
 
 const TOKEN_STORAGE_KEY = "sd_session_token";
 
