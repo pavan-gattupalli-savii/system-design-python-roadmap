@@ -515,8 +515,8 @@ function TableRow({ r, idx, myVotes, toggleVote }: {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {r.topics.slice(0, 4).map((t) => (
             <span key={t} style={{
-              fontSize: 9, color: "#38bdf8", background: "#0ea5e911",
-              border: "1px solid #0ea5e922", borderRadius: 4, padding: "2px 7px",
+              fontSize: 9, color: "var(--badge-sky-tx)", background: "var(--badge-sky-bg)",
+              border: "1px solid var(--badge-sky-border)", borderRadius: 4, padding: "2px 7px",
             }}>
               #{t}
             </span>
@@ -620,7 +620,7 @@ function ReadingCard({ r, myVotes, toggleVote }: {
             <span style={{ fontSize: 10, color: "var(--text-secondary)", marginRight: 4 }}>by {r.addedBy}</span>
           )}
           {r.topics.slice(0, 4).map((t) => (
-            <span key={t} style={{ fontSize: 9, color: "#0ea5e9", background: "#0ea5e922", border: "1px solid #0ea5e933", borderRadius: 4, padding: "1px 5px" }}>
+            <span key={t} style={{ fontSize: 9, color: "var(--badge-sky-tx)", background: "var(--badge-sky-bg)", border: "1px solid var(--badge-sky-border)", borderRadius: 4, padding: "1px 5px" }}>
               #{t}
             </span>
           ))}

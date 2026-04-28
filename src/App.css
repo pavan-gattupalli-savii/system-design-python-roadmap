@@ -24,6 +24,9 @@
   --badge-red-bg:    #450a0a44;
   --badge-slate-tx:  #94a3b8;
   --badge-slate-bg:  #1e293b44;
+  --badge-sky-tx:    #38bdf8;
+  --badge-sky-bg:    #0ea5e911;
+  --badge-sky-border:#0ea5e933;
 }
 
 /* ── Light theme overrides ────────────────────────────────────────────── */
@@ -52,6 +55,9 @@
   --badge-red-bg:    #fee2e2;
   --badge-slate-tx:  #475569;
   --badge-slate-bg:  #f1f5f9;
+  --badge-sky-tx:    #0284c7;
+  --badge-sky-bg:    #e0f2fe;
+  --badge-sky-border:#bae6fd;
 }
 
 /* ── Phase & Week navigation buttons ─────────────────────────────────── */

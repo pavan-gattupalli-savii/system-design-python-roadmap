@@ -498,7 +498,7 @@ function ExperienceCard({ e, myVotes, toggleVote, isMobile }: {
             <span style={{ fontSize: 10, color: "var(--text-secondary)", marginRight: 4 }}>by {e.addedBy}</span>
           )}
           {e.topics.slice(0, 5).map((t) => (
-            <span key={t} style={{ fontSize: 9, color: "#38bdf8", background: "#0ea5e911", border: "1px solid #0ea5e922", borderRadius: 4, padding: "1px 5px" }}>
+            <span key={t} style={{ fontSize: 9, color: "var(--badge-sky-tx)", background: "var(--badge-sky-bg)", border: "1px solid var(--badge-sky-border)", borderRadius: 4, padding: "1px 5px" }}>
               #{t}
             </span>
           ))}
@@ -876,7 +876,7 @@ function QuestionCard({
               <span style={{ fontSize: 10, color: "var(--text-muted)" }}>+{q.companies.length - (isMobile ? 2 : 4)}</span>
             )}
             {q.answerDocs && q.answerDocs.length > 0 && (
-              <span style={{ fontSize: 10, color: "#4ade80", background: "#052e1633", border: "1px solid #4ade8033", borderRadius: 4, padding: "1px 7px" }}>
+              <span style={{ fontSize: 10, color: "var(--badge-green-tx)", background: "var(--badge-green-bg)", border: "1px solid var(--badge-green-tx)33", borderRadius: 4, padding: "1px 7px" }}>
                 {q.answerDocs.length} answer{q.answerDocs.length > 1 ? "s" : ""}
               </span>
             )}
@@ -884,7 +884,7 @@ function QuestionCard({
           {/* Topics row */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {q.topics.slice(0, 5).map((t) => (
-              <span key={t} style={{ fontSize: 9, color: "#38bdf8", background: "#0ea5e911", border: "1px solid #0ea5e922", borderRadius: 4, padding: "1px 6px" }}>
+              <span key={t} style={{ fontSize: 9, color: "var(--badge-sky-tx)", background: "var(--badge-sky-bg)", border: "1px solid var(--badge-sky-border)", borderRadius: 4, padding: "1px 6px" }}>
                 #{t}
               </span>
             ))}
