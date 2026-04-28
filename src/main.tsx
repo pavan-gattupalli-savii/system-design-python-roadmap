@@ -8,10 +8,22 @@ import App from "./App";
 import { queryClient } from "./lib/queryClient";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-// Fire a silent /health ping immediately so Railway wakes up before the user
-// navigates to a page that needs real data. Failure is intentionally swallowed.
-import { apiFetch } from "./api/client";
-apiFetch("/health", { timeoutMs: 30_000 }).catch(() => {});
+// Pre-warm on startup: populate TanStack cache with the Python roadmap (default
+// language) and fire-and-forget on readings/experiences to wake the Neon DB
+// connection pool before the user navigates to a content page.
+// Note: /health (used by UptimeRobot) never queries the DB, so Neon can still be
+// cold on first real request — these fetches fix that.
+import { fetchRoadmap } from "./api/roadmap";
+import { apiFetch }    from "./api/client";
+
+queryClient.prefetchQuery({
+  queryKey:  ["roadmap", "python"],
+  queryFn:   () => fetchRoadmap("python"),
+  staleTime: 30 * 60_000,
+});
+// Fire-and-forget: warm Neon's readings + experiences tables.
+apiFetch("/api/readings?sort=newest&limit=200").catch(() => {});
+apiFetch("/api/experiences?sort=newest&limit=200").catch(() => {});
 
 // One-time cleanup: upvotes and "practiced" flags moved from browser-local storage
 // to per-user DB rows. Drop the legacy keys so they don't sit in storage forever.

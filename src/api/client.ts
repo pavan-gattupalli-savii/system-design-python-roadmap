@@ -38,7 +38,7 @@ interface ApiFetchOptions extends RequestInit {
   timeoutMs?: number;
 }
 
-const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 export async function apiFetch<T>(path: string, init?: ApiFetchOptions): Promise<T> {
   const headers: Record<string, string> = {
