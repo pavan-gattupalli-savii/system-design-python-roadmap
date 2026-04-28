@@ -13,6 +13,17 @@
   --text-secondary: #64748b;
   --text-muted:     #374151;
   --text-dim:       #4b5563;
+  /* Badge colours (difficulty / outcome chips) */
+  --badge-green-tx:  #4ade80;
+  --badge-green-bg:  #052e1644;
+  --badge-amber-tx:  #fbbf24;
+  --badge-amber-bg:  #78350f33;
+  --badge-indigo-tx: #a5b4fc;
+  --badge-indigo-bg: #312e8133;
+  --badge-red-tx:    #f87171;
+  --badge-red-bg:    #450a0a44;
+  --badge-slate-tx:  #94a3b8;
+  --badge-slate-bg:  #1e293b44;
 }
 
 /* ── Light theme overrides ────────────────────────────────────────────── */
@@ -30,6 +41,17 @@
   --text-secondary: #475569;
   --text-muted:     #94a3b8;
   --text-dim:       #64748b;
+  /* Badge colours — high-contrast for light backgrounds */
+  --badge-green-tx:  #15803d;
+  --badge-green-bg:  #dcfce7;
+  --badge-amber-tx:  #b45309;
+  --badge-amber-bg:  #fef3c7;
+  --badge-indigo-tx: #4338ca;
+  --badge-indigo-bg: #e0e7ff;
+  --badge-red-tx:    #dc2626;
+  --badge-red-bg:    #fee2e2;
+  --badge-slate-tx:  #475569;
+  --badge-slate-bg:  #f1f5f9;
 }
 
 /* ── Phase & Week navigation buttons ─────────────────────────────────── */

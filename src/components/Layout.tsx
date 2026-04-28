@@ -111,7 +111,7 @@ export default function Layout() {
       style={{
         display: "flex", flexDirection: "column", height: "100vh",
         background: "var(--bg-page)", color: "var(--text-body)",
-        fontFamily: FONT_STACK, userSelect: "none",
+        fontFamily: FONT_STACK,
       }}
     >
       {showOnboarding && (
@@ -181,7 +181,9 @@ export default function Layout() {
               <span>/{totalStats.total} done</span>
             </div>
 
-            <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer" className="tracker-link">
+            <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer" className="tracker-link"
+              style={{ display: isMobile ? "none" : undefined }}
+            >
               🔊 Tracker ↗
             </a>
 

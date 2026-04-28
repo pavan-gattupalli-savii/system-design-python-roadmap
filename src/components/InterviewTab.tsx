@@ -23,9 +23,9 @@ const SUBMIT_EXP_PATH  = "/app/experiences/submit";
 
 // ── Colour / icon maps ────────────────────────────────────────────────────────
 const DIFF_COLOR: Record<string, { tx: string; bg: string }> = {
-  Easy:   { tx: "#4ade80", bg: "#052e1644" },
-  Medium: { tx: "#fbbf24", bg: "#78350f33" },
-  Hard:   { tx: "#f87171", bg: "#450a0a44" },
+  Easy:   { tx: "var(--badge-green-tx)", bg: "var(--badge-green-bg)" },
+  Medium: { tx: "var(--badge-amber-tx)", bg: "var(--badge-amber-bg)" },
+  Hard:   { tx: "var(--badge-red-tx)",   bg: "var(--badge-red-bg)"   },
 };
 
 const CAT_ICON: Record<string, string> = {
@@ -51,10 +51,10 @@ const PLATFORM_ICON: Record<ExpPlatform, string> = {
 };
 
 const OUTCOME_STYLE: Record<ExpOutcome, { tx: string; bg: string }> = {
-  Offer:    { tx: "#4ade80", bg: "#052e1644" },
-  Rejected: { tx: "#f87171", bg: "#450a0a44" },
-  Ongoing:  { tx: "#fbbf24", bg: "#78350f33" },
-  Unknown:  { tx: "#94a3b8", bg: "#1e293b44" },
+  Offer:    { tx: "var(--badge-green-tx)", bg: "var(--badge-green-bg)" },
+  Rejected: { tx: "var(--badge-red-tx)",   bg: "var(--badge-red-bg)"   },
+  Ongoing:  { tx: "var(--badge-amber-tx)", bg: "var(--badge-amber-bg)" },
+  Unknown:  { tx: "var(--badge-slate-tx)", bg: "var(--badge-slate-bg)" },
 };
 
 type QASort  = "difficulty" | "newest" | "alpha";
@@ -243,7 +243,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
               display: "inline-flex", alignItems: "center", gap: 5,
               background: showFilters || activeFilterCount > 0 ? "#6366f122" : "var(--bg-card)",
               border: "1px solid " + (showFilters || activeFilterCount > 0 ? "#6366f1" : "var(--border)"),
-              color: showFilters || activeFilterCount > 0 ? "#a5b4fc" : "var(--text-secondary)",
+              color: showFilters || activeFilterCount > 0 ? "var(--badge-indigo-tx)" : "var(--text-secondary)",
               borderRadius: 8, height: 36, padding: "0 12px", fontSize: 12, fontWeight: 600,
               cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
             }}
@@ -635,7 +635,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
               display: "inline-flex", alignItems: "center", gap: 5,
               background: showFilters || activeFilterCount > 0 ? "#6366f122" : "var(--bg-card)",
               border: "1px solid " + (showFilters || activeFilterCount > 0 ? "#6366f1" : "var(--border)"),
-              color: showFilters || activeFilterCount > 0 ? "#a5b4fc" : "var(--text-secondary)",
+              color: showFilters || activeFilterCount > 0 ? "var(--badge-indigo-tx)" : "var(--text-secondary)",
               borderRadius: 8, height: 36, padding: "0 12px", fontSize: 12, fontWeight: 600,
               cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
             }}

@@ -23,9 +23,9 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 const DIFF_STYLE: Record<string, { bg: string; tx: string }> = {
-  Beginner:     { bg: "#052e1644", tx: "#4ade80" },
-  Intermediate: { bg: "#78350f33", tx: "#fbbf24" },
-  Advanced:     { bg: "#312e8133", tx: "#a5b4fc" },
+  Beginner:     { bg: "var(--badge-green-bg)",  tx: "var(--badge-green-tx)"  },
+  Intermediate: { bg: "var(--badge-amber-bg)",  tx: "var(--badge-amber-tx)"  },
+  Advanced:     { bg: "var(--badge-indigo-bg)", tx: "var(--badge-indigo-tx)" },
 };
 
 type SortKey = "newest" | "top" | "alpha";
@@ -196,7 +196,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
               display: "inline-flex", alignItems: "center", gap: 5,
               background: showFilters || activeFilterCount > 0 ? "#6366f122" : "var(--bg-card)",
               border: "1px solid " + (showFilters || activeFilterCount > 0 ? "#6366f1" : "var(--border)"),
-              color: showFilters || activeFilterCount > 0 ? "#a5b4fc" : "var(--text-secondary)",
+              color: showFilters || activeFilterCount > 0 ? "var(--badge-indigo-tx)" : "var(--text-secondary)",
               borderRadius: 8, height: 36, padding: "0 12px", fontSize: 12, fontWeight: 600,
               cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
             }}
