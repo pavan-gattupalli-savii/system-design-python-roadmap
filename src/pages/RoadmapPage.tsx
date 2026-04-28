@@ -3,7 +3,7 @@
 // view. Renders TimelinePanel (left) + DetailPanel (right) with a draggable
 // resize handle, falling back to mobile-friendly stacked navigation.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useParams, useSearchParams } from "react-router-dom";
 import { TimelinePanel } from "../components/TimelinePanel";
 import { DetailPanel }   from "../components/DetailPanel";
@@ -75,6 +75,21 @@ export default function RoadmapPage() {
     setParams(next, { replace: true });
   }
 
+  // Local input value — debounced 300ms before writing to the URL.
+  const [inputValue, setInputValue] = useState(searchQuery);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleSearchInput(val: string) {
+    setInputValue(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setSearchQuery(val), 300);
+  }
+  function clearSearch() {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setInputValue("");
+    setSearchQuery("");
+  }
+
   const [openSessions, setOpenSessions] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true });
   const [mobileView, setMobileView] = useState<string>("phases");
   const timeline = usePanelResize(360, 240, 540);
@@ -85,7 +100,7 @@ export default function RoadmapPage() {
 
   function handleJumpToWeek(ph: number, wn: number) {
     navigate(`/app/roadmap/phase/${ph}/week/${wn}`);
-    setSearchQuery("");
+    clearSearch();
     setOpenSessions({ 0: true, 1: true, 2: true });
     if (ctx.isMobile) setMobileView("detail");
   }
@@ -103,13 +118,13 @@ export default function RoadmapPage() {
         <input
           className="search-input"
           placeholder="Search resources… e.g. Redis, Kafka, Docker, SOLID, auth"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Escape" && setSearchQuery("")}
+          value={inputValue}
+          onChange={(e) => handleSearchInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && clearSearch()}
           style={{ flex: 1 }}
         />
-        {searchQuery && (
-          <button onClick={() => setSearchQuery("")}
+        {inputValue && (
+          <button onClick={clearSearch}
             style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 4px", flexShrink: 0 }}>
             ✕
           </button>

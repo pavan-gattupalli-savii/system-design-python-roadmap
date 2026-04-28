@@ -70,9 +70,8 @@ export function useProgress(lang: Language): ProgressApi {
     const remote = new Set(serverQuery.data.completed);
     const localOnly = [...local].filter((k) => !remote.has(k));
     if (localOnly.length === 0) return;
-    Promise.all(localOnly.map((k) => setProgress(lang, k, true)))
-      .then(() => qc.invalidateQueries({ queryKey: ["progress", user.id, lang] }))
-      .catch(() => { /* best-effort */ });
+    Promise.allSettled(localOnly.map((k) => setProgress(lang, k, true)))
+      .then(() => qc.invalidateQueries({ queryKey: ["progress", user.id, lang] }));
     // We intentionally only run this once per server fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, serverQuery.data, lang]);

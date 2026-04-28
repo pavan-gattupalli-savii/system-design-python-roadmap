@@ -3,6 +3,7 @@
 // optional subtitle, posting-as chip, two-column field grid and sticky footer.
 
 import type { CSSProperties, ReactNode } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export function FormShell({
@@ -199,6 +200,7 @@ export function PostingAs({
   const initial = (displayName || email || "U").trim().slice(0, 1).toUpperCase();
   const ghSafe  = (github ?? "").trim();
   const name    = displayName?.trim() || email || "you";
+  const [imgFailed, setImgFailed] = useState(false);
 
   return (
     <div style={{
@@ -207,12 +209,13 @@ export function PostingAs({
       background: "var(--bg-card)", border: "1px solid var(--border-subtle)",
       marginBottom: 18,
     }}>
-      {ghSafe ? (
+      {ghSafe && !imgFailed ? (
         <img
           src={`https://github.com/${ghSafe}.png?size=80`}
           alt=""
           width={36}
           height={36}
+          onError={() => setImgFailed(true)}
           style={{ borderRadius: "50%", flexShrink: 0, background: "var(--bg-secondary)" }}
         />
       ) : (

@@ -110,7 +110,7 @@ export function useAuth(): UseAuthResult {
     staleTime:   30_000,
     gcTime:      5 * 60 * 1000,
     retry:       false,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
   return {
     user:      q.data ?? null,

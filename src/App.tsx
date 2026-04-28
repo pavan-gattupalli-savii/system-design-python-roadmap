@@ -8,6 +8,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import Layout from "./components/Layout";
 import { RequireAuth, RequireAdmin } from "./components/RequireAuth";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Home             = lazy(() => import("./pages/Home"));
 const SignIn           = lazy(() => import("./pages/SignIn"));
@@ -34,7 +35,8 @@ function PageFallback() {
 
 export default function App() {
   return (
-    <Suspense fallback={<PageFallback />}>
+    <ErrorBoundary>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         {/* Public landing + auth */}
         <Route path="/"        element={<Home />} />
@@ -62,5 +64,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 }

@@ -188,6 +188,7 @@ export default function Layout() {
             </a>
 
             <button className="theme-toggle" onClick={() => setIsDark((d) => !d)}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               title={isDark ? "Switch to light mode" : "Switch to dark mode"}>
               {isDark ? "☀️" : "🌙"}
             </button>
@@ -219,6 +220,7 @@ export default function Layout() {
                 key={tab.id}
                 to={tab.path + (params.has("lang") ? `?lang=${lang}` : "")}
                 className="nav-tab"
+                aria-current={active ? "page" : undefined}
                 style={{
                   borderBottom: active ? "2px solid #6366f1" : "2px solid transparent",
                   padding: isMobile ? "8px 14px" : "10px 18px",
@@ -236,6 +238,7 @@ export default function Layout() {
             <NavLink
               to="/app/admin"
               className="nav-tab"
+              aria-current={activeTab === "admin" ? "page" : undefined}
               style={{
                 borderBottom: activeTab === "admin" ? "2px solid #f59e0b" : "2px solid transparent",
                 padding: isMobile ? "8px 14px" : "10px 18px",
