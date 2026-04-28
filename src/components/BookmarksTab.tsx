@@ -1,9 +1,13 @@
 // ── BookmarksTab — "My Bookmarks" panel on Profile page ──────────────────────
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { fetchResolvedBookmarks, type ResolvedBookmarkItem } from "../api/bookmarks";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { useAuth } from "../lib/auth";
+import { useRoadmap } from "../hooks/useRoadmap";
+import { resId } from "../utils/stats";
+import { getResourceUrl } from "../utils/url";
 
 // ── Section ───────────────────────────────────────────────────────────────────
 function BookmarkSection({
@@ -107,6 +111,39 @@ export default function BookmarksTab() {
     staleTime: 60_000,
   });
 
+  // Build roadmap resource lookup: id → { title, url } for both languages
+  const { phases: pyPhases } = useRoadmap("python");
+  const { phases: jvPhases } = useRoadmap("java");
+  const roadmapLookup = useMemo(() => {
+    const map = new Map<string, { title: string; url: string | null }>();
+    for (const phases of [pyPhases, jvPhases]) {
+      for (const p of phases) {
+        for (const w of p.weeks) {
+          w.sessions.forEach((s, si) => {
+            s.resources.forEach((res, ri) => {
+              const id = resId(p.phase, w.n, si, ri);
+              if (!map.has(id)) {
+                map.set(id, { title: res.item, url: getResourceUrl(res) });
+              }
+            });
+          });
+        }
+      }
+    }
+    return map;
+  }, [pyPhases, jvPhases]);
+
+  // Resolve raw roadmap items to proper titles + links
+  const resolvedRoadmapItems: ResolvedBookmarkItem[] = useMemo(() => {
+    if (!data?.roadmap_resource) return [];
+    return data.roadmap_resource.map((item) => {
+      const resolved = roadmapLookup.get(item.id);
+      return resolved
+        ? { id: item.id, title: resolved.title, url: resolved.url, meta: "Roadmap" }
+        : item;
+    });
+  }, [data?.roadmap_resource, roadmapLookup]);
+
   if (!user) {
     return (
       <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
@@ -156,7 +193,7 @@ export default function BookmarksTab() {
       />
       <BookmarkSection
         title="Roadmap Resources"
-        items={data.roadmap_resource}
+        items={resolvedRoadmapItems}
         emptyHref="/app/roadmap"
         emptyLabel="Browse roadmap"
         onRemove={(id) => toggleBookmark("roadmap_resource", id)}

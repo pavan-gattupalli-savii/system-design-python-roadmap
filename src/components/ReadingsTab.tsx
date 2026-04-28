@@ -371,8 +371,8 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
                 <tr>
                   {(["♡", "★", "Type", "Title / Link", "Level", "Added By", "Topics", "Date"] as string[]).map((h, i) => (
                     <th key={h} style={{
-                      padding: i === 0 ? "10px 6px 8px" : "10px 14px 8px",
-                      textAlign: i === 0 ? "center" : "left",
+                      padding: i <= 1 ? "10px 6px 8px" : "10px 14px 8px",
+                      textAlign: i <= 1 ? "center" : "left",
                       fontSize: 9, fontWeight: 700, letterSpacing: 1.4,
                       textTransform: "uppercase", color: "var(--text-muted)",
                       whiteSpace: "nowrap", background: "transparent",
@@ -450,6 +450,22 @@ function TableRow({ r, idx, myVotes, toggleVote, isBookmarked, toggleBookmark }:
         >
           <span style={{ fontSize: 13, lineHeight: 1 }}>{voted ? "♥" : "♡"}</span>
           <span style={{ fontSize: 10 }}>{r.upvotes}</span>
+        </button>
+      </td>
+
+      {/* ★ Bookmark */}
+      <td style={{ ...cellBase, padding: "10px 6px", textAlign: "center" }}>
+        <button
+          onClick={() => toggleBookmark(r.id)}
+          title={isBookmarked ? "Remove bookmark" : "Bookmark"}
+          style={{
+            background: "transparent", border: "none",
+            color: isBookmarked ? "#f59e0b" : "var(--text-muted)",
+            cursor: "pointer", fontSize: 16, padding: "4px", lineHeight: 1,
+            transition: "color 0.15s",
+          }}
+        >
+          {isBookmarked ? "★" : "☆"}
         </button>
       </td>
 

@@ -915,24 +915,24 @@ function QuestionCard({
           </div>
         </div>
 
-        {/* Expand arrow */}
-        <div style={{ flexShrink: 0, fontSize: 12, color: "var(--text-muted)", marginTop: 4, transition: "transform 0.2s", transform: isExpanded ? "rotate(180deg)" : "none" }}>
-          ▼
-        </div>
-
         {/* Bookmark star */}
         <button
           onClick={(e) => { e.stopPropagation(); toggleBookmark(q.id); }}
           title={isBookmarked ? "Remove bookmark" : "Bookmark this question"}
           style={{
             flexShrink: 0, background: "transparent", border: "none",
-            color: isBookmarked ? "#f59e0b" : "var(--text-muted)",
-            cursor: "pointer", fontSize: 16, padding: "4px", lineHeight: 1,
+            color: isBookmarked ? "#f59e0b" : "var(--text-secondary)",
+            cursor: "pointer", fontSize: 17, padding: "4px", lineHeight: 1,
             marginTop: 2, transition: "color 0.15s",
           }}
         >
           {isBookmarked ? "★" : "☆"}
         </button>
+
+        {/* Expand arrow */}
+        <div style={{ flexShrink: 0, fontSize: 12, color: "var(--text-muted)", marginTop: 4, transition: "transform 0.2s", transform: isExpanded ? "rotate(180deg)" : "none" }}>
+          ▼
+        </div>
       </div>
 
       {/* Expanded body */}
