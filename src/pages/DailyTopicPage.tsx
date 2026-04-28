@@ -6,80 +6,122 @@ import { useDailyTopic, useDailyHistory } from "../hooks/useDailyTopic";
 import { useAuth } from "../lib/auth";
 import type { LayoutContext } from "../components/Layout";
 
-// ── History grid ──────────────────────────────────────────────────────────────
+// ── Contribution graph (GitHub style) ────────────────────────────────────────
 
-function HistoryGrid({ days, completed, today, isMobile }: {
-  days: number;
+function ContributionGraph({ completed, today, isMobile }: {
   completed: Set<string>;
   today: string;
   isMobile: boolean;
 }) {
-  const cells: { date: string; state: "done" | "today" | "missed" | "future" }[] = [];
+  const WEEKS = isMobile ? 16 : 20;
+  const CELL  = isMobile ? 12 : 14;
+  const GAP   = 3;
 
-  for (let i = days - 1; i >= 0; i--) {
-    const d   = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10);
-    const state =
-      d > today                ? "future" :
-      d === today              ? "today"  :
-      completed.has(d)         ? "done"   : "missed";
-    cells.push({ date: d, state });
+  // Align graph start to Monday of (this week − (WEEKS − 1))
+  const todayUTC   = new Date(today + "T00:00:00Z");
+  const todayDow   = todayUTC.getUTCDay();                        // 0=Sun…6=Sat
+  const daysToMon  = todayDow === 0 ? 6 : todayDow - 1;          // days since last Monday
+  const graphStart = new Date(todayUTC);
+  graphStart.setUTCDate(todayUTC.getUTCDate() - daysToMon - (WEEKS - 1) * 7);
+
+  const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const cells: { date: string; state: "done"|"today"|"missed"|"future" }[] = [];
+  const monthLabels: { weekIdx: number; label: string }[] = [];
+  let lastMonth = -1;
+
+  for (let w = 0; w < WEEKS; w++) {
+    for (let d = 0; d < 7; d++) {
+      const dt = new Date(graphStart);
+      dt.setUTCDate(graphStart.getUTCDate() + w * 7 + d);
+      const dateStr = dt.toISOString().slice(0, 10);
+      const state =
+        dateStr > today          ? "future" :
+        dateStr === today        ? "today"  :
+        completed.has(dateStr)   ? "done"   : "missed";
+      cells.push({ date: dateStr, state });
+      if (d === 0) {
+        const m = dt.getUTCMonth();
+        if (m !== lastMonth) {
+          monthLabels.push({ weekIdx: w, label: MONTH_NAMES[m] });
+          lastMonth = m;
+        }
+      }
+    }
   }
 
-  const cellSize  = isMobile ? 28 : 32;
-  const cellGap   = 4;
-  const cols      = isMobile ? 10 : 15;
+  const DOW_LABELS = ["M", "", "W", "", "F", "", "S"];
+  const DOW_WIDTH  = 16;
 
   return (
     <div>
-      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>
-        Last {days} Days
+      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>
+        Contribution History
       </div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
-        gap: cellGap,
-      }}>
-        {cells.map(({ date, state }) => (
-          <div
-            key={date}
-            title={date}
-            style={{
-              width:        cellSize,
-              height:       cellSize,
-              borderRadius: 6,
-              background:
-                state === "done"   ? "#22c55e" :
-                state === "today"  ? "#6366f1" :
-                state === "future" ? "transparent" :
-                                     "var(--bg-secondary)",
-              border:
-                state === "today"  ? "2px solid #818cf8" :
-                state === "missed" ? "1px solid var(--border-subtle)" :
-                state === "future" ? "1px dashed var(--border-subtle)" :
-                                     "none",
-              display:    "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 12,
-              transition: "transform 0.1s",
-              cursor: state !== "future" ? "default" : undefined,
-            }}
-          >
-            {state === "done"  && <span style={{ color: "#fff", fontWeight: 700, fontSize: 11 }}>✓</span>}
-            {state === "today" && <span style={{ color: "#fff", fontSize: 10 }}>●</span>}
-          </div>
-        ))}
+
+      {/* Month labels row — aligned to column grid */}
+      <div style={{ paddingLeft: DOW_WIDTH + GAP, marginBottom: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${WEEKS}, ${CELL}px)`, gap: GAP }}>
+          {Array.from({ length: WEEKS }, (_, w) => {
+            const entry = monthLabels.find(ml => ml.weekIdx === w);
+            return (
+              <div key={w} style={{ fontSize: 10, color: "var(--text-muted)", height: 14, lineHeight: "14px", overflow: "visible", whiteSpace: "nowrap" }}>
+                {entry?.label ?? ""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Day-of-week labels + cell grid */}
+      <div style={{ display: "flex", gap: GAP, alignItems: "flex-start" }}>
+        {/* DOW labels */}
+        <div style={{ display: "flex", flexDirection: "column", gap: GAP, flexShrink: 0, width: DOW_WIDTH }}>
+          {DOW_LABELS.map((label, i) => (
+            <div key={i} style={{ height: CELL, lineHeight: `${CELL}px`, fontSize: 10, color: "var(--text-muted)", textAlign: "right" }}>
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* Heatmap grid — gridAutoFlow:column fills week columns Mon→Sun */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${WEEKS}, ${CELL}px)`,
+          gridTemplateRows:    `repeat(7, ${CELL}px)`,
+          gap: GAP,
+          gridAutoFlow: "column",
+        }}>
+          {cells.map(({ date, state }) => (
+            <div
+              key={date}
+              title={date}
+              style={{
+                width:        CELL,
+                height:       CELL,
+                borderRadius: 3,
+                boxSizing:    "border-box",
+                background:
+                  state === "done"   ? "#22c55e" :
+                  state === "today"  ? "#6366f1" :
+                  state === "future" ? "transparent" : "var(--bg-secondary)",
+                border:
+                  state === "today"  ? "2px solid #818cf8" :
+                  state === "missed" ? "1px solid var(--border-subtle)" : undefined,
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Legend */}
       <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
         {[
-          { color: "#22c55e",                label: "Completed" },
-          { color: "#6366f1",                label: "Today" },
-          { color: "var(--bg-secondary)",    label: "Missed", border: "1px solid var(--border-subtle)" },
+          { color: "#22c55e",             label: "Completed" },
+          { color: "#6366f1",             label: "Today" },
+          { color: "var(--bg-secondary)", label: "Missed", border: "1px solid var(--border-subtle)" },
         ].map(({ color, label, border }) => (
           <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 12, height: 12, borderRadius: 3, background: color, border, flexShrink: 0 }} />
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: color, border, flexShrink: 0 }} />
             <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{label}</span>
           </div>
         ))}
@@ -96,7 +138,7 @@ export default function DailyTopicPage() {
   const { user } = useAuth();
 
   const { topic, isLoading, markAsRead, isMarking } = useDailyTopic();
-  const { dates: completedDates }                   = useDailyHistory(30);
+  const { dates: completedDates }                   = useDailyHistory(150);
 
   const sourceLabel = topic?.sourceType === "session" ? "🗺 Roadmap Session" : "📖 Community Reading";
   const sourceColor = topic?.sourceType === "session" ? "#6366f1" : "#0ea5e9";
@@ -284,8 +326,7 @@ export default function DailyTopicPage() {
         {/* ── Streak history grid ── */}
         {user && topic && (
           <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 14, padding: ctx.isMobile ? "18px" : "22px 28px" }}>
-            <HistoryGrid
-              days={30}
+            <ContributionGraph
               completed={completedDates}
               today={topic.todayDate}
               isMobile={ctx.isMobile}

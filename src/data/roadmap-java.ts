@@ -96,11 +96,11 @@ export const javaRoadmap: Phase[] = [
     weeks: [
       { n: 7, title: "SOLID Principles in Java", sessions: [
         { label: "Study", focus: "SRP, OCP & LSP in Java", resources: [
-          { type: "Blog",    item: "refactoring.guru – SOLID principles with Java examples (SRP, OCP, LSP sections)", where: "refactoring.guru/solid — read all 5 sections in order", mins: 45 },
+          { type: "Blog",    item: "Baeldung – 'SOLID Principles in Java' — SRP, OCP & LSP sections with full code examples", where: "baeldung.com/solid-principles — read all five sections; SRP, OCP, LSP are first three", mins: 45 },
           { type: "Book",    item: "Effective Java 3e – Items 15–22 (Classes & Interfaces)", where: "pp. 93–135 — minimize accessibility, prefer composition over inheritance, Liskov in practice", mins: 60 },
         ]},
         { label: "Study", focus: "ISP & DIP — interface design and dependency inversion", resources: [
-          { type: "Blog",    item: "refactoring.guru – ISP + DIP with Java examples", where: "refactoring.guru/solid — last two sections. Focus on coding examples.", mins: 30 },
+          { type: "Blog",    item: "Baeldung – 'SOLID Principles in Java' — ISP & DIP sections with Java code examples", where: "baeldung.com/solid-principles — scroll to the ISP and DIP sections; focus on the code examples", mins: 30 },
           { type: "YouTube", item: "CodeAesthetic – 'Why You Shouldn't Nest Your Code' (clean code principles)", where: "YouTube → search 'CodeAesthetic shouldn't nest code'", mins: 12 },
         ]},
         { label: "Build", focus: "Refactor a God-class order handler to SOLID", resources: [

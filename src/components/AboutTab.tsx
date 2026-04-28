@@ -2,7 +2,6 @@
 // Creator profile + roadmap overview.
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
-const GITHUB_REPO  = "https://github.com/pavan-gattupalli-savii/system-design-python-roadmap";
 
 const TECH_STACK = [
   { icon: "⚛️",  name: "React 18",   desc: "UI framework with hooks" },
@@ -22,6 +21,7 @@ const COMMUNITY_FEATURES = [
   { icon: "📖", label: "Reading List", desc: "Community-curated articles, videos, papers and more — all PR-reviewed" },
   { icon: "💬", label: "Experiences",  desc: "Real interview experience posts from engineers at top companies" },
   { icon: "❓", label: "Q & A",        desc: "Practice questions with hints, follow-ups, and community answer docs" },
+  { icon: "🔥", label: "Daily Topic", desc: "A curated topic every day from the roadmap and community readings — mark it read to build a daily streak and track consistency with a heatmap." },
 ];
 
 export function AboutTab({ isMobile }: { isMobile: boolean }) {
@@ -42,7 +42,7 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
             Built this roadmap to go from Python/Java developer to system-design-ready engineer —
             documenting every resource, book chapter, and build project for both languages along the way.
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a
               href={LINKEDIN_URL}
               target="_blank"
@@ -62,27 +62,7 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
               </svg>
               Connect on LinkedIn ↗
             </a>
-            <a
-              href={GITHUB_REPO}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 7,
-                background: "var(--border-subtle)", color: "var(--text-bright)",
-                border: "1px solid #30363d",
-                borderRadius: 7, padding: "8px 16px",
-                fontSize: 13, fontWeight: 600, textDecoration: "none",
-                transition: "border-color 0.15s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#6366f1")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#30363d")}
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-              </svg>
-              View on GitHub ↗
-            </a>
-          </div>
+            </div>
         </div>
       </div>
 
@@ -124,6 +104,7 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
           ["4", "Use the search", "Press the 🔍 bar to find any topic instantly across all weeks in both roadmaps."],
           ["5", "Log in the tracker", "Open the Google Sheets tracker to log hours and notes per week."],
           ["6", "Prep for interviews", "Browse the Experiences tab for real stories, then drill Q&A with hints and community answers."],
+          ["7", "Daily topic streak", "Open the 🔥 Daily tab each day — one topic, mark it done, keep your streak alive and track 20 weeks of consistency."],
         ].map(([num, title, detail]) => (
           <div key={num} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
             <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: "50%", background: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", marginTop: 1 }}>{num}</div>

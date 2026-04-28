@@ -10,14 +10,14 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { useAuth } from "../lib/auth";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
-const GITHUB_REPO  = "https://github.com/pavan-gattupalli-savii/system-design-python-roadmap";
 
 const FEATURES = [
   { icon: "🗺️", label: "Phase-by-phase roadmap",   desc: "Foundations → LLD → HLD → Reliability → Interview prep, mapped onto Python and Java tracks you can switch between." },
   { icon: "📚", label: "600+ curated free resources", desc: "Books, papers, videos and labs — every entry community-suggested and admin-reviewed before it ships." },
   { icon: "💬", label: "Real interview experiences", desc: "First-hand accounts from Google, Amazon, Meta and more — alongside Q&A with hints and community answer docs." },
   { icon: "✅", label: "Per-account progress",     desc: "Sign in to track completed sessions across devices. Falls back to local storage when signed out." },
-  { icon: "🛠️", label: "In-app submissions",       desc: "Publish a reading, share an experience or contribute a question — straight from the app, no PR required." },
+  { icon: "�", label: "Topic of the day",        desc: "A fresh curated topic every day drawn from the roadmap and community readings. Mark it done and build a streak — like LeetCode’s Daily Problem." },
+  { icon: "�🛠️", label: "In-app submissions",       desc: "Publish a reading, share an experience or contribute a question — straight from the app, no PR required." },
   { icon: "🌗", label: "Light + dark theme",       desc: "Tuned for late-night study sessions. Theme is persisted between visits." },
 ];
 
@@ -175,7 +175,6 @@ export default function Home() {
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" style={creatorLink}>💼 LinkedIn</a>
-              <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" style={creatorLink}>⭐ GitHub repo</a>
             </div>
           </div>
         </div>
