@@ -8,22 +8,30 @@ import App from "./App";
 import { queryClient } from "./lib/queryClient";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-// Pre-warm on startup: populate TanStack cache with the Python roadmap (default
-// language) and fire-and-forget on readings/experiences to wake the Neon DB
-// connection pool before the user navigates to a content page.
-// Note: /health (used by UptimeRobot) never queries the DB, so Neon can still be
-// cold on first real request — these fetches fix that.
-import { fetchRoadmap } from "./api/roadmap";
-import { apiFetch }    from "./api/client";
+// Bootstrap prefetch: ONE request warms Neon DB and seeds all TanStack caches.
+// /api/bootstrap fetches roadmap + readings + interviews + experiences in a
+// single server-side Promise.all, so cold Neon pays one connection cost instead
+// of four. Data is seeded into TanStack cache so navigating to any tab is
+// instant even on slow mobile networks.
+import { apiFetch } from "./api/client";
 
-queryClient.prefetchQuery({
-  queryKey:  ["roadmap", "python"],
-  queryFn:   () => fetchRoadmap("python"),
-  staleTime: 30 * 60_000,
-});
-// Fire-and-forget: warm Neon's readings + experiences tables.
-apiFetch("/api/readings?sort=newest&limit=200").catch(() => {});
-apiFetch("/api/experiences?sort=newest&limit=200").catch(() => {});
+(async () => {
+  try {
+    type Boot = {
+      roadmap:     unknown[];
+      readings:    unknown[];
+      interviews:  unknown[];
+      experiences: unknown[];
+    };
+    const boot = await apiFetch<Boot>("/api/bootstrap?lang=python");
+    queryClient.setQueryData(["roadmap",     "python"],  boot.roadmap);
+    queryClient.setQueryData(["readings",    "newest"],  { data: boot.readings,    page: 1, limit: boot.readings.length    });
+    queryClient.setQueryData(["interviews",  "newest"],  { data: boot.interviews,  page: 1, limit: boot.interviews.length  });
+    queryClient.setQueryData(["experiences", "newest"],  { data: boot.experiences, page: 1, limit: boot.experiences.length });
+  } catch {
+    // Silently ignore — components will self-fetch with retry on failure.
+  }
+})();
 
 // One-time cleanup: upvotes and "practiced" flags moved from browser-local storage
 // to per-user DB rows. Drop the legacy keys so they don't sit in storage forever.
