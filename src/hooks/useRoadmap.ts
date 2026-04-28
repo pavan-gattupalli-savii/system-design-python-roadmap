@@ -1,20 +1,21 @@
 // ── useRoadmap hook ────────────────────────────────────────────────────────────
-// Returns roadmap phases for the given language.
-// Strategy: start with the bundled static data (instant), then background-fetch
-// from the API via React Query (auto-cached, deduped, and shared across tabs).
-// On error or empty payload, keeps showing the static snapshot.
+// Fetches roadmap phases for the given language from the API.
+// Data is shared across all call sites via TanStack Query's cache (key: ["roadmap", lang]).
+// After first load it stays fresh for 30 min and alive in memory for 1 hr,
+// so navigating between pages never triggers a second network request.
 
 import { useQuery } from "@tanstack/react-query";
-import { ROADMAPS } from "../data/roadmap-index";
 import type { Language } from "../data/roadmap-index";
 import type { Phase } from "../data/models";
 import { fetchRoadmap } from "../api/roadmap";
 
-export function useRoadmap(lang: Language): Phase[] {
-  const { data } = useQuery<Phase[]>({
-    queryKey: ["roadmap", lang],
-    queryFn:  () => fetchRoadmap(lang),
-    staleTime: 5 * 60_000,
+export function useRoadmap(lang: Language): { phases: Phase[]; isLoading: boolean } {
+  const { data, isLoading } = useQuery<Phase[]>({
+    queryKey:  ["roadmap", lang],
+    queryFn:   () => fetchRoadmap(lang),
+    staleTime: 30 * 60_000,   // treat as fresh for 30 min
+    gcTime:    60 * 60_000,   // keep in memory for 1 hr after last subscriber
   });
-  return data && data.length ? data : ROADMAPS[lang];
+  const phases = data ?? [];
+  return { phases, isLoading: isLoading && phases.length === 0 };
 }

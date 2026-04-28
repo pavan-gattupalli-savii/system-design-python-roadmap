@@ -41,7 +41,7 @@ export default function RoadmapPage() {
   const selWeek  = w ? parseInt(w) : NaN;
   const lang: Language = ctx.lang;
 
-  const roadmap   = useRoadmap(lang);
+  const { phases: roadmap, isLoading } = useRoadmap(lang);
   const flatWeeks = useMemo(() => getAllWeeks(roadmap), [roadmap]);
   const totalWeeks = flatWeeks.length ? flatWeeks[flatWeeks.length - 1].n : 54;
 
@@ -106,6 +106,20 @@ export default function RoadmapPage() {
   }
 
   const showSearch = searchQuery.trim().length > 0;
+
+  if (isLoading) {
+    return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, color: "var(--text-muted)" }}>
+        <div style={{ fontSize: 28 }}>🗺️</div>
+        <div style={{ fontSize: 13 }}>Loading roadmap…</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366f1", opacity: 0.4, animation: `pulse 1.2s ${i * 0.3}s ease-in-out infinite` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>

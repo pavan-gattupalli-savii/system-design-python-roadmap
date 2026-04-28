@@ -12,14 +12,9 @@ import { sendCached } from "../middleware/cache.js";
 const router = Router();
 
 
-export async function buildRoadmap(language: "python" | "java"): Promise<unknown[]> {
-  const cached = roadmapCache.get(language);
-  if (cached) return cached as unknown[];
-
-  // Fetch all 4 tables filtered by language, then join in memory
+async function fetchFromDB(language: "python" | "java"): Promise<unknown[]> {
   const phases = await db.select().from(roadmapPhases).where(eq(roadmapPhases.language, language)).orderBy(asc(roadmapPhases.phaseNumber));
-  const phaseIds = phases.map((p) => p.id);
-  if (!phaseIds.length) { roadmapCache.set(language, []); return []; }
+  if (!phases.length) return [];
 
   const [weeks, sessions, resources] = await Promise.all([
     db.select().from(roadmapWeeks).orderBy(asc(roadmapWeeks.weekNumber)),
@@ -46,7 +41,7 @@ export async function buildRoadmap(language: "python" | "java"): Promise<unknown
     resourcesBySession.set(r.sessionId, arr);
   }
 
-  const data = phases.map((p) => ({
+  return phases.map((p) => ({
     phase:  p.phaseNumber,
     title:  p.title,
     icon:   p.icon,
@@ -69,9 +64,14 @@ export async function buildRoadmap(language: "python" | "java"): Promise<unknown
       })),
     })),
   }));
+}
 
-  roadmapCache.set(language, data);
-  return data;
+// buildRoadmap: thin wrapper that adds SWR caching + in-flight dedup via roadmapCache.load().
+// First request pays the DB cost; subsequent requests within 15min get a cached value instantly;
+// stale entries (15–60min old) are served immediately while a background refresh runs.
+export async function buildRoadmap(language: "python" | "java"): Promise<unknown[]> {
+  const { data } = await roadmapCache.load(language, () => fetchFromDB(language));
+  return data as unknown[];
 }
 
 // GET /api/roadmap/:language  (language = "python" | "java")

@@ -81,8 +81,8 @@ export default function Layout() {
     setParams(newParams, { replace: true });
   }
 
-  const langDef       = LANGUAGES.find((l) => l.id === lang)!;
-  const activeRoadmap = useRoadmap(lang);
+  const langDef                          = LANGUAGES.find((l) => l.id === lang)!;
+  const { phases: activeRoadmap }        = useRoadmap(lang);
   const { completed, toggle: toggleCompleted, reset: resetCompleted } = useProgress(lang);
 
   const totalStats = useMemo(() => {

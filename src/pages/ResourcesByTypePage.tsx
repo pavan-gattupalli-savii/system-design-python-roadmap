@@ -24,7 +24,7 @@ type SortKey = "week" | "mins" | "item";
 export default function ResourcesByTypePage() {
   const { type }   = useParams<{ type: string }>();
   const ctx        = useOutletContext<LayoutContext>();
-  const roadmap    = useRoadmap(ctx.lang);
+  const { phases: roadmap } = useRoadmap(ctx.lang);
   const navigate   = useNavigate();
   const [sort, setSort] = useState<SortKey>("week");
   const [search, setSearch] = useState("");

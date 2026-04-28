@@ -8,7 +8,7 @@ import type { LayoutContext } from "../components/Layout";
 export default function OverviewPage() {
   const ctx = useOutletContext<LayoutContext>();
   const navigate = useNavigate();
-  const roadmap  = useRoadmap(ctx.lang);
+  const { phases: roadmap } = useRoadmap(ctx.lang);
 
   return (
     <TrackerTab
