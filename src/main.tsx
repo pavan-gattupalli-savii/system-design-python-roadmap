@@ -8,6 +8,11 @@ import App from "./App";
 import { queryClient } from "./lib/queryClient";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
+// Fire a silent /health ping immediately so Railway wakes up before the user
+// navigates to a page that needs real data. Failure is intentionally swallowed.
+import { apiFetch } from "./api/client";
+apiFetch("/health", { timeoutMs: 30_000 }).catch(() => {});
+
 // One-time cleanup: upvotes and "practiced" flags moved from browser-local storage
 // to per-user DB rows. Drop the legacy keys so they don't sit in storage forever.
 try {

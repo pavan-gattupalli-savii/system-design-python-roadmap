@@ -10,7 +10,10 @@ export const queryClient = new QueryClient({
       staleTime:  60_000,            // 1 min: matches server Cache-Control
       gcTime:     5 * 60_000,        // keep cached data warm for 5 min
       refetchOnWindowFocus: false,   // a refresh shouldn't trigger another roundtrip
-      retry:      1,                 // single retry on transient network errors
+      // Railway Starter plan cold-starts can take 15–30s. Retry up to 3 times
+      // with a 6s gap so the server has time to wake before we give up.
+      retry:      3,
+      retryDelay: 6_000,
     },
   },
 });
