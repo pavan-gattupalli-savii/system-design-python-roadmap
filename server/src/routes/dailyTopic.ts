@@ -8,6 +8,7 @@
 // Same topic all day, rotates automatically — zero admin curation needed.
 
 import { Router } from "express";
+import { dailyPoolCache } from "../lib/cache.js";
 import { db } from "../db/client.js";
 import {
   roadmapPhases, roadmapWeeks, roadmapSessions,
@@ -143,7 +144,14 @@ async function buildPool(): Promise<PoolItem[]> {
 
 router.get("/", optionalAuth, async (req, res) => {
   try {
-    const pool = await buildPool();
+    // Pool is identical for all users all day — cache it keyed by UTC date.
+    // First request of the day pays the 4-query DB cost; all subsequent hits
+    // (including UptimeRobot pings every 5 min) are served from memory.
+    const pool = (await dailyPoolCache.load(
+      "pool:" + utcDateStr(),
+      buildPool as () => Promise<unknown>,
+    )).data as PoolItem[];
+
     if (!pool.length) {
       res.status(503).json({ error: "No topics available yet" });
       return;

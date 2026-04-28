@@ -146,6 +146,7 @@ export class TTLCache<T> {
 // Hot list endpoints (readings / interviews / experiences) change rarely, so
 // we cache them aggressively. The roadmap is built from many joined tables,
 // so keep it warm even longer.
-export const queryCache    = new TTLCache<unknown>(5  * 60_000, 500);   // raw DB rows, 5min fresh / 20min stale
-export const responseCache = new TTLCache<unknown>(5  * 60_000, 200);   // shaped HTTP response, 5min fresh
-export const roadmapCache  = new TTLCache<unknown>(15 * 60_000, 4);     // roadmap is heavy → 15min fresh / 1h stale
+export const queryCache    = new TTLCache<unknown>(15 * 60_000, 500);                   // raw DB rows, 15min fresh / 60min stale
+export const responseCache = new TTLCache<unknown>(5  * 60_000, 200);                   // shaped HTTP response, 5min fresh
+export const roadmapCache  = new TTLCache<unknown>(15 * 60_000, 4, 24 * 60 * 60_000);  // roadmap: 15min fresh / 24hr stale (never changes without re-seed)
+export const dailyPoolCache = new TTLCache<unknown>(60 * 60_000, 2);                    // daily topic pool: 1hr fresh / 4hr stale (same pool all day)

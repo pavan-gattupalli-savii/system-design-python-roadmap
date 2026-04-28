@@ -87,7 +87,7 @@ router.get("/:language", async (req, res) => {
       res.status(404).json({ error: "No roadmap data found for " + language });
       return;
     }
-    sendCached(res, req, data, { maxAge: 300, swr: 600 });
+    sendCached(res, req, data, { maxAge: 3600, swr: 86400 });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch roadmap" });
