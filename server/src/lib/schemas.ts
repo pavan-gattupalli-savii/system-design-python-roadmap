@@ -73,6 +73,11 @@ export const practiceToggleSchema = z.object({
 
 export const adminKindSchema = z.enum(["readings", "interviews", "experiences", "answers"]);
 
+export const bookmarkSchema = z.object({
+  resourceType: z.enum(["reading", "experience", "question", "roadmap_resource"]),
+  resourceId:   z.string().min(1).max(200).transform(trim),
+});
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 const emailField = z
   .string()

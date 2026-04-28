@@ -193,3 +193,18 @@ export const dailyCompletions = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.topicDate] })],
 );
+
+// ── Per-user bookmarks ─────────────────────────────────────────────────────────
+// Polymorphic: resourceType discriminates which table resourceId belongs to.
+// resourceType: "reading" | "experience" | "question" | "roadmap_resource"
+// resourceId: UUID for DB items; resId(phase,weekN,si,ri) string for roadmap resources.
+export const bookmarks = pgTable(
+  "bookmarks",
+  {
+    userId:       uuid("user_id").notNull(),
+    resourceType: text("resource_type").notNull(),
+    resourceId:   text("resource_id").notNull(),
+    createdAt:    timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.resourceType, t.resourceId] })],
+);

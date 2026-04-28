@@ -7,9 +7,9 @@ import { Router } from "express";
 import { db } from "../db/client.js";
 import {
   users, userProgress, readingUpvotes, experienceUpvotes, userPracticedQuestions,
-  readings, interviewQuestions, experiences, answerDocs,
+  readings, interviewQuestions, experiences, answerDocs, bookmarks,
 } from "../db/schema.js";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { writeLimiter } from "../middleware/rateLimiter.js";
 import { profileUpdateSchema, progressUpdateSchema, practiceToggleSchema } from "../lib/schemas.js";
@@ -222,6 +222,62 @@ router.post("/practiced", writeLimiter, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update practiced list" });
+  }
+});
+
+// GET /api/me/bookmarks — all bookmarked resource IDs, grouped by type.
+// With ?resolved=true: resolves titles from DB for readings/experiences/questions.
+router.get("/bookmarks", async (req, res) => {
+  const userId = req.user!.id;
+  try {
+    const rows = await db
+      .select({ resourceType: bookmarks.resourceType, resourceId: bookmarks.resourceId })
+      .from(bookmarks)
+      .where(eq(bookmarks.userId, userId))
+      .orderBy(bookmarks.createdAt);
+
+    if (req.query.resolved !== "true") {
+      // Lightweight: just return grouped ID lists for star-button state.
+      const grouped: Record<string, string[]> = {
+        reading: [], experience: [], question: [], roadmap_resource: [],
+      };
+      for (const r of rows) {
+        (grouped[r.resourceType] ??= []).push(r.resourceId);
+      }
+      res.json(grouped);
+      return;
+    }
+
+    // Resolved: fetch titles for DB-backed types in parallel.
+    const readingIds    = rows.filter((r) => r.resourceType === "reading").map((r) => r.resourceId);
+    const experienceIds = rows.filter((r) => r.resourceType === "experience").map((r) => r.resourceId);
+    const questionIds   = rows.filter((r) => r.resourceType === "question").map((r) => r.resourceId);
+    const roadmapIds    = rows.filter((r) => r.resourceType === "roadmap_resource").map((r) => r.resourceId);
+
+    const [readingRows, experienceRows, questionRows] = await Promise.all([
+      readingIds.length
+        ? db.select({ id: readings.id, title: readings.title, url: readings.url, type: readings.type })
+            .from(readings).where(inArray(readings.id, readingIds))
+        : Promise.resolve([]),
+      experienceIds.length
+        ? db.select({ id: experiences.id, title: experiences.title, url: experiences.url, company: experiences.company, role: experiences.role })
+            .from(experiences).where(inArray(experiences.id, experienceIds))
+        : Promise.resolve([]),
+      questionIds.length
+        ? db.select({ id: interviewQuestions.id, title: interviewQuestions.title, category: interviewQuestions.category })
+            .from(interviewQuestions).where(inArray(interviewQuestions.id, questionIds))
+        : Promise.resolve([]),
+    ]);
+
+    res.json({
+      reading:          readingRows.map((r) => ({ id: String(r.id), title: r.title, url: r.url, meta: r.type })),
+      experience:       experienceRows.map((e) => ({ id: String(e.id), title: e.title, url: e.url, meta: `${e.company} · ${e.role}` })),
+      question:         questionRows.map((q) => ({ id: String(q.id), title: q.title, url: null, meta: q.category })),
+      roadmap_resource: roadmapIds.map((id) => ({ id, title: id, url: null, meta: "Roadmap" })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load bookmarks" });
   }
 });
 
