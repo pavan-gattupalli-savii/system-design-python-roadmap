@@ -8,6 +8,16 @@ interface State {
   err: Error | null;
 }
 
+const CHUNK_ERR_KEY = "sd_chunk_reload";
+
+function isChunkError(err: Error): boolean {
+  return (
+    err.message.includes("Failed to fetch dynamically imported module") ||
+    err.message.includes("Importing a module script failed") ||
+    err.message.includes("Unable to preload CSS")
+  );
+}
+
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   state: State = { err: null };
 
@@ -17,6 +27,15 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
 
   componentDidCatch(err: Error, info: ErrorInfo) {
     console.error("[ErrorBoundary]", err, info);
+
+    // Stale chunk after a new deploy: auto-reload once to fetch fresh assets.
+    if (isChunkError(err)) {
+      const alreadyReloaded = sessionStorage.getItem(CHUNK_ERR_KEY);
+      if (!alreadyReloaded) {
+        sessionStorage.setItem(CHUNK_ERR_KEY, "1");
+        window.location.reload();
+      }
+    }
   }
 
   reset = () => this.setState({ err: null });
