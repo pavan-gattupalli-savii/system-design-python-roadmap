@@ -1,0 +1,13 @@
+# Nixpacks build config for Railway
+# Without this, Railway sets NODE_ENV=production and Nixpacks runs
+# `npm ci --omit=dev`, which skips devDependencies (including typescript).
+# tsc is then missing and the build fails with exit code 127.
+
+[phases.install]
+cmds = ["npm ci"]           # installs ALL deps (devDeps included), ignores NODE_ENV
+
+[phases.build]
+cmds = ["npm run build"]    # runs `tsc` — now available because typescript is in devDeps
+
+[phases.start]
+cmds = ["node dist/index.js"]
