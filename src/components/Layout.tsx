@@ -24,6 +24,7 @@ const APP_TABS = [
   { id: "roadmap",   label: "Roadmap",    path: "/app/roadmap"   },
   { id: "readings",  label: "Readings",   path: "/app/readings"  },
   { id: "interview", label: "Interview",  path: "/app/interview" },
+  { id: "concepts",  label: "📖 Concepts", path: "/app/concepts"  },
   { id: "about",     label: "About",      path: "/app/about"     },
 ] as const;
 

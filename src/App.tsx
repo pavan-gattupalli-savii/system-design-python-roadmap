@@ -25,6 +25,7 @@ const MyProfile        = lazy(() => import("./pages/MyProfile"));
 const AdminQueue       = lazy(() => import("./pages/AdminQueue"));
 const ResourcesByTypePage = lazy(() => import("./pages/ResourcesByTypePage"));
 const DailyTopicPage   = lazy(() => import("./pages/DailyTopicPage"));
+const ConceptsPage     = lazy(() => import("./pages/ConceptsPage"));
 
 function PageFallback() {
   return (
@@ -58,6 +59,8 @@ export default function App() {
           <Route path="interview/submit"   element={<RequireAuth><SubmitInterview /></RequireAuth>} />
           <Route path="interview/:id/answer" element={<RequireAuth><SubmitAnswer /></RequireAuth>} />
           <Route path="experiences/submit" element={<RequireAuth><SubmitExperience /></RequireAuth>} />
+          <Route path="concepts"           element={<ConceptsPage />} />
+          <Route path="concepts/:slug"     element={<ConceptsPage />} />
           <Route path="about"              element={<AboutPage />} />
           <Route path="me"                 element={<RequireAuth><MyProfile /></RequireAuth>} />
           <Route path="admin"              element={<RequireAdmin><AdminQueue /></RequireAdmin>} />

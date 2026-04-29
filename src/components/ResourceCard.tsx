@@ -3,6 +3,8 @@ import { resId } from "../utils/stats";
 import { getResourceUrl } from "../utils/url";
 import type { Resource } from "../data/models";
 import { useBookmarks } from "../hooks/useBookmarks";
+import { CONCEPTS } from "../data/concepts/index";
+import { Link } from "react-router-dom";
 
 interface Props {
   phase: number;
@@ -22,6 +24,13 @@ export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isM
   const url   = getResourceUrl(res);
   const { bookmarks, toggleBookmark } = useBookmarks();
   const isBookmarked = bookmarks.roadmap_resource.has(id);
+
+  // Cross-link: find first concept whose keywords match this resource
+  const linkedConcept = CONCEPTS.find((c) =>
+    c.roadmapKeywords?.some((kw) =>
+      res.item.toLowerCase().includes(kw) || res.where.toLowerCase().includes(kw),
+    ),
+  ) ?? null;
 
   return (
     <div
@@ -72,6 +81,25 @@ export function ResourceCard({ phase, weekN, si, ri, res, completed, toggle, isM
             <span style={{ color: "var(--text-muted)" }}>→ </span>
             {res.where}
           </div>
+
+          {/* Concept cross-link chip */}
+          {linkedConcept && (
+            <Link
+              to={`/app/concepts/${linkedConcept.slug}`}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                marginTop: 7, padding: "2px 8px", borderRadius: 10,
+                background: "#6366f111", border: "1px solid #6366f133",
+                color: "#a5b4fc", fontSize: 10, fontWeight: 600,
+                textDecoration: "none", whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#6366f122")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#6366f111")}
+            >
+              📖 {linkedConcept.title} →
+            </Link>
+          )}
         </div>
 
         {/* Completion toggle */}
