@@ -3,8 +3,23 @@
 // Add a new concept by: creating a .ts file, exporting a Concept object, and
 // appending it to the CONCEPTS array below.
 
-import { latency }    from "./latency";
-import { lldSymbols } from "./lld-symbols";
+import { latency }           from "./latency";
+import { lldSymbols }        from "./lld-symbols";
+import { caching }           from "./caching";
+import { capTheorem }        from "./cap-theorem";
+import { loadBalancing }     from "./load-balancing";
+import { databaseIndexes }   from "./database-indexes";
+import { consistentHashing } from "./consistent-hashing";
+import { sqlVsNosql }        from "./sql-vs-nosql";
+import { rateLimiting }      from "./rate-limiting";
+import { messageQueues }     from "./message-queues";
+import { apiDesign }         from "./api-design";
+import { replication }       from "./replication";
+import { sharding }          from "./sharding";
+import { cdn }               from "./cdn";
+import { dns }               from "./dns";
+import { acidTransactions }  from "./acid-transactions";
+import { microservices }     from "./microservices";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,7 +33,19 @@ export type ConceptCategory =
 export type DiagramKey =
   | "latency-timeline"
   | "latency-table"
-  | "lld-symbols";
+  | "lld-symbols"
+  | "cache-hit-miss"
+  | "cap-triangle"
+  | "lb-flow"
+  | "btree-index"
+  | "hash-ring"
+  | "token-bucket"
+  | "queue-flow"
+  | "replication-flow"
+  | "sharding-flow"
+  | "cdn-flow"
+  | "dns-resolution"
+  | "microservices-flow";
 
 export interface ConceptSection {
   heading: string;
@@ -45,6 +72,21 @@ export interface Concept {
 export const CONCEPTS: Concept[] = [
   latency,
   lldSymbols,
+  caching,
+  capTheorem,
+  loadBalancing,
+  databaseIndexes,
+  consistentHashing,
+  sqlVsNosql,
+  rateLimiting,
+  messageQueues,
+  apiDesign,
+  replication,
+  sharding,
+  cdn,
+  dns,
+  acidTransactions,
+  microservices,
 ];
 
 export const CONCEPTS_BY_SLUG = new Map(CONCEPTS.map((c) => [c.slug, c]));
