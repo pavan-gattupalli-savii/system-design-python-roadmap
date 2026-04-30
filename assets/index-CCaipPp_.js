@@ -59,7 +59,7 @@ Solutions:
 1. Mutex/lock on miss: Only one request fetches from the DB; others wait and read from cache once populated. Introduces latency for waiting requests.
 2. Probabilistic early expiration (PER/XFetch): Before TTL expires, randomly some requests treat the key as expired and refresh it early. Amortises the refresh over time with no coordination.
 3. Background refresh: A background job refreshes cache entries before they expire. The cache never actually goes empty for hot keys. Best for keys with predictable TTLs.
-4. Stale-while-revalidate: Serve the stale cached value immediately while triggering an async refresh in the background. User sees slightly old data but never a slow response.`,callout:{kind:"tip",text:"The simplest production fix: add a small random jitter to TTLs (e.g., TTL = 300 + random(0, 60) seconds). This spreads expiration events across time so thousands of keys don't all expire at the exact same moment."}},{heading:"Redis vs Memcached",table:{cols:["Feature","Redis","Memcached"],rows:[["Data structures","Strings, Hashes, Lists, Sets, Sorted Sets, Streams, HyperLogLog, Bitmaps, Geo","Strings only"],["Persistence","RDB snapshots + AOF append-only log (optional)","None — in-memory only"],["Replication","Primary-replica, Redis Sentinel, Redis Cluster","No built-in replication"],["Pub/Sub","Yes — built-in channel-based messaging","No"],["Lua scripting","Yes — atomic server-side scripts","No"],["Multi-threading","Single-threaded command execution (I/O is async multi-thread since Redis 6)","Multi-threaded from the start"],["Max value size","512 MB per key","1 MB per key"],["Use cases","Everything — sessions, queues, leaderboards, rate limiting, pub/sub, geospatial","Simple string KV cache with extreme read throughput"],["When to choose","Default choice for almost all new projects","Legacy systems or when you need raw multi-core KV throughput"]]}}]},i={slug:"cap-theorem",title:"CAP Theorem",emoji:"🔺",category:"Distributed Systems",tagline:"Pick two: Consistency, Availability, Partition Tolerance",roadmapKeywords:["cap","consistency","availability","partition","distributed","base","pacelc"],related:["consistent-hashing","replication","acid-transactions"],sections:[{heading:"The Problem CAP Theorem Addresses",body:`The moment you split your database across more than one machine, you have a distributed system. Distributed systems communicate over a network, and networks are fundamentally unreliable — packets get lost, links go down, switches fail, and data centres get isolated from each other.
+4. Stale-while-revalidate: Serve the stale cached value immediately while triggering an async refresh in the background. User sees slightly old data but never a slow response.`,callout:{kind:"tip",text:"The simplest production fix: add a small random jitter to TTLs (e.g., TTL = 300 + random(0, 60) seconds). This spreads expiration events across time so thousands of keys don't all expire at the exact same moment."}},{heading:"Redis vs Memcached",table:{cols:["Feature","Redis","Memcached"],rows:[["Data structures","Strings, Hashes, Lists, Sets, Sorted Sets, Streams, HyperLogLog, Bitmaps, Geo","Strings only"],["Persistence","RDB snapshots + AOF append-only log (optional)","None — in-memory only"],["Replication","Primary-replica, Redis Sentinel, Redis Cluster","No built-in replication"],["Pub/Sub","Yes — built-in channel-based messaging","No"],["Lua scripting","Yes — atomic server-side scripts","No"],["Multi-threading","Single-threaded command execution (I/O is async multi-thread since Redis 6)","Multi-threaded from the start"],["Max value size","512 MB per key","1 MB per key"],["Use cases","Everything — sessions, queues, leaderboards, rate limiting, pub/sub, geospatial","Simple string KV cache with extreme read throughput"],["When to choose","Default choice for almost all new projects","Legacy systems or when you need raw multi-core KV throughput"]]}}]},r={slug:"cap-theorem",title:"CAP Theorem",emoji:"🔺",category:"Distributed Systems",tagline:"Pick two: Consistency, Availability, Partition Tolerance",roadmapKeywords:["cap","consistency","availability","partition","distributed","base","pacelc"],related:["consistent-hashing","replication","acid-transactions"],sections:[{heading:"The Problem CAP Theorem Addresses",body:`The moment you split your database across more than one machine, you have a distributed system. Distributed systems communicate over a network, and networks are fundamentally unreliable — packets get lost, links go down, switches fail, and data centres get isolated from each other.
 
 Eric Brewer formalised this in 2000 (proven by Gilbert and Lynch in 2002): a distributed data store can guarantee at most two of the three following properties at any given time.`},{heading:"The Three Properties",body:`Consistency (C): Every read receives the most recent write or an error. All nodes in the cluster see the same data at the same time. When you write to any node, every subsequent read from any node returns that value. This is linearizability — the strongest consistency model.
 
@@ -86,7 +86,7 @@ For a cluster of N replicas, a write with W acknowledgements required and a read
 Example: N=3 replicas. Set W=2 (write must be acked by 2 nodes) and R=2 (read from 2 nodes). Since 2+2=4 > 3, at least one of your read nodes always has the latest write. Strong consistency — but you've sacrificed some availability (if 2 nodes are down, both W and R can't be satisfied).
 
 Set W=1, R=1: maximum availability, eventual consistency.
-Set W=3, R=1: strong write durability, fast reads — but any node outage blocks writes.`}]},r={slug:"load-balancing",title:"Load Balancing",emoji:"⚖️",category:"Architecture",tagline:"Spreading work so no single server drowns",roadmapKeywords:["load balancer","load balancing","nginx","round robin","sticky session","haproxy","l4","l7"],related:["caching","microservices","consistent-hashing"],sections:[{heading:"Why Load Balancers Exist",body:`A single server can only handle so many requests before it becomes the bottleneck. When traffic spikes — a product goes viral, a cron job triggers, a major news event drives traffic — you need to scale horizontally by adding more servers. But adding servers alone isn't enough: you need something to distribute requests across them.
+Set W=3, R=1: strong write durability, fast reads — but any node outage blocks writes.`}]},i={slug:"load-balancing",title:"Load Balancing",emoji:"⚖️",category:"Architecture",tagline:"Spreading work so no single server drowns",roadmapKeywords:["load balancer","load balancing","nginx","round robin","sticky session","haproxy","l4","l7"],related:["caching","microservices","consistent-hashing"],sections:[{heading:"Why Load Balancers Exist",body:`A single server can only handle so many requests before it becomes the bottleneck. When traffic spikes — a product goes viral, a cron job triggers, a major news event drives traffic — you need to scale horizontally by adding more servers. But adding servers alone isn't enough: you need something to distribute requests across them.
 
 A load balancer (LB) is a reverse proxy that sits between clients and your server pool. It accepts incoming connections and routes each request to one of the backend servers according to a distribution algorithm. The client doesn't know — or care — which backend handled its request.
 
@@ -186,7 +186,7 @@ Reads and writes use quorum mathematics (R + W > N) to determine consistency lev
 Consistent hashing deliberately destroys key ordering. Keys that are lexicographically close end up on different nodes. This achieves uniform load but makes range scans impossible across multiple nodes — you'd need to query all nodes and merge results.
 
 Choose consistent hashing when: uniform load distribution is the priority and range queries span entire datasets.
-Choose range partitioning when: your queries frequently scan ranges of keys and you can accept hot spots or need to ensure key locality.`,callout:{kind:"tip",text:"DynamoDB uses consistent hashing for its partition key — but you add a sort key to enable range queries within a single partition. This is the best of both worlds: hashing for distribution, range indexing within each partition. Understanding this pattern is the foundation of designing DynamoDB schemas."}}]},d={slug:"sql-vs-nosql",title:"SQL vs NoSQL",emoji:"🗃️",category:"Database",tagline:"Choosing the right data store for the job",roadmapKeywords:["sql","nosql","database","postgresql","mongodb","cassandra","dynamo","relational","document","key-value"],related:["database-indexes","acid-transactions","sharding","cap-theorem"],sections:[{heading:"The Relational Model",body:`SQL databases (Relational databases) organise data into tables — rows and columns — with a fixed schema. Relationships between tables are expressed via foreign keys and enforced by the database engine. The query language is SQL (Structured Query Language), which is declarative: you describe what data you want, not how to retrieve it.
+Choose range partitioning when: your queries frequently scan ranges of keys and you can accept hot spots or need to ensure key locality.`,callout:{kind:"tip",text:"DynamoDB uses consistent hashing for its partition key — but you add a sort key to enable range queries within a single partition. This is the best of both worlds: hashing for distribution, range indexing within each partition. Understanding this pattern is the foundation of designing DynamoDB schemas."}}]},c={slug:"sql-vs-nosql",title:"SQL vs NoSQL",emoji:"🗃️",category:"Database",tagline:"Choosing the right data store for the job",roadmapKeywords:["sql","nosql","database","postgresql","mongodb","cassandra","dynamo","relational","document","key-value"],related:["database-indexes","acid-transactions","sharding","cap-theorem"],sections:[{heading:"The Relational Model",body:`SQL databases (Relational databases) organise data into tables — rows and columns — with a fixed schema. Relationships between tables are expressed via foreign keys and enforced by the database engine. The query language is SQL (Structured Query Language), which is declarative: you describe what data you want, not how to retrieve it.
 
 The relational model was invented by E.F. Codd at IBM in 1970 and remains dominant for most transactional workloads. Its strengths: strong consistency (ACID guarantees), powerful JOIN operations, referential integrity (foreign keys prevent orphaned data), and a mature ecosystem of tooling, ORMs, and operational expertise.
 
@@ -204,7 +204,7 @@ Each database handles what it's best at. The trade-off: operational complexity i
 
 Google Spanner (2012) was the first major NewSQL system — globally distributed, externally consistent SQL. CockroachDB and YugabyteDB are open-source NewSQL databases inspired by Spanner.
 
-Trade-offs: higher write latency (synchronous consensus adds round trips), significant operational complexity, and still relatively young compared to PostgreSQL. For most startups and mid-size companies, PostgreSQL with read replicas and connection pooling (PgBouncer) handles 10-100x more load than you think before you need NewSQL.`}]},c={slug:"rate-limiting",title:"Rate Limiting",emoji:"🚦",category:"Networking",tagline:"Protecting your API from being overwhelmed",roadmapKeywords:["rate limit","rate limiting","throttle","token bucket","api gateway","429","leaky bucket"],related:["load-balancing","api-design","caching"],sections:[{heading:"Why Rate Limiting?",body:`An API without rate limits is an invitation to abuse. A single misbehaving client — a broken retry loop, a scraper, a DDoS attack, or a well-meaning developer with a bug — can consume all your server resources and degrade service for every other user.
+Trade-offs: higher write latency (synchronous consensus adds round trips), significant operational complexity, and still relatively young compared to PostgreSQL. For most startups and mid-size companies, PostgreSQL with read replicas and connection pooling (PgBouncer) handles 10-100x more load than you think before you need NewSQL.`}]},d={slug:"rate-limiting",title:"Rate Limiting",emoji:"🚦",category:"Networking",tagline:"Protecting your API from being overwhelmed",roadmapKeywords:["rate limit","rate limiting","throttle","token bucket","api gateway","429","leaky bucket"],related:["load-balancing","api-design","caching"],sections:[{heading:"Why Rate Limiting?",body:`An API without rate limits is an invitation to abuse. A single misbehaving client — a broken retry loop, a scraper, a DDoS attack, or a well-meaning developer with a bug — can consume all your server resources and degrade service for every other user.
 
 Rate limiting caps how many requests a client can make within a time window. It protects your system by:
 1. Preventing resource exhaustion: database connections, CPU, memory, and bandwidth are finite.
@@ -545,4 +545,397 @@ The three pillars of microservices observability:
 - Metrics: RED metrics per service — Request rate, Error rate, Duration (latency)
 - Traces: distributed traces correlating all spans for a single request
 
-Without all three, debugging production issues in a microservices environment is guesswork.`}]},t=[a,s,o,i,r,n,l,d,c,h,u,m,p,g,y,f,b],w=new Map(t.map(e=>[e.slug,e])),v=Array.from(new Set(t.map(e=>e.category)));export{t as C,w as a,v as b};
+Without all three, debugging production issues in a microservices environment is guesswork.`}]},v={slug:"circuit-breaker",title:"Circuit Breaker",emoji:"⚡",category:"Architecture",tagline:"Fail fast so one broken service doesn't cascade into full outage",roadmapKeywords:["circuit breaker","resilience","fault tolerance","hystrix","resilience4j","retry","timeout"],related:["microservices","load-balancing","rate-limiting","message-queues"],sections:[{heading:"The Cascading Failure Problem",body:`In distributed systems, services call other services. When a downstream service becomes slow or unavailable, the callers block waiting for responses. If enough requests pile up, the caller's thread pool exhausts and it too becomes unresponsive — causing its callers to fail as well. A single failing service cascades into a full system outage in seconds.
+
+Classic example: Payment Service calls Fraud Detection Service. Fraud Detection is having a slow database day — responses that normally take 20ms now take 30 seconds. Payment Service's 50 threads are all blocked waiting for Fraud Detection. New payment requests queue up, then timeout. Users see "Payment failed." Payment Service itself is now unresponsive. Checkout Service (which calls Payment) starts failing too. A database problem in one service has taken down the entire checkout flow.
+
+The circuit breaker pattern, named after the electrical circuit breaker that physically interrupts current when overloaded, is a state machine that wraps outbound service calls and trips open when failure rate exceeds a threshold — causing calls to fail immediately rather than waiting for the slow downstream.`,diagram:"circuit-breaker-flow"},{heading:"Three States",body:`The circuit breaker has three states:
+
+CLOSED (normal operation): requests flow through to the downstream service. The circuit breaker tracks success and failure counts in a sliding window. While the failure rate stays below the threshold (e.g., <50% failures), the circuit stays closed.
+
+OPEN (failing fast): once the failure rate exceeds the threshold, the circuit trips open. All calls fail immediately with a CircuitBreakerOpenException — no calls reach the downstream service. This gives the failing service time to recover, and prevents thread exhaustion in the caller. A timer starts (e.g., 30 seconds).
+
+HALF-OPEN (probing recovery): after the timer expires, the circuit allows a small number of probe requests through. If the probe requests succeed, the circuit closes (normal operation resumes). If they fail, the circuit opens again and resets the timer. This enables automatic recovery without human intervention.`},{heading:"Implementation Details",body:`Sliding window types for failure counting:
+- Count-based window: track the last N requests. If >X% fail, trip. Simple, but one slow request can delay the trip if N is large.
+- Time-based window: track failures in the last T seconds. More responsive to sudden degradation.
+
+Key configuration parameters:
+- failureRateThreshold (e.g., 50%): circuit opens when this % of requests fail within the window
+- minimumNumberOfCalls (e.g., 10): don't trip on the first request if it fails; collect enough data first
+- waitDurationInOpenState (e.g., 30s): how long to stay open before transitioning to half-open
+- permittedNumberOfCallsInHalfOpenState (e.g., 3): how many probe requests to allow in half-open
+- slowCallRateThreshold (e.g., 80%): trip on slowness too (not just errors) — if 80% of calls take >slowCallDurationThreshold, treat as failure
+
+Fallback strategy: when the circuit is open, instead of returning an error, provide a fallback: serve stale cached data, return a default response, queue the request for later processing, or degrade gracefully (e.g., "fraud check temporarily unavailable, proceeding with manual review").`,callout:{kind:"tip",text:"A circuit breaker without a fallback is only half the solution. The fallback is what determines the user experience during an outage. Design fallbacks first: ask 'what should happen when this service is unavailable?' before implementing the circuit breaker."}},{heading:"Circuit Breaker vs Retry vs Timeout",table:{cols:["Pattern","What it does","When to use","Risk without it"],rows:[["Timeout","Limit how long a single call can block","Always — every network call needs a timeout","Thread starvation — threads blocked forever on dead services"],["Retry","Automatically retry failed requests with backoff","Transient failures (network blip, 503 for <1s)","Missing idempotency causes duplicate side effects"],["Circuit Breaker","Stop calling a service that is consistently failing","Sustained downstream failures (not transient)","Cascading failures across the service graph"],["Bulkhead","Isolate thread pools per downstream service","Prevent one slow downstream from starving all threads","Thread pool exhaustion affecting unrelated features"],["Fallback","Provide a degraded but functional response on failure","When partial data is better than no data","Hard errors propagated to users"]]},callout:{kind:"note",text:"Retry + Circuit Breaker is a dangerous combination if not designed carefully. Retries amplify load during an outage (the 'thundering herd' problem). Use circuit breakers to stop retrying altogether once the circuit opens. Resilience4j lets you chain: CircuitBreaker → Retry → Timeout as decorators — order matters."}},{heading:"Real-World Libraries",table:{cols:["Library / Tool","Language","Key Feature"],rows:[["Resilience4j","Java","Lightweight, functional-style, integrates with Spring Boot, Micrometer metrics"],["Hystrix","Java","Netflix OSS, battle-tested but now in maintenance mode — use Resilience4j instead"],["Polly",".NET","Comprehensive resilience library with circuit breaker, retry, bulkhead, timeout, fallback"],["PyBreaker","Python","Simple circuit breaker for Python services"],["Istio / Envoy","Any language","Circuit breaking at the infrastructure/service mesh level — no application code changes required. Configured via Istio DestinationRule."],["AWS App Mesh","Any language","Managed service mesh with circuit breaker via Envoy proxy"]]}},{heading:"Circuit Breaker in System Design Interviews",body:`Circuit breakers are a key resilience pattern to mention in any system design interview involving microservices, payment systems, or high-availability requirements.
+
+When asked "how do you handle a downstream service failure?", structure your answer as:
+
+1. Timeout: every call to ServiceB has a 500ms timeout. We never block indefinitely.
+2. Circuit breaker: after 5 consecutive timeouts or >50% failure rate in 10 seconds, the circuit opens. We fail fast for the next 30 seconds without hitting ServiceB.
+3. Fallback: while the circuit is open, we serve the last known good response from cache / use a simplified default / enqueue for later processing.
+4. Monitoring: circuit state transitions are emitted as metrics (circuit_open_count, circuit_close_count). Alerts fire when circuits stay open for >2 minutes.
+5. Recovery: after 30 seconds, we probe with 3 test requests. On success, we close the circuit and resume normal traffic gradually.`}]},w={slug:"bloom-filter",title:"Bloom Filter",emoji:"🌸",category:"Database",tagline:"Probably yes, definitely no — a space-efficient membership test",roadmapKeywords:["bloom filter","probabilistic","false positive","hashing","set membership","cassandra","bigtable"],related:["caching","database-indexes","consistent-hashing","sharding"],sections:[{heading:"The Problem: Expensive Membership Checks",body:`Before accessing a database or cache for a key, you want to know: does this key exist? Checking the actual datastore takes a full read — disk I/O, network round-trip, or cache lookup. When millions of keys don't exist (the "negative lookup" case), these misses are expensive and wasteful.
+
+Examples:
+- Cassandra checking if an SSTable contains a key before reading it from disk
+- A cache layer checking if a URL has been crawled before
+- Chrome checking if a URL is in Google's Safe Browsing blacklist
+- A database checking if a username is taken during signup
+
+A Bloom filter solves this: a compact probabilistic data structure that answers "is this element in the set?" with two possible answers:
+- "Definitely NOT in the set" — 100% accurate (no false negatives)
+- "Probably IN the set" — may have false positives (but configurable rate)
+
+A false positive means the bloom filter says "yes, it's there" but the element isn't actually in the set. A false negative (saying "not there" when it is) is impossible — making Bloom filters safe for use as a pre-filter before the real lookup.`,diagram:"bloom-filter-viz"},{heading:"How It Works",body:`A Bloom filter is a bit array of m bits (initially all 0) and k hash functions.
+
+Adding an element: hash the element with each of the k hash functions, producing k array positions. Set each of those bits to 1.
+
+Querying an element: hash the element with the same k functions. If ALL k bits are 1 → "probably present." If ANY bit is 0 → "definitely not present."
+
+Why false positives happen: two different elements may map some of their bit positions to the same slots. If those slots are already set to 1 by other elements, a query for an element that was never inserted can find all k bits set — a false positive.
+
+Why there are no false negatives: when you insert element X, its k bits are set to 1. When you query X, you check those same k positions. Since bits are only ever set to 1 (never reset to 0), all k bits will still be 1 — so X is always reported as "probably present."
+
+Deletion is not supported in a standard Bloom filter — clearing a bit could affect other elements that share it. Counting Bloom filters use counters instead of bits to support deletion, at the cost of more space.`},{heading:"Math: False Positive Rate and Sizing",body:`The false positive probability p depends on three parameters: m (bit array size), n (number of elements inserted), and k (number of hash functions).
+
+False positive probability: p ≈ (1 − e^(−kn/m))^k
+
+Optimal k for a given m and n: k = (m/n) × ln(2) ≈ 0.693 × (m/n)
+
+Practical sizing: to achieve a false positive rate of p with n expected elements, you need m = −(n × ln p) / (ln 2)² bits.
+
+Example: 1 million URLs, 1% false positive rate → m = −(1,000,000 × ln 0.01) / (ln 2)² ≈ 9.6 million bits ≈ 1.2 MB. For the same data in a hash set, you'd need at least 50-100 MB. Bloom filter uses ~100x less memory.`,table:{cols:["False Positive Rate","Bits per element (optimal k)","Optimal k"],rows:[["10%","4.8 bits","3 hash functions"],["1%","9.6 bits","7 hash functions"],["0.1%","14.4 bits","10 hash functions"],["0.01%","19.2 bits","13 hash functions"]]},callout:{kind:"tip",text:"In practice, you choose your acceptable false positive rate first (usually 1–5%), then compute the bit array size. Cassandra uses one Bloom filter per SSTable — with a 1% false positive rate, 99% of non-existent key lookups skip the SSTable entirely (no disk read). This dramatically reduces read amplification for large datasets."}},{heading:"Real-World Applications",table:{cols:["System","What's stored","What Bloom filter prevents"],rows:[["Cassandra / HBase","SSTable file per row range","Disk reads for keys that don't exist in that SSTable"],["Bigtable (Google)","Tablet files","Disk I/O for negative lookups across large tablets"],["Chrome Safe Browsing","Millions of malicious URLs","Server round-trips for safe URLs (local Bloom filter check first)"],["Akamai CDN","Recently requested URLs","Caching 'one-hit wonder' URLs that are never requested again"],["Ethereum nodes","Recent transaction pool","Redundant transaction propagation across the P2P network"],["Medium (blog platform)","Recommended articles per user","Re-showing articles the user has already read"],["Redis (4.0+)","Built-in module","Native Bloom filter support with BF.ADD / BF.EXISTS commands"]]}},{heading:"Variants",body:`Counting Bloom Filter: replaces each bit with a small counter (4 bits). Supports deletion — decrement counters instead of clearing bits. Used in network packet classification and IP routing. Cost: 4x more space than a standard Bloom filter.
+
+Scalable Bloom Filter: automatically grows by adding new Bloom filter tiers as the set fills. Each tier has a stricter false positive rate so the overall rate stays bounded. Good for datasets with unknown or unbounded size.
+
+Cuckoo Filter: an alternative to Bloom filters that supports deletion (without counting), uses slightly less space at low false positive rates (<3%), and has better cache locality. Faster for lookups. Favoured in modern implementations.
+
+Xor Filter: even more compact than Cuckoo filters for static sets (cannot add elements after construction). Used in database indexes where the set is built once and then read-only.`},{heading:"When NOT to Use a Bloom Filter",bullets:["When false positives are unacceptable — e.g., financial transactions where 'probably exists' isn't good enough. Use a hash set or the actual database.","When the set is small enough to fit in memory — a hash set is faster and exact.","When you need to delete elements frequently — use a Counting Bloom Filter or Cuckoo Filter instead.","When you need to enumerate the elements in the set — Bloom filters are write-only; you can't retrieve what was inserted.","When the fill ratio will exceed ~50% — false positive rate rises sharply. Size generously or use a Scalable Bloom Filter."]}]},k={slug:"observability",title:"Observability",emoji:"🔭",category:"Architecture",tagline:"Understanding what your system is doing from its external outputs",roadmapKeywords:["observability","monitoring","logs","metrics","traces","opentelemetry","prometheus","grafana","jaeger"],related:["microservices","latency","circuit-breaker","cdn"],sections:[{heading:"Observability vs Monitoring",body:`Monitoring tells you whether a known thing is broken: "Is CPU above 90%? Is error rate above 1%?" You define dashboards and alerts for failures you can anticipate.
+
+Observability goes further: it's the ability to understand the internal state of your system solely from its external outputs — logs, metrics, and traces — including for failures you didn't predict. An observable system lets you ask arbitrary questions about its behaviour without deploying new instrumentation.
+
+The distinction matters in production: monitoring catches the problems you expected. Observability helps you debug the problems you didn't — the slow query that only happens for users in a specific region, the memory leak that only manifests on Tuesdays, the cascade that takes 4 services to reproduce.
+
+Peter Bourgon coined the term "three pillars of observability" to describe the three signal types that together provide full system insight: logs, metrics, and traces.`,diagram:"observability-pillars"},{heading:"Pillar 1 — Logs",body:`Logs are timestamped, immutable records of discrete events: "User 12345 logged in", "Query returned 0 rows", "NullPointerException at line 47", "Payment $99 succeeded for order #8821".
+
+Structured logging: emit JSON logs instead of plain text strings. Every log line should include: timestamp, level, service name, trace_id (for correlation), and relevant key-value fields. Plain text logs are grep-able; structured logs are query-able.
+
+Log levels (use them consistently):
+- ERROR: something failed and needs attention — alert on this
+- WARN: something unexpected happened but the system recovered — track trends
+- INFO: normal events worth recording — request start/end, significant state transitions
+- DEBUG: detailed diagnostics — disable in production or sample at 1%
+
+Log aggregation: logs from 100 pods need to be centrally collected and indexed. The ELK stack (Elasticsearch + Logstash + Kibana) or the EFK stack (with Fluentd) are common. CloudWatch Logs (AWS), Cloud Logging (GCP), and Datadog Logs are managed alternatives.
+
+The failure mode of logs: log too much and storage costs explode; log too little and you're blind during incidents. Sample DEBUG logs at 1-10%. Always log at ERROR and WARN. For INFO, log request boundaries (one line per request with status, duration, user_id, trace_id).`,callout:{kind:"tip",text:"The single highest-value improvement to your logging is adding a trace_id to every log line. When an alert fires at 2am, being able to grep trace_id=abc123 and instantly see every log line from all services for that specific request is the difference between a 5-minute debug and a 2-hour investigation."}},{heading:"Pillar 2 — Metrics",body:`Metrics are numerical measurements sampled over time: request rate, error rate, p95 latency, CPU utilisation, memory usage, queue depth, active connections. They're time series data — efficient to store, fast to query, and the basis for dashboards and alerts.
+
+The RED method (for services): track these three metric types for every service:
+- Request Rate: how many requests per second is this service receiving?
+- Error Rate: what percentage of those requests are failing?
+- Duration: what is the p50, p95, p99 latency distribution?
+
+The USE method (for resources): for every hardware resource (CPU, memory, disk, network):
+- Utilisation: what percentage of the resource is being used?
+- Saturation: is there a queue forming? (e.g., CPU run queue length)
+- Errors: are there hardware errors?
+
+Prometheus: the industry-standard metrics collection system. Services expose a /metrics endpoint in text format. Prometheus scrapes these endpoints on a schedule and stores data in its time-series database. PromQL is its query language. Works with Grafana for visualisation and AlertManager for alerting.
+
+The four Prometheus metric types:
+- Counter: monotonically increasing (total request count, total errors). Never decreases.
+- Gauge: can go up and down (current active connections, memory usage, queue depth).
+- Histogram: samples observations into configurable buckets — used for latency distributions (enables p95/p99 calculations).
+- Summary: calculates quantiles client-side (less flexible than histograms for aggregation).`},{heading:"Pillar 3 — Traces",body:`A trace represents a single request's journey through your distributed system — from the user's browser through the API gateway, to Service A, which calls Service B and Service C, each making database queries.
+
+A trace is composed of spans. Each span represents a single unit of work: one service's processing, one database query, one external API call. Spans have: service name, operation name, start time, duration, status (ok/error), and key-value attributes.
+
+W3C Trace Context: the standard header format for propagating trace context across service boundaries. Every service adds its span to the trace by reading the traceparent header from the incoming request and writing it to all outbound requests.
+
+OpenTelemetry (OTel): the CNCF standard for producing and collecting telemetry data. A single SDK for all three pillars — logs, metrics, traces — with exporters for Jaeger, Zipkin, Prometheus, Datadog, Honeycomb, and more. Instrument once; switch backends without code changes.
+
+Sampling: recording every trace at 1M req/s is impractical. Strategies:
+- Head-based sampling: decide at the start of a trace (e.g., sample 1% of all requests). Simple but you miss rare slow/error requests.
+- Tail-based sampling (preferred): buffer spans and decide at trace completion. Always sample traces with errors or high latency. Sample the rest at 1%.`},{heading:"Observability Stack Choices",table:{cols:["Component","Open Source","Managed (cloud)","Description"],rows:[["Metrics","Prometheus + Grafana","Datadog, New Relic, CloudWatch","Collect, store, visualise numerical time series"],["Logs","ELK / EFK, Loki","Datadog, Splunk, CloudWatch Logs","Aggregate, index, and search log streams"],["Traces","Jaeger, Zipkin, Tempo","Datadog APM, AWS X-Ray, Honeycomb","Distributed request tracing across services"],["All-in-one","OpenTelemetry Collector","Datadog, Dynatrace, Honeycomb","Unified collection agent — one SDK for all signals"],["Alerting","AlertManager, PagerDuty","PagerDuty, OpsGenie, Datadog","Route alerts to on-call engineers"]]}},{heading:"SLIs, SLOs, and Error Budgets",body:`Observability without targets is noise. Site Reliability Engineering (SRE) defines formal targets:
+
+SLI (Service Level Indicator): a quantitative measure of a service behaviour. The ratio of "good requests" to total requests. "Good" means: responded in <200ms AND status 2xx.
+
+SLO (Service Level Objective): the target value for an SLI. "99.9% of requests in any 30-day window are good." This is your internal target — stricter than your SLA with customers.
+
+Error Budget: the allowed number of "bad" events before breaching the SLO. At 99.9% SLO and 1M daily requests: error budget = 0.1% × 1M = 1,000 bad requests/day. If the error budget is being consumed faster than expected, freeze feature launches and focus on reliability. If the budget is healthy, ship features aggressively.
+
+SLA (Service Level Agreement): the contractual commitment to customers, with financial penalties for breach. Always set your SLA looser than your SLO — the SLO is your safety margin.`,callout:{kind:"note",text:"The most important alert is not 'CPU > 90%' — it's 'error rate exceeding SLO budget.' Alert on user-visible symptoms (latency, error rate) rather than causes (CPU, memory). A high-CPU system might be perfectly healthy; a low-CPU system might be returning errors to every user."}}]},S={slug:"websockets",title:"WebSockets & Real-time",emoji:"🔌",category:"Networking",tagline:"Full-duplex communication without the HTTP overhead",roadmapKeywords:["websocket","real-time","long polling","server-sent events","sse","socket.io","push","pub-sub"],related:["api-design","load-balancing","message-queues","cdn"],sections:[{heading:"Why Standard HTTP Falls Short for Real-time",body:`HTTP was designed for a request-response model: the client asks, the server answers. For real-time use cases (live chat, collaborative editing, stock tickers, multiplayer games, live notifications), you need the server to push updates to clients as events happen — not when the client asks.
+
+Three solutions evolved, each with different trade-offs:
+
+1. Short Polling: client sends a new HTTP request every N seconds: "anything new?" Server responds immediately (yes or no). Simple, but wasteful — 99% of requests get "nothing new" responses, burning bandwidth and server capacity.
+
+2. Long Polling: client sends a request, server holds it open until there's data (or a timeout, e.g., 30 seconds). When data arrives, server responds, client immediately opens a new long-poll. Reduces wasted requests but still per-message HTTP overhead (headers, connection setup).
+
+3. Server-Sent Events (SSE): server sends a stream of events over a persistent HTTP/1.1 connection. Client subscribes via EventSource API. One-way (server → client only). Simple, works over HTTP (firewall friendly), automatic reconnect. Good for dashboards, live feeds.
+
+4. WebSockets: a persistent, full-duplex TCP connection between client and server. After an HTTP upgrade handshake, both sides can send messages at any time without opening new connections. The gold standard for bidirectional real-time communication.`,diagram:"ws-vs-polling"},{heading:"WebSocket Protocol Internals",body:`WebSockets start with an HTTP upgrade handshake. The client sends:
+
+GET /ws HTTP/1.1
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+
+The server responds with 101 Switching Protocols, and the HTTP connection becomes a WebSocket connection — a raw TCP stream with WebSocket framing.
+
+WebSocket frames: data is sent in frames. A frame has: a 2-14 byte header (opcode, mask bit, payload length) and the payload. Frame types include text (UTF-8), binary, ping/pong (keep-alive), and close.
+
+Masking: browser-to-server frames MUST be masked (XOR with a 4-byte random key). This prevents cache poisoning attacks against intermediaries. Server-to-client frames are unmasked.
+
+Ping/Pong: WebSocket has built-in keep-alive. The server periodically sends ping frames; the client responds with pong. If no pong within a timeout, the connection is dead. This is more reliable than TCP keep-alive for connections passing through NATs and proxies.
+
+Subprotocols: applications can negotiate application-level protocols via the Sec-WebSocket-Protocol header. Common ones: "chat", "v1.finance.api", or custom JSON/MessagePack protocols.`},{heading:"Choosing the Right Real-time Pattern",table:{cols:["Technique","Direction","Connection","Overhead per message","Best for","Browser support"],rows:[["Short Polling","Client → Server","New HTTP each time","Full HTTP headers + TCP","Infrequent updates, simple implementation","Universal"],["Long Polling","Server → Client","New HTTP after response","Full HTTP headers + TCP","Low-volume push to clients behind strict firewalls","Universal"],["SSE","Server → Client","Single persistent HTTP","~dozens of bytes","Live feeds, dashboards, notifications (one-way only)","All except IE11"],["WebSockets","Bidirectional","Single persistent TCP","~6 bytes (framing overhead)","Chat, gaming, collaboration, trading — any bidirectional real-time","All modern browsers"],["WebTransport","Bidirectional","QUIC (UDP)","Near-zero overhead","Next-gen real-time: lower latency than WS over QUIC","Chrome/Edge only (2025)"]]}},{heading:"Scaling WebSockets",body:`HTTP is stateless — any server can handle any request. WebSockets are stateful — a client's connection is tied to a specific server process. Scaling becomes harder.
+
+Challenge: with 100 servers, User A is connected to Server 1, User B is connected to Server 2. When User A sends a message to User B, Server 1 needs to deliver it to Server 2 so it can push to User B's connection.
+
+Solution 1 — Pub/Sub backplane: each server subscribes to a shared message broker (Redis Pub/Sub, Kafka). When Server 1 receives a message from User A, it publishes to the broker. All servers receive the message and check if the target user is connected to them. Redis Pub/Sub has sub-millisecond fanout. Socket.IO uses this pattern natively with the Redis adapter.
+
+Solution 2 — Sticky sessions: route all requests from a given user to the same server (by IP or session cookie). Simpler architecture but limits horizontal scaling — if that server is overloaded, you can't redistribute load easily.
+
+Solution 3 — Dedicated WebSocket gateway: separate the WebSocket connection management from application logic. A gateway layer (Ably, Pusher, AWS API Gateway WebSockets) maintains all connections and routes messages. Application servers are stateless and communicate with the gateway via webhooks or internal APIs.
+
+Connection limits: a WebSocket connection is a file descriptor. Linux defaults to 1024 FDs per process; raise via ulimit. With tuning, a single server can sustain 100K-1M concurrent WebSocket connections. Cloudflare's Durable Objects handle billions of persistent connections globally.`,callout:{kind:"tip",text:"In system design interviews, mention the pub/sub backplane pattern for WebSocket scaling — it's the pattern that all major real-time systems (Slack, Discord, Figma) use. Then mention connection draining during deployments: before restarting a server, stop accepting new connections and wait for existing ones to migrate (clients reconnect after detecting disconnect)."}},{heading:"Production Considerations",bullets:["Always implement client-side reconnection with exponential backoff. Network blips happen. The client should attempt reconnect at 1s, 2s, 4s, 8s, 16s, then cap at 60s with jitter.","Set a server-side connection timeout. Idle WebSocket connections that don't ping back within 60-120 seconds should be closed — they're likely zombie connections from disconnected clients.","Use message queuing at the client level. If the connection drops, buffer outgoing messages locally and flush them after reconnect. Never lose user actions.","Authenticate at connection time. Validate JWT or session token in the HTTP upgrade request, not per-message. Store the user identity on the connection object.","Rate-limit messages per connection. A client sending 10,000 messages/second to a WebSocket endpoint is either broken or adversarial. Apply per-connection rate limiting at the gateway.","Use binary frames (MessagePack, Protocol Buffers) for high-throughput scenarios instead of JSON. Binary serialization is 40-60% more compact and faster to parse."]}]},T={slug:"event-sourcing",title:"Event Sourcing & CQRS",emoji:"📜",category:"Architecture",tagline:"Store every change as an immutable event — your data has a full history",roadmapKeywords:["event sourcing","cqrs","event store","event log","domain event","projection","read model","eventual consistency"],related:["message-queues","microservices","saga-pattern","acid-transactions","replication"],sections:[{heading:"Traditional State Storage vs Event Sourcing",body:`Traditional databases store the current state of an entity. An order record has columns for status, total, shipping_address. When the order ships, you UPDATE orders SET status='shipped'. The previous status is gone — overwritten. The audit trail is lost unless you separately maintain an audit_log table.
+
+Event Sourcing inverts this: instead of storing current state, store every event (state transition) that has ever occurred. The state at any point in time is derived by replaying events from the beginning (or from a snapshot).
+
+Order events: OrderPlaced → ItemAdded → ItemAdded → PaymentAuthorized → PaymentCaptured → Shipped → Delivered.
+
+Current state = result of replaying all events in sequence.
+
+Benefits:
+1. Complete audit trail: every change is recorded immutably. Who did what, when, and why.
+2. Temporal queries: reconstruct state at any point in the past — "what did this order look like at 2pm last Tuesday?"
+3. Event replay: rebuild read models, fix bugs by replaying with corrected logic, create new projections from historical data.
+4. Debugging: reproduce bugs exactly by replaying the event sequence that caused them.
+5. Event-driven integration: events are naturally publishable to message queues — other services subscribe to domain events without polling.`,diagram:"event-log-flow"},{heading:"Event Store",body:`An event store is an append-only log of events. Events are never updated or deleted — only new events are appended. Each event has: event_id, aggregate_id, aggregate_type, event_type, event_data (JSON/binary), occurred_at, sequence_number.
+
+Aggregate: the root entity whose events are stored together (e.g., an Order). All events for one aggregate are stored and replayed as a unit.
+
+Sequence numbers: events for an aggregate have monotonically increasing sequence numbers. Loading an aggregate means fetching all events with its ID, sorted by sequence number, and replaying them.
+
+Optimistic concurrency: when saving new events, include the expected current sequence number. If the actual sequence number differs (another process added events first), reject the write with a concurrency conflict — the caller retries. This prevents lost updates without locking.
+
+Snapshots: for aggregates with thousands of events, replaying from event 1 is slow. Periodically save a snapshot of the current state. To load the aggregate, start from the latest snapshot and replay only events after it.
+
+Event stores: EventStoreDB (the canonical purpose-built event store), Apache Kafka (used as a durable event log), AWS DynamoDB (append-only table patterns), PostgreSQL (with a purpose-built events table and proper indexing).`},{heading:"CQRS — Command Query Responsibility Segregation",body:`Event Sourcing pairs naturally with CQRS, though they're independent patterns.
+
+Traditional CRUD: the same model reads and writes data. Your Order service has one model, one database, serving both "save the order" and "show me all orders for user X."
+
+CQRS separates: the write model (command side) handles state changes. The read model (query side) handles queries. They can use different databases, different schemas, and scale independently.
+
+Command side (write model): validates business rules, applies domain logic, saves events to the event store. Optimised for consistency and correctness. Usually strongly consistent. Often event-sourced.
+
+Query side (read model): one or more denormalised, query-optimised projections of the data. An event handler (projector) listens to the event stream and updates the read model as events arrive. Optimised for query performance. Eventually consistent with the write model.
+
+Example: OrderPlaced event is published. Three projectors update three read models simultaneously:
+- orders_by_user read model: adds the order to the user's order history (optimised for "show me user 12345's orders")
+- fulfilment_queue read model: adds the order to the picking queue (optimised for warehouse operations)
+- analytics_summary read model: updates revenue counters (optimised for dashboards)
+
+Each read model is perfectly shaped for its queries. No JOINs needed. The write model doesn't need to worry about query performance.`},{heading:"Trade-offs and Complexity",bullets:["Eventual consistency: the read model lags behind the write model by milliseconds to seconds. Users who just placed an order may not immediately see it in their order history list. You must design the UI to handle this (optimistic updates, 'your order is processing' messages).","Complexity: event sourcing is significantly more complex than CRUD. You need: event store, projectors, snapshot logic, event schema versioning. Only adopt it for core domains where the benefits justify the cost.","Event schema evolution: once an event is written, it's immutable. When business requirements change, you can't change old events. Use upcasting (transform old event formats when reading) or versioned event types (OrderPlacedV1, OrderPlacedV2).","Replay time: for millions of events, a full replay to rebuild a read model can take hours. Design your snapshot strategy and incremental rebuild process before you need it.","Testing complexity: test each projector independently. Test the aggregate's event application logic independently. Test the command handler's validation logic independently.","Infrastructure dependency: you need a reliable, ordered, durable event log. Kafka, EventStoreDB, or a purpose-built Postgres events table — all have operational overhead."],callout:{kind:"warning",text:"Event Sourcing is not a default architecture — it's a specialised tool for specific domains: financial transactions (ledgers), audit-heavy systems (compliance, healthcare), collaborative editing, and long-running business processes. For a standard CRUD application, traditional databases with an audit_log table are simpler and sufficient."}},{heading:"Event Sourcing in System Design Interviews",body:`Mention Event Sourcing when the interviewer asks about:
+- Audit trails ("how do you know who changed this order?")
+- Historical state ("can we see what the account balance was 6 months ago?")
+- Replaying/reprocessing ("if we fix a bug in our discount calculation, can we reprocess old orders?")
+- Event-driven integration ("how does the Inventory service know when an Order is placed?")
+
+Real examples where Event Sourcing shines:
+- Banking ledgers: every debit and credit is an immutable event. Current balance = sum of all events. Used by Monzo, Starling.
+- Collaborative editing (Google Docs, Figma): every edit is an event. Apply events from all users to derive document state. Supports real-time collaboration and conflict resolution (CRDT).
+- E-commerce order management: orders go through complex state machines with many actors (customer, fulfilment, finance, shipping). Each state transition is an event.
+- Git: every commit is an event. Current file state = result of applying all commits from the root.`}]},x={slug:"proxies",title:"Proxies",emoji:"🔀",category:"Networking",tagline:"Intermediaries that sit between clients and servers — for security, caching, and control",roadmapKeywords:["proxy","reverse proxy","forward proxy","nginx","api gateway","vpn","ssl termination","sidecar"],related:["load-balancing","cdn","api-design","service-mesh"],sections:[{heading:"What is a Proxy?",body:`A proxy is any intermediary that sits between a client and a server, forwarding requests and responses. Proxies add a layer of control: they can inspect, transform, block, cache, log, or route traffic.
+
+Two fundamental types — forward proxy and reverse proxy — differ in whose side they represent.`,diagram:"proxy-flow"},{heading:"Forward Proxy — The Client's Representative",body:`A forward proxy sits in front of clients and speaks to the internet on their behalf. The origin server sees the proxy's IP, not the client's.
+
+How it works: Client → Forward Proxy → Internet (server). The proxy forwards requests and returns responses. From the server's view, the request came from the proxy.
+
+Use cases:
+1. Corporate security / filtering: all employee traffic routes through a company proxy. The proxy blocks social media, malware domains, and enforces DLP (Data Loss Prevention) by scanning outbound content.
+2. Privacy / anonymity: hide the client's real IP from websites. VPNs work on this principle (though VPN is a tunnel, not just a proxy).
+3. Caching: the proxy caches responses. All employees fetching the same Windows update get it from the proxy's cache rather than hammering Microsoft's CDN.
+4. Bypassing geo-restrictions: appear to be in another country by using a proxy located there.
+5. Access control: schools and governments use forward proxies to restrict which websites can be accessed.
+
+Examples: Squid (popular open-source forward proxy), corporate VPNs, browser proxy settings.`},{heading:"Reverse Proxy — The Server's Representative",body:`A reverse proxy sits in front of servers and receives requests from the internet. Clients don't know which backend server they're actually talking to.
+
+How it works: Client → Internet → Reverse Proxy → Backend Server. The proxy receives the request and decides which server should handle it. From the client's view, the reverse proxy IS the server.
+
+Use cases:
+1. Load balancing: distribute requests across multiple backend servers — the core use case of Nginx and HAProxy.
+2. SSL/TLS termination: handle the expensive TLS handshake at the proxy. Backend servers communicate over plain HTTP internally, reducing CPU load.
+3. Caching: cache responses for static assets or API responses. Varnish and Nginx can serve cached responses in microseconds, protecting backends.
+4. Compression: compress responses (gzip, Brotli) at the proxy layer before sending to clients. Backends emit uncompressed responses (faster to generate).
+5. Security: hide backend IP addresses. DDoS protection at the proxy layer (Cloudflare, AWS Shield). WAF (Web Application Firewall) to block SQLi, XSS.
+6. Request routing: route /api/* to API servers, /static/* to file servers, /ws/* to WebSocket servers — all on the same public domain.
+7. Rate limiting: enforce global rate limits at the proxy before traffic reaches services.
+
+Examples: Nginx, HAProxy, Traefik, Envoy, Caddy, AWS CloudFront (also a CDN), Cloudflare.`},{heading:"Forward vs Reverse Proxy",table:{cols:["Property","Forward Proxy","Reverse Proxy"],rows:[["Whose side","Client's — acts for the client","Server's — acts for the server"],["Client configuration","Clients must be configured to use it","Transparent to clients — they don't know it exists"],["Server sees","Proxy's IP, not the real client","Client's IP (or X-Forwarded-For header)"],["Client sees","No difference (proxy is transparent outbound)","Proxy as the server — never sees backend IPs"],["Primary uses","Privacy, filtering, corporate access control, caching","Load balancing, SSL termination, caching, security"],["Example products","Squid, corporate VPN, SOCKS5 proxy","Nginx, HAProxy, Traefik, Envoy, Cloudflare"]]}},{heading:"Sidecar Proxy (Service Mesh)",body:`In microservices architectures, a sidecar proxy is a proxy deployed alongside each service instance — in the same Pod in Kubernetes. Instead of every service implementing retries, circuit breaking, TLS, and distributed tracing, the sidecar handles all of this transparently.
+
+Envoy is the most widely used sidecar proxy. Istio and Linkerd are service mesh control planes that manage Envoy sidecars across thousands of service instances.
+
+Traffic flow: Client Service → Envoy Sidecar → (mTLS) → Envoy Sidecar → Server Service. Neither service knows the other is using a proxy. Envoy is injected automatically by the service mesh.
+
+What sidecar proxies handle: automatic mTLS encryption between all services (zero-trust networking), distributed tracing (Envoy injects trace headers), circuit breaking, retries with backoff, load balancing, traffic shaping (canary deployments by routing 5% of traffic to v2), access control policies.
+
+Trade-offs: sidecar proxies add latency (~1ms per hop), memory overhead (~50MB per Envoy instance), and significant operational complexity. Worth it at large scale (100+ services); usually overkill for small deployments.`},{heading:"API Gateway vs Reverse Proxy vs Load Balancer",table:{cols:["Component","Layer","Key responsibilities","Examples"],rows:[["Load Balancer","L4 (TCP) or L7 (HTTP)","Distribute traffic across server pool; health checks; failover","AWS NLB, HAProxy, F5"],["Reverse Proxy","L7 (HTTP)","SSL termination, caching, compression, routing, basic auth","Nginx, Caddy, Traefik"],["API Gateway","L7 (HTTP)","Auth/authz, rate limiting, request transformation, versioning, analytics","AWS API Gateway, Kong, Apigee"],["Service Mesh","L7 (HTTP/gRPC)","mTLS, observability, retries, circuit breaking — between services","Istio, Linkerd, Consul Connect"]]},callout:{kind:"note",text:"In practice, these components overlap. Cloudflare is simultaneously a DNS provider, CDN, DDoS scrubber, WAF, forward proxy, and reverse proxy. Nginx can act as a reverse proxy, load balancer, and API gateway simultaneously. Choose based on what features you need, not strict categories."}}]},P={slug:"service-mesh",title:"Service Mesh",emoji:"🕸️",category:"Architecture",tagline:"Infrastructure-level control over service-to-service communication",roadmapKeywords:["service mesh","istio","linkerd","envoy","sidecar","mtls","control plane","data plane","traffic management"],related:["microservices","proxies","observability","load-balancing","circuit-breaker"],sections:[{heading:"Why a Service Mesh?",body:`In a microservices architecture with 50+ services, each service needs to handle: mutual TLS (mTLS) between services, retries with exponential backoff, circuit breaking, distributed tracing (inject/propagate trace headers), load balancing across instances, canary deployments (route 5% of traffic to v2), rate limiting, access control (Service A may call Service B, but Service C may not).
+
+Without a service mesh, every service implements these features in its own code. You have the same retry logic in 50 different services in 3 different languages. Updating the retry policy requires deploying 50 services. Enforcing mTLS requires every team to implement TLS correctly.
+
+A service mesh moves these concerns to the infrastructure layer: a sidecar proxy (Envoy) deployed alongside every service instance handles all network concerns transparently. The service speaks plain HTTP/gRPC to localhost; Envoy intercepts, enforces policies, and handles the network.`,diagram:"service-mesh-flow"},{heading:"The Sidecar Pattern",body:`In Kubernetes, a sidecar is an additional container in the same Pod as your application container. The service mesh injects the Envoy sidecar automatically (via a MutatingAdmissionWebhook) — your Kubernetes manifests don't need to mention it.
+
+The sidecar proxy intercepts all inbound and outbound traffic using iptables rules (init container sets up the rules before your app starts). Your app binds to port 8080; Envoy intercepts traffic on that port, applies policies, and forwards to your app on port 8081 (or vice versa for outbound).
+
+From your application's perspective: you make an HTTP request to another service's hostname and get a response. Envoy handles TLS, retries, circuit breaking, load balancing, and trace header injection — invisibly.
+
+The sidecar proxy receives its configuration from the control plane. When you update a routing rule or circuit breaker policy via the control plane API, the control plane pushes the new config to all Envoy sidecars over a long-lived gRPC connection (xDS protocol: Listener Discovery Service, Route Discovery Service, Cluster Discovery Service, Endpoint Discovery Service).`},{heading:"Control Plane vs Data Plane",body:`Data plane: all the Envoy sidecar proxies running in your cluster. They handle the actual network traffic — load balancing, TLS, retries. The data plane is in the hot path of every request.
+
+Control plane: the management layer that configures and manages the data plane. You interact with the control plane (via YAML resources or API); it translates your policies into Envoy configuration and distributes them to all sidecars. The control plane is NOT in the request path — only in the configuration path.
+
+Istio control plane components:
+- istiod: the unified control plane daemon. Combines the old Pilot (service discovery, routing), Citadel (certificate management, mTLS), and Galley (configuration validation).
+- istiod connects to the Kubernetes API server to watch Service, Pod, and Istio CRD resources. It translates these into Envoy xDS configuration and pushes updates to sidecars.
+
+Linkerd control plane components:
+- linkerd-controller: implements the Destination API (service discovery, routing rules)
+- linkerd-identity: manages mTLS certificate issuance (acts as a CA)
+- linkerd-proxy-injector: webhook that injects the linkerd-proxy sidecar
+
+Key difference: Linkerd uses a custom lightweight Rust proxy (linkerd-proxy) instead of Envoy. Smaller memory footprint, simpler configuration, but fewer features than Envoy/Istio.`},{heading:"Features of a Service Mesh",bullets:["Mutual TLS (mTLS): every service-to-service connection is encrypted and both sides authenticate. The service mesh acts as a CA, issuing short-lived certificates to each sidecar. Zero-trust networking — even inside the cluster, traffic is encrypted and authenticated. Certificates rotate automatically.","Traffic management: fine-grained routing rules. Route 95% of traffic to v1, 5% to v2 (canary). Route traffic based on headers (A/B testing by user segment). Shift 100% to v2 once validated (blue-green rollout).","Retries and timeouts: configure retry policies (3 retries with exponential backoff for 503 errors) centrally without touching application code. Per-route timeout configuration.","Circuit breaking: automatically open the circuit for a service returning too many 5xx errors, preventing cascading failures. Configured centrally, enforced by each sidecar.","Distributed tracing: Envoy injects B3/W3C trace headers on every request. Export spans to Jaeger, Zipkin, or Tempo. Full call graph across all services, automatically.","Observability: every sidecar emits Prometheus metrics (request rate, error rate, latency percentiles, connection counts) per (source service, destination service, route). No instrumentation needed in application code.","Authorization policies: Istio's AuthorizationPolicy allows you to declare 'Service A can call GET /api/orders on Service B, but Service C cannot.' Enforced by the sidecar — your application doesn't need to implement authz."]},{heading:"Istio vs Linkerd vs Consul Connect",table:{cols:["Property","Istio","Linkerd","Consul Connect"],rows:[["Proxy","Envoy (C++)","linkerd-proxy (Rust)","Envoy or built-in proxy"],["Complexity","High — many features, steep learning curve","Low — opinionated, simpler CRDs","Medium"],["Performance","Higher latency/memory vs Linkerd","Lowest overhead in benchmarks","Medium"],["Features","Most complete — traffic mgmt, Wasm extensions","Good baseline — mTLS, observability, retries","Good Vault/Consul integration"],["Best for","Complex traffic management, advanced auth","Simplicity, Kubernetes-native, low overhead","Multi-cloud, existing Consul/HashiCorp stack"],["Platform","Kubernetes","Kubernetes","Kubernetes, VMs, bare metal"]]}},{heading:"When NOT to Use a Service Mesh",bullets:["Small teams and few services: if you have 5-10 services and a small team, the operational complexity of running a service mesh (Istio adds ~10 CRD types, 3 control plane pods, requires expertise to debug) exceeds the benefit. Implement mTLS and tracing directly in your services.","Non-Kubernetes deployments: service meshes are designed for Kubernetes. Running them on VMs or bare metal is possible but much more complex.","Performance-critical paths: every request incurs an extra local network hop through the sidecar proxy (~1ms). For latency-critical services where 1ms matters, this overhead may be unacceptable.","Simple architectures: monoliths, 2-3 service architectures, or serverless functions don't benefit enough to justify the complexity.","Recommendation: adopt a service mesh when you have 10+ services in Kubernetes, multiple teams, and are struggling with cross-cutting concerns (mTLS enforcement, consistent observability, traffic management for canary releases)."]}]},C={slug:"two-phase-commit",title:"Two-Phase Commit",emoji:"🤝",category:"Distributed Systems",tagline:"Coordinating atomic commits across multiple nodes — and why it's hard",roadmapKeywords:["two phase commit","2pc","distributed transaction","coordinator","xa","consensus","atomicity"],related:["acid-transactions","cap-theorem","saga-pattern","replication"],sections:[{heading:"The Problem: Atomic Commits Across Nodes",body:`Single-node databases achieve atomicity with a write-ahead log (WAL): if the machine crashes mid-transaction, the log is replayed on restart — either committing or rolling back. This works because the coordinator (database engine) and the participants (disk/memory) are on the same machine.
+
+Distribute a transaction across two machines — "debit Alice on Node 1 AND credit Bob on Node 2" — and this breaks. If Node 1 commits its debit but the network fails before Node 2 can commit its credit, the money vanishes. There is no shared WAL, no single crash recovery.
+
+Two-Phase Commit (2PC) solves this with a protocol that guarantees either all nodes commit or all nodes abort, even in the presence of node crashes and network failures.`,diagram:"two-pc-flow"},{heading:"Protocol: Phase 1 — Prepare (Voting)",body:`Participants: one coordinator node and N participant nodes. The coordinator orchestrates the protocol.
+
+Phase 1 — Prepare (Voting):
+1. The coordinator writes "begin prepare" to its WAL.
+2. The coordinator sends a PREPARE message to all participants.
+3. Each participant receives PREPARE, does all necessary pre-commit work (write new data to WAL, acquire all locks, validate constraints), and then votes:
+   - YES (commit-ready): participant writes "yes" to its WAL and sends YES to coordinator. The participant is now in a "prepared" state — it MUST commit if the coordinator says so.
+   - NO (abort): participant cannot commit (constraint violation, deadlock, disk full). Sends NO to coordinator and rolls back immediately.
+4. The coordinator collects votes from all participants and moves to Phase 2.
+
+The key insight of Phase 1: a participant that votes YES has made a binding promise. Even if it crashes and restarts, it can reconstruct its prepared state from its WAL and still commit when Phase 2 arrives. This is what makes 2PC recoverable.`},{heading:"Protocol: Phase 2 — Commit/Abort",body:`Phase 2 — Commit or Abort:
+
+If ALL participants voted YES:
+1. Coordinator writes "commit" to its WAL.
+2. Coordinator sends COMMIT to all participants.
+3. Each participant commits, releases locks, writes "committed" to its WAL.
+4. Each participant sends ACK to coordinator.
+5. Coordinator writes "done" to WAL. Transaction is complete.
+
+If ANY participant voted NO (or timed out):
+1. Coordinator writes "abort" to its WAL.
+2. Coordinator sends ABORT to all participants.
+3. Each participant rolls back, releases locks.
+4. Transaction is cancelled.
+
+The protocol guarantees: every participant either commits or aborts — never a split (one commits, another aborts).`},{heading:"The Blocking Problem — 2PC's Fatal Flaw",body:`2PC has a fundamental weakness: it is a blocking protocol. After a participant votes YES in Phase 1, it holds all its locks and waits for the Phase 2 commit/abort message. If the COORDINATOR fails at this moment, the participants are stuck — they cannot commit (haven't received COMMIT) and cannot abort (they voted YES, binding themselves).
+
+The participant must wait indefinitely until the coordinator recovers. It cannot ask other participants what to do — they're in the same uncertain state. This is the "uncertain period" of 2PC.
+
+In practice: the coordinator uses a WAL. On restart, it reads its log and sends the missed Phase 2 messages. Recovery time = coordinator restart time. With persistent storage and fast restarts, this is typically seconds to minutes.
+
+But in cloud environments with transient node failures, 2PC can block for extended periods. Database administrators have war stories about 2PC transactions holding locks for hours during coordinator failures, blocking all writes to affected tables.`,callout:{kind:"warning",text:"2PC does NOT handle the case where both the coordinator AND a participant crash simultaneously. In this scenario, even after the coordinator recovers, it doesn't know whether the crashed participant had committed before crashing. Human intervention or a timeout-based heuristic abort is required. This is called the 'heuristic hazard.'"}},{heading:"XA Transactions — 2PC in Practice",body:`The XA standard (by The Open Group) defines a protocol for 2PC between a transaction manager (coordinator) and multiple resource managers (databases, message brokers).
+
+Supported by: PostgreSQL, MySQL, Oracle, SQL Server, IBM DB2. Message brokers: IBM MQ, ActiveMQ. Java applications use XA via JTA (Java Transaction API).
+
+XA transaction flow: the Java EE application server (coordinator) begins an XA transaction, calls xa_start() on each database, executes SQL, calls xa_end(), then xa_prepare() (Phase 1), then xa_commit() or xa_rollback() (Phase 2).
+
+Limitations: XA is slow (multiple network round trips, lock holding across phases), not supported by all NoSQL databases or modern cloud-native datastores, and has the blocking failure mode described above. Most cloud-native architects avoid XA and use the Saga pattern instead.`},{heading:"Comparison: 2PC vs Saga vs Paxos/Raft",table:{cols:["Property","2PC","Saga","Paxos / Raft"],rows:[["Guarantee","Atomic commit across all nodes","Eventual consistency via compensation","Distributed consensus (elect leader, replicate log)"],["Blocking","Yes — locks held across network round trips","No — each step commits independently","No — non-blocking under quorum availability"],["Failure mode","Blocks if coordinator fails during prepare","Temporary inconsistency; compensating txns run","Progress if majority of nodes available"],["Performance","High latency — 2+ round trips, lock holding","High throughput — no global locking","High throughput at log level; used for coordination"],["Use case","OLTP across 2-3 databases in same DC","Business processes across microservices","Leader election, distributed log, metadata store"],["Examples","XA transactions, PostgreSQL 2PC","Temporal.io, Axon, hand-rolled orchestrators","etcd (Raft), ZooKeeper (ZAB), Spanner (Paxos)"]]}}]},A={slug:"saga-pattern",title:"Saga Pattern",emoji:"🎭",category:"Distributed Systems",tagline:"Managing distributed transactions without a global lock",roadmapKeywords:["saga","distributed transaction","compensating transaction","choreography","orchestration","eventual consistency","microservices"],related:["microservices","event-sourcing","message-queues","acid-transactions","cap-theorem"],sections:[{heading:"The Distributed Transaction Problem",body:`In a monolith with a single database, multi-step operations are wrapped in ACID transactions: if any step fails, the database rolls back all changes atomically. The database guarantees all-or-nothing.
+
+In a microservices architecture, each service has its own database. There is no single transaction coordinator. When placing an order requires: creating an order record (Order Service), deducting inventory (Inventory Service), charging a payment (Payment Service), and sending a confirmation email (Notification Service) — how do you ensure all four either succeed together or all roll back?
+
+Two-Phase Commit (2PC) solves this with a global coordinator but is slow, doesn't work across heterogeneous databases, and has a blocking failure mode. Most microservices teams avoid 2PC.
+
+The Saga pattern is the alternative: break the distributed transaction into a sequence of local transactions, each with a compensating transaction that undoes its effect if a later step fails. Instead of atomic rollback, you execute compensating actions forward.`,diagram:"saga-flow"},{heading:"Compensating Transactions",body:`A compensating transaction is the business-level "undo" of a local transaction. It doesn't literally undo the database write (that's already committed) — instead, it applies a new write that cancels the business effect.
+
+Examples:
+- Order Service created an order (OrderPlaced) → compensating transaction: UpdateOrderStatus(cancelled)
+- Inventory Service decremented stock → compensating transaction: RestoreInventory(quantity)
+- Payment Service charged the card → compensating transaction: RefundPayment(amount)
+
+Important: compensating transactions must be idempotent. The saga coordinator may retry them on failure. Issuing two refunds when one was requested is a business disaster.
+
+Semantic locks: some steps cannot be easily compensated (you can't un-send an email, un-deliver a package). Design sagas to delay irreversible side effects until the saga is certain to succeed. Send the confirmation email only after payment capture succeeds, not after payment authorisation.`},{heading:"Choreography-Based Sagas",body:`In a choreography saga, there is no central coordinator. Each service listens for events and knows what to do next — like dancers following each other without a conductor.
+
+Flow: Order Service creates order and publishes OrderPlaced event. Inventory Service listens, decrements stock, publishes InventoryReserved. Payment Service listens, charges card, publishes PaymentCaptured. Notification Service listens, sends email, publishes OrderConfirmed.
+
+Failure handling: if Payment Service fails, it publishes PaymentFailed. Inventory Service listens for PaymentFailed and publishes InventoryReleased. Order Service listens for InventoryReleased and marks the order cancelled.
+
+Pros of choreography: simple architecture — no central coordinator to fail or scale. Services are loosely coupled. Each service only knows about its own events and the events it reacts to.
+
+Cons of choreography: hard to reason about the overall flow. "What happens if Inventory Service is down when PaymentFailed is published?" Hard to monitor saga progress. Hard to test the full flow end-to-end. Can produce cyclic dependencies if not designed carefully.
+
+Best for: simple sagas with 2-3 steps. High-throughput scenarios where you can't afford a coordinator bottleneck.`},{heading:"Orchestration-Based Sagas",body:`In an orchestration saga, a central saga orchestrator coordinates all steps. The orchestrator sends commands to each service, waits for responses/events, and decides what to do next — like a conductor directing an orchestra.
+
+Flow: Order Saga Orchestrator sends ReserveInventory command to Inventory Service. Gets InventoryReserved response. Sends ChargePayment to Payment Service. Gets PaymentCaptured. Sends SendConfirmation to Notification Service. Gets ConfirmationSent. Marks saga as complete.
+
+Failure: if Payment Service returns PaymentFailed, the orchestrator sends ReleaseInventory to Inventory Service (compensating transaction), then sends UpdateOrderStatus(cancelled) to Order Service. Full control over the compensation sequence.
+
+Saga state: the orchestrator persists its current step and status to its own database. If the orchestrator crashes and restarts, it resumes from the last known step.
+
+Implementation: the orchestrator is typically implemented as a state machine. Libraries: Temporal.io (workflows as code), Apache Camel, Axon Framework (Java), or hand-rolled state machine with a saga table.
+
+Pros: clear flow visible in one place, easy to monitor saga progress, easy to add error handling and retries per step, easier to test.
+
+Cons: orchestrator is a single point of failure (mitigate with HA deployment), potential for the orchestrator to become a bottleneck, adds an extra service to maintain.`},{heading:"Choreography vs Orchestration",table:{cols:["Property","Choreography","Orchestration"],rows:[["Architecture","Decentralised — no coordinator","Centralised — saga orchestrator service"],["Coupling","Services know only about events they care about","Services coupled to orchestrator commands"],["Visibility","Hard to see the full flow","Full saga flow visible in one place"],["Error handling","Each service handles its own failure path","Orchestrator manages full compensation sequence"],["Testing","Integration tests across many services","Unit test orchestrator state machine + mock services"],["Monitoring","Aggregate events across services to trace a saga","Query orchestrator's saga table for status"],["Best for","Simple flows, high throughput, decoupled teams","Complex flows, critical business processes, strict ordering"]]}},{heading:"Saga vs Two-Phase Commit",bullets:["2PC requires all participants to be available simultaneously to proceed. If any participant is unavailable, the coordinator blocks indefinitely (blocking protocol). Sagas are non-blocking — each step commits independently.","2PC uses a global lock held across all participants during the prepare phase. Sagas release local locks after each step — much lower contention, much better throughput.","2PC works only with databases that support the XA protocol (MySQL, PostgreSQL). Sagas work with any service, any database, any external API.","2PC guarantees ACID atomicity. Sagas only provide eventual consistency — there are windows where some steps have committed and others haven't. The system is temporarily inconsistent.","2PC is suitable for small, same-datacenter transactions where latency is low (e.g., updating two tables in two databases within one DC). Sagas are suitable for cross-service, cross-datacenter distributed transactions.","In practice: avoid 2PC in microservices. Use sagas for business processes, and accept eventual consistency with careful compensating transaction design."]}]},D={slug:"full-text-search",title:"Full-Text Search",emoji:"🔎",category:"Database",tagline:"Searching document content in milliseconds — not exact matches but relevance",roadmapKeywords:["full text search","elasticsearch","inverted index","tfidf","bm25","lucene","search engine","tokenization","relevance"],related:["database-indexes","caching","sharding","replication"],sections:[{heading:"Why Regular Database Indexes Don't Work for Search",body:`A B-tree index on a text column supports prefix matches (LIKE 'foo%') but not substring or relevance-ranked search. Finding all documents containing the word "distributed" in a million-row table with LIKE '%distributed%' requires a full table scan — O(n) with no index help.
+
+Even if you could make it fast, a naive LIKE match doesn't handle:
+- Stemming: "running" should match "run", "runs", "runner"
+- Synonyms: "automobile" should match "car"
+- Relevance: documents where "distributed systems" appears 10 times are more relevant than those where it appears once
+- Multi-field ranking: a match in the title is more important than a match in the body
+- Typos: "distibuted" should still find "distributed" (fuzzy matching)
+
+Full-text search engines solve all of this with an inverted index and a relevance scoring model.`,diagram:"inverted-index-viz"},{heading:"Inverted Index",body:`An inverted index maps each term (word) to the list of documents that contain it — the inverse of a document-to-word mapping.
+
+Building the index (indexing pipeline):
+1. Tokenisation: split text into tokens (words). "The quick brown fox" → ["The", "quick", "brown", "fox"]
+2. Normalisation: lowercase, remove punctuation. ["the", "quick", "brown", "fox"]
+3. Stop word removal: remove common words that add no search signal. ["quick", "brown", "fox"] (removed "the")
+4. Stemming / lemmatisation: reduce words to root form. "running" → "run", "faster" → "fast"
+5. Store: for each resulting term, record the document ID and position(s) where the term appears.
+
+Example inverted index:
+- "quick"  → [doc1: positions [2], doc5: positions [7, 12]]
+- "brown"  → [doc1: positions [3], doc3: positions [1]]
+- "fox"    → [doc1: positions [4], doc8: positions [9]]
+
+When searching for "quick brown fox": look up all three terms, intersect the posting lists, documents containing all three terms rank highest. doc1 contains all three → top result.
+
+Phrase queries: "quick brown fox" as a phrase requires that the terms appear in consecutive positions. The position data in the posting list enables this.`},{heading:"Relevance Scoring — TF-IDF and BM25",body:`A search for "distributed systems" matches thousands of documents. Which one should rank first? Relevance scoring determines the order.
+
+TF-IDF (Term Frequency–Inverse Document Frequency):
+- TF (term frequency): how many times the search term appears in this document? More occurrences = more relevant. Normalised by document length.
+- IDF (inverse document frequency): how rare is this term across all documents? "the" appears in every document (low IDF, low weight). "Paxos" appears in few documents (high IDF, high weight).
+- Score = TF × IDF. Terms that appear frequently in this document AND rarely across all documents give the highest signal.
+
+BM25 (Best Match 25): the modern improvement over TF-IDF, used by Elasticsearch (since v5), Lucene, and Solr as the default. BM25 adds:
+- Saturation: TF contribution doesn't grow linearly — a word appearing 100 times is not 10x more relevant than one appearing 10 times. BM25 saturates the TF component.
+- Length normalisation: short documents with a match are more relevant than long documents with the same match (the term density is higher).
+- Configurable k1 (TF saturation) and b (length normalisation) parameters.`,callout:{kind:"note",text:"Modern search systems supplement BM25 with semantic/vector search: encode documents and queries as dense vectors (via transformer models like BERT, sentence-transformers). Compute cosine similarity between query vector and document vectors. This enables 'find documents about distributed systems' even without exact keyword matches. Hybrid search (BM25 + vector) is the current state of the art in Elasticsearch 8.x, OpenSearch, and pgvector."}},{heading:"Elasticsearch Architecture",body:`Elasticsearch is a distributed full-text search engine built on Apache Lucene. Each Lucene instance manages local inverted indexes; Elasticsearch adds distribution.
+
+Index: a collection of documents with the same schema (like a database table). E.g., a "products" index with 10 million product documents.
+
+Shard: an index is split into N primary shards, each a self-contained Lucene instance. A query fans out to all shards (scatter-gather). More shards = more parallelism but more coordination overhead. Rule of thumb: 10-50GB per shard.
+
+Replica shards: each primary shard has R replicas. Reads can be served from any replica. Replicas also provide fault tolerance.
+
+Write path: document → coordinating node → hashed to primary shard → primary writes + indexes → replicas sync.
+
+Query path: query → coordinating node → fan out to all shards (or only shards with matching data for filter queries) → each shard returns its top-K results + scores → coordinating node merges and re-ranks → final top-K returned to client.
+
+Inverted index on disk: Elasticsearch uses Lucene segments — immutable on-disk files. New documents go into an in-memory buffer, periodically flushed as a new segment (refresh, default every 1 second). Background merges combine small segments into large ones for query performance.`},{heading:"Search vs Database — When to Use Each",table:{cols:["Need","Use","Why"],rows:[["Exact lookup by ID","Database (B-tree index)","O(log n) exact match, ACID guarantees"],["Keyword search with ranking","Search engine (ES, Solr)","Inverted index, BM25 scoring, millisecond response"],["Autocomplete / prefix search","Search engine or prefix trie","ES completion suggester, edge ngrams"],["Fuzzy / typo-tolerant search","Search engine","Levenshtein automata, fuzziness parameter in ES"],["Semantic / meaning-based search","Vector database or ES+kNN","Dense vector similarity (cosine/dot product)"],["Faceted navigation (filters)","Search engine","Aggregations in ES, faceting in Solr"],["Geospatial search","Postgres (PostGIS) or ES","Geo distance queries, bounding box, polygon"],["Aggregations / analytics","OLAP (ClickHouse) or ES","ES aggregations for search-adjacent analytics; ClickHouse for heavy analytics"]]}},{heading:"Keeping the Search Index in Sync",body:`Search engines are typically a secondary store, not the source of truth. Data lives in PostgreSQL/MySQL; Elasticsearch contains a copy for search. Keeping them in sync is non-trivial.
+
+Dual write (synchronous): application writes to both the database and Elasticsearch in the same request. Simple but error-prone — if the ES write fails after the DB write succeeds, they're out of sync.
+
+Change Data Capture (CDC): stream database changes (via WAL for PostgreSQL, binlog for MySQL) to a connector (Debezium) that publishes them to Kafka. Elasticsearch consumer ingests the events and updates its index. Eventually consistent (seconds lag) but reliable and decoupled from the application write path.
+
+Bulk re-indexing: periodically rebuild the entire search index from the source of truth. Safe but introduces downtime or requires blue/green index aliases. Use when CDC is impractical or for schema migrations.
+
+Index aliases: Elasticsearch supports index aliases — a pointer from an alias name ("products") to one or more real indexes ("products-v2"). During a re-index, build a new index in parallel, then atomically switch the alias. Zero downtime for search consumers.`}]},t=[a,s,o,r,i,n,l,c,d,h,u,m,p,g,y,f,b,v,w,k,S,T,x,P,C,A,D],I=new Map(t.map(e=>[e.slug,e])),L=Array.from(new Set(t.map(e=>e.category)));export{t as C,I as a,L as b};
