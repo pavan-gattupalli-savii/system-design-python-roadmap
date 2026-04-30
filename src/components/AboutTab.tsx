@@ -1,7 +1,17 @@
 // ── ABOUT TAB ──────────────────────────────────────────────────────────────────
 // Creator profile + roadmap overview.
 
+import { useNavigate } from "react-router-dom";
+
 const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
+const GITHUB_REPO  = "https://github.com/pavan-gattupalli-savii/system-design-python-roadmap";
+
+const CONTRIBUTE_WAYS = [
+  { icon: "🧠", label: "Add a Concept",      desc: "Write a new in-depth concept page with SVG diagram and interview tips" },
+  { icon: "📚", label: "Suggest a Reading",  desc: "Add a curated article, paper, or video to the Reading List" },
+  { icon: "💬", label: "Share an Experience", desc: "Post a real system design interview question you received" },
+  { icon: "🐛", label: "Report a Bug",       desc: "Spotted an error or typo? Open a GitHub Issue" },
+];
 
 const TECH_STACK = [
   { icon: "⚛️",  name: "React 18",   desc: "UI framework with hooks" },
@@ -25,6 +35,7 @@ const COMMUNITY_FEATURES = [
 ];
 
 export function AboutTab({ isMobile }: { isMobile: boolean }) {
+  const navigate = useNavigate();
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px" : "32px 48px", maxWidth: 760, margin: "0 auto", width: "100%" }}>
 
@@ -114,6 +125,66 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── Open Source — Contribute ── */}
+      <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+        Open Source — Contribute
+      </div>
+      <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: 16 }}>
+          Every concept, reading, and experience on this site was written by someone who wanted better system design resources. Add yours — a PR is welcome at any skill level.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
+          {CONTRIBUTE_WAYS.map(({ icon, label, desc }) => (
+            <div key={label} style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 14px" }}>
+              <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-bright)", marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1.5 }}>{desc}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a
+            href={GITHUB_REPO}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-bright)", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 600, textDecoration: "none" }}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+            </svg>
+            ⭐ Star on GitHub ↗
+          </a>
+          <button
+            onClick={() => navigate("/app/contribute")}
+            style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#6366f1", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+          >
+            View Contribution Guide →
+          </button>
+        </div>
+      </div>
+
+      {/* ── Support the Project ── */}
+      <div style={{ background: "var(--bg-panel)", border: "1px solid #0077B530", borderRadius: 10, padding: "16px 20px", marginBottom: 24, display: "flex", gap: 14, alignItems: "center", flexDirection: isMobile ? "column" : "row" }}>
+        <div style={{ fontSize: 28 }}>🙏</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-bright)", marginBottom: 4 }}>Support the Project</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
+            The best support is a ⭐ on GitHub, sharing with a friend preparing for interviews, or connecting on LinkedIn. No donations — just community.
+          </div>
+          <a
+            href={LINKEDIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#0077B5", color: "#fff", borderRadius: 7, padding: "7px 14px", fontSize: 12, fontWeight: 600, textDecoration: "none" }}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+            Connect on LinkedIn ↗
+          </a>
+        </div>
       </div>
 
       {/* ── Tech stack ── */}

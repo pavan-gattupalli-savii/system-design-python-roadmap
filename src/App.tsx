@@ -26,6 +26,7 @@ const AdminQueue       = lazy(() => import("./pages/AdminQueue"));
 const ResourcesByTypePage = lazy(() => import("./pages/ResourcesByTypePage"));
 const DailyTopicPage   = lazy(() => import("./pages/DailyTopicPage"));
 const ConceptsPage     = lazy(() => import("./pages/ConceptsPage"));
+const ContributePage   = lazy(() => import("./pages/ContributePage"));
 
 function PageFallback() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="concepts"           element={<ConceptsPage />} />
           <Route path="concepts/:slug"     element={<ConceptsPage />} />
           <Route path="about"              element={<AboutPage />} />
+          <Route path="contribute"         element={<ContributePage />} />
           <Route path="me"                 element={<RequireAuth><MyProfile /></RequireAuth>} />
           <Route path="admin"              element={<RequireAdmin><AdminQueue /></RequireAdmin>} />
         </Route>

@@ -20,6 +20,16 @@ import { cdn }               from "./cdn";
 import { dns }               from "./dns";
 import { acidTransactions }  from "./acid-transactions";
 import { microservices }     from "./microservices";
+import { circuitBreaker }    from "./circuit-breaker";
+import { bloomFilter }       from "./bloom-filter";
+import { observability }     from "./observability";
+import { websockets }        from "./websockets";
+import { eventSourcing }     from "./event-sourcing";
+import { proxies }           from "./proxies";
+import { serviceMesh }       from "./service-mesh";
+import { twoPc }             from "./two-phase-commit";
+import { sagaPattern }       from "./saga-pattern";
+import { fullTextSearch }    from "./full-text-search";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -45,7 +55,17 @@ export type DiagramKey =
   | "sharding-flow"
   | "cdn-flow"
   | "dns-resolution"
-  | "microservices-flow";
+  | "microservices-flow"
+  | "circuit-breaker-flow"
+  | "bloom-filter-viz"
+  | "observability-pillars"
+  | "ws-vs-polling"
+  | "event-log-flow"
+  | "proxy-flow"
+  | "service-mesh-flow"
+  | "two-pc-flow"
+  | "saga-flow"
+  | "inverted-index-viz";
 
 export interface ConceptSection {
   heading: string;
@@ -87,6 +107,16 @@ export const CONCEPTS: Concept[] = [
   dns,
   acidTransactions,
   microservices,
+  circuitBreaker,
+  bloomFilter,
+  observability,
+  websockets,
+  eventSourcing,
+  proxies,
+  serviceMesh,
+  twoPc,
+  sagaPattern,
+  fullTextSearch,
 ];
 
 export const CONCEPTS_BY_SLUG = new Map(CONCEPTS.map((c) => [c.slug, c]));

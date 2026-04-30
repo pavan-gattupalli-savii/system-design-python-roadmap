@@ -17,6 +17,16 @@ import { ShardingFlow }       from "./diagrams/ShardingFlow";
 import { CdnFlow }            from "./diagrams/CdnFlow";
 import { DnsResolution }      from "./diagrams/DnsResolution";
 import { MicroservicesFlow }  from "./diagrams/MicroservicesFlow";
+import { CircuitBreaker }     from "./diagrams/CircuitBreaker";
+import { BloomFilter }        from "./diagrams/BloomFilter";
+import { ObservabilityPillars } from "./diagrams/ObservabilityPillars";
+import { WsVsPolling }        from "./diagrams/WsVsPolling";
+import { EventLogFlow }       from "./diagrams/EventLogFlow";
+import { ProxyFlow }          from "./diagrams/ProxyFlow";
+import { ServiceMeshFlow }    from "./diagrams/ServiceMeshFlow";
+import { TwoPcFlow }          from "./diagrams/TwoPcFlow";
+import { SagaFlow }           from "./diagrams/SagaFlow";
+import { InvertedIndex }      from "./diagrams/InvertedIndex";
 
 export function ConceptDiagram({ id }: { id: DiagramKey }) {
   switch (id) {
@@ -35,5 +45,15 @@ export function ConceptDiagram({ id }: { id: DiagramKey }) {
     case "cdn-flow":          return <CdnFlow />;
     case "dns-resolution":    return <DnsResolution />;
     case "microservices-flow": return <MicroservicesFlow />;
+    case "circuit-breaker-flow":   return <CircuitBreaker />;
+    case "bloom-filter-viz":       return <BloomFilter />;
+    case "observability-pillars":  return <ObservabilityPillars />;
+    case "ws-vs-polling":          return <WsVsPolling />;
+    case "event-log-flow":         return <EventLogFlow />;
+    case "proxy-flow":             return <ProxyFlow />;
+    case "service-mesh-flow":      return <ServiceMeshFlow />;
+    case "two-pc-flow":            return <TwoPcFlow />;
+    case "saga-flow":              return <SagaFlow />;
+    case "inverted-index-viz":     return <InvertedIndex />;
   }
 }
