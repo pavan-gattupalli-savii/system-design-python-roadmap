@@ -9,5 +9,6 @@ cmds = ["npm ci"]           # installs ALL deps (devDeps included), ignores NODE
 [phases.build]
 cmds = ["npm run build"]    # runs `tsc` — now available because typescript is in devDeps
 
-[phases.start]
-cmds = ["node dist/index.js"]
+# NOTE: do NOT add [phases.start] — Nixpacks treats it as a Docker RUN during
+# the image build, not the container start command.
+# The start command is defined in railway.toml [deploy] startCommand.
