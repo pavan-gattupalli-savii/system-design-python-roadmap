@@ -3,6 +3,9 @@ import { TYPES } from "../data/types";
 import { resId, sessionColors } from "../utils/stats";
 import { ResourceCard } from "./ResourceCard";
 import type { Phase, WeekWithPhase } from "../data/models";
+import type { Language } from "../data/roadmap-index";
+import { useBuilds } from "../hooks/useBuilds";
+import { useAuth } from "../lib/auth";
 
 interface Props {
   weekObj:       WeekWithPhase | undefined;
@@ -16,13 +19,16 @@ interface Props {
   completed:     Set<string>;
   toggle:        (id: string) => void;
   totalWeeks:    number;
+  language:      Language;
 }
 
 export function DetailPanel({
   weekObj, phase, openSessions, toggleSession,
   isMobile, isDark, setMobileView, selectWeek,
-  completed, toggle, totalWeeks,
+  completed, toggle, totalWeeks, language,
 }: Props) {
+  const { user } = useAuth();
+  const { submissions: buildSubmissions, submit: submitBuild, remove: deleteBuild } = useBuilds(language);
 
   const successColor = isDark ? "#4ade80" : "#16a34a";
 
@@ -297,6 +303,10 @@ export function DetailPanel({
                       key={ri}
                       phase={weekObj.phase} weekN={weekObj.n} si={si} ri={ri}
                       res={res} completed={completed} toggle={toggle} isMobile={isMobile}
+                      language={user ? language : undefined}
+                      buildSubmissions={buildSubmissions}
+                      onSubmitBuild={(resourceKey, githubUrl, notes) => submitBuild({ resourceKey, githubUrl, notes })}
+                      onDeleteBuild={(resourceKey) => deleteBuild({ resourceKey })}
                     />
                   ))}
                 </div>

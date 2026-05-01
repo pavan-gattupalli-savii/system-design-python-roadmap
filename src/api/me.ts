@@ -9,8 +9,8 @@ export interface MyProfile {
   linkedin:    string | null;
   role:        "user" | "admin";
   createdAt:   string;
-  published:   { readings: number; interviews: number; experiences: number; answers: number };
-  pending:     { readings: number; interviews: number; experiences: number; answers: number };
+  published:   { readings: number; interviews: number; experiences: number; answers: number; builds: number };
+  pending:     { readings: number; interviews: number; experiences: number; answers: number; builds: number };
 }
 
 export interface ProgressResponse {

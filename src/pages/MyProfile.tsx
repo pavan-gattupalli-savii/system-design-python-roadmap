@@ -10,6 +10,7 @@ import type { LayoutContext } from "../components/Layout";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
 import BookmarksTab from "../components/BookmarksTab";
+import { useBuilds } from "../hooks/useBuilds";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function memberSince(iso?: string): string {
@@ -38,13 +39,15 @@ const STAT_ICONS: Record<string, string> = {
   interviews: "💬",
   experiences: "🏢",
   answers: "📝",
+  builds: "🔨",
 };
 
-const statKeys: { key: "readings" | "interviews" | "experiences" | "answers"; label: string; href: string }[] = [
+const statKeys: { key: "readings" | "interviews" | "experiences" | "answers" | "builds"; label: string; href: string }[] = [
   { key: "readings",    label: "Readings",    href: "/app/readings"  },
   { key: "interviews",  label: "Questions",   href: "/app/interview" },
   { key: "experiences", label: "Experiences", href: "/app/interview" },
   { key: "answers",     label: "Answers",     href: "/app/interview" },
+  { key: "builds",      label: "Builds",      href: "/app/roadmap"  },
 ];
 
 export default function MyProfile() {
@@ -52,6 +55,12 @@ export default function MyProfile() {
   const { user } = useAuth();
   const qc   = useQueryClient();
   const { data: profile, isLoading } = useMyProfile();
+
+  // Fetch build submissions for both languages so the profile list is complete
+  const { submissions: buildsPy }   = useBuilds("python");
+  const { submissions: buildsJava } = useBuilds("java");
+  const allBuilds = [...buildsPy.values(), ...buildsJava.values()]
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
   const [tab, setTab] = useState<"info" | "prefs" | "bookmarks">("info");
   const [form, setForm] = useState<ProfileForm>({ displayName: "", github: "", linkedin: "" });
@@ -303,7 +312,8 @@ export default function MyProfile() {
           isLoading
             ? <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "20px 0" }}>Loading…</div>
             : (
-              <form onSubmit={submit}>
+              <>
+                <form onSubmit={submit}>
                 <SectionCard title="Identity">
                   <FieldRow label="Display name" hint="Shown next to readings and experiences you publish" error={errors.displayName}>
                     <input
@@ -356,6 +366,51 @@ export default function MyProfile() {
                   </FormButton>
                 </div>
               </form>
+
+              {/* ── My Builds list ──────────────────────────────── */}
+              {allBuilds.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <SectionCard title={`🔨 My Builds (${allBuilds.length})`}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {allBuilds.map((b) => {
+                        const [ph, wk] = b.resourceKey.split("_");
+                        const label = `Phase ${ph} · Week ${wk}`;
+                        const langLabel = buildsPy.has(b.resourceKey) ? "Python" : "Java";
+                        const date = new Date(b.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                        return (
+                          <div key={b.resourceKey + b.githubUrl} style={{
+                            display: "flex", gap: 12, alignItems: "flex-start",
+                            padding: "10px 0", borderBottom: "1px solid var(--border-subtle)",
+                          }}>
+                            <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>🔨</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-heading)" }}>{label}</span>
+                                <span style={{ fontSize: 10, color: "#a5b4fc", background: "#6366f118", border: "1px solid #6366f130", borderRadius: 4, padding: "1px 6px" }}>{langLabel}</span>
+                                <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: "auto" }}>{date}</span>
+                              </div>
+                              <a
+                                href={b.githubUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: 12, color: "#4ade80", textDecoration: "none", wordBreak: "break-all" }}
+                                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                              >
+                                {b.githubUrl} ↗
+                              </a>
+                              {b.notes && (
+                                <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, lineHeight: 1.5 }}>{b.notes}</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </SectionCard>
+                </div>
+              )}
+              </>
             )
         )}
 

@@ -5,7 +5,7 @@
 
 import {
   pgTable, serial, text, integer, boolean, timestamp, uuid,
-  primaryKey, customType,
+  primaryKey, customType, uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -192,6 +192,24 @@ export const dailyCompletions = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.topicDate] })],
+);
+
+// ── Build submissions ─────────────────────────────────────────────────────────
+// One row per user per roadmap build resource. resourceKey = resId() string
+// ("phase_weekN_si_ri"). Unique on (userId, language, resourceKey) — upsert.
+export const buildSubmissions = pgTable(
+  "build_submissions",
+  {
+    id:          uuid("id").primaryKey().defaultRandom(),
+    userId:      uuid("user_id").notNull(),
+    language:    text("language").notNull(),
+    resourceKey: text("resource_key").notNull(),
+    githubUrl:   text("github_url").notNull(),
+    notes:       text("notes"),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("build_submissions_user_lang_key").on(t.userId, t.language, t.resourceKey)],
 );
 
 // ── Per-user bookmarks ─────────────────────────────────────────────────────────

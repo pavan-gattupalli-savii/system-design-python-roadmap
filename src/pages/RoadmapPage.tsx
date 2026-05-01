@@ -183,6 +183,7 @@ export default function RoadmapPage() {
                 completed={ctx.completed}
                 toggle={ctx.toggleCompleted}
                 totalWeeks={totalWeeks}
+                language={lang}
               />
             )}
           </>
@@ -211,6 +212,7 @@ export default function RoadmapPage() {
               completed={ctx.completed}
               toggle={ctx.toggleCompleted}
               totalWeeks={totalWeeks}
+              language={lang}
             />
           </>
         )}

@@ -7,7 +7,7 @@ import { Router } from "express";
 import { db } from "../db/client.js";
 import {
   users, userProgress, readingUpvotes, experienceUpvotes, userPracticedQuestions,
-  readings, interviewQuestions, experiences, answerDocs, bookmarks,
+  readings, interviewQuestions, experiences, answerDocs, bookmarks, buildSubmissions,
 } from "../db/schema.js";
 import { eq, and, count, inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
@@ -47,6 +47,7 @@ router.get("/", async (req, res) => {
     const [
       [pubReadings], [pubInterviews], [pubExperiences], [pubAnswers],
       [pendReadings], [pendInterviews], [pendExperiences], [pendAnswers],
+      [totalBuilds],
     ] = await Promise.all([
       db.select({ c: count() }).from(readings).where(and(eq(readings.submittedBy, userId), eq(readings.isApproved, true))),
       db.select({ c: count() }).from(interviewQuestions).where(and(eq(interviewQuestions.submittedBy, userId), eq(interviewQuestions.isApproved, true))),
@@ -56,6 +57,7 @@ router.get("/", async (req, res) => {
       db.select({ c: count() }).from(interviewQuestions).where(and(eq(interviewQuestions.submittedBy, userId), eq(interviewQuestions.isApproved, false))),
       db.select({ c: count() }).from(experiences).where(and(eq(experiences.submittedBy, userId), eq(experiences.isApproved, false))),
       db.select({ c: count() }).from(answerDocs).where(and(eq(answerDocs.submittedBy, userId), eq(answerDocs.isApproved, false))),
+      db.select({ c: count() }).from(buildSubmissions).where(eq(buildSubmissions.userId, userId)),
     ]);
 
     res.json({
@@ -66,8 +68,8 @@ router.get("/", async (req, res) => {
       linkedin:    u.linkedin,
       role:        u.role,
       createdAt:   u.createdAt,
-      published: { readings: pubReadings.c, interviews: pubInterviews.c, experiences: pubExperiences.c, answers: pubAnswers.c },
-      pending:   { readings: pendReadings.c, interviews: pendInterviews.c, experiences: pendExperiences.c, answers: pendAnswers.c },
+      published: { readings: pubReadings.c, interviews: pubInterviews.c, experiences: pubExperiences.c, answers: pubAnswers.c, builds: totalBuilds.c },
+      pending:   { readings: pendReadings.c, interviews: pendInterviews.c, experiences: pendExperiences.c, answers: pendAnswers.c, builds: 0 },
     });
   } catch (err) {
     console.error(err);

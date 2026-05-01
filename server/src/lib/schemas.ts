@@ -78,6 +78,17 @@ export const bookmarkSchema = z.object({
   resourceId:   z.string().min(1).max(200).transform(trim),
 });
 
+export const buildSubmitSchema = z.object({
+  language:    z.enum(["python", "java"]),
+  resourceKey: z.string().min(1).max(200).transform(trim),
+  githubUrl:   z.string()
+    .max(2048)
+    .transform(trim)
+    .refine((u) => u.startsWith("https://github.com/"), { message: "URL must start with https://github.com/" })
+    .refine((u) => { try { new URL(u); return true; } catch { return false; } }, { message: "URL is malformed" }),
+  notes: z.string().max(1000).transform(trim).optional(),
+});
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 const emailField = z
   .string()
