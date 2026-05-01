@@ -8,6 +8,7 @@ import { CONCEPTS } from "../data/concepts/index";
 import { Link } from "react-router-dom";
 import type { BuildSubmission } from "../api/builds";
 import type { Language } from "../data/roadmap-index";
+import { BUILD_SPECS } from "../data/build-specs";
 
 interface Props {
   phase: number;
@@ -37,6 +38,13 @@ export function ResourceCard({
 
   const isBuild = res.type === "Build";
   const existing = isBuild ? buildSubmissions?.get(id) : undefined;
+  const spec = isBuild ? (BUILD_SPECS[res.item] ?? null) : null;
+
+  const difficultyStyle: Record<string, { color: string; bg: string; border: string }> = {
+    beginner:     { color: "#4ade80", bg: "#4ade8012", border: "#4ade8033" },
+    intermediate: { color: "#fb923c", bg: "#fb923c12", border: "#fb923c33" },
+    advanced:     { color: "#f87171", bg: "#f8717112", border: "#f8717133" },
+  };
 
   const [expanded, setExpanded] = useState(false);
   const [ghUrl, setGhUrl] = useState(existing?.githubUrl ?? "");
@@ -215,23 +223,105 @@ export function ResourceCard({
           display: "flex", flexDirection: "column", gap: 12,
         }}>
 
-          {/* Challenge spec */}
-          <div>
-            <div style={{ fontSize: 10, color: "#c4b5fd", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6, fontWeight: 700 }}>
-              🔨 Challenge
+          {/* ── Rich spec (if in BUILD_SPECS) ── */}
+          {spec ? (
+            <>
+              {/* Difficulty badge */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: 1,
+                  textTransform: "uppercase", padding: "2px 10px", borderRadius: 20,
+                  color: difficultyStyle[spec.difficulty].color,
+                  background: difficultyStyle[spec.difficulty].bg,
+                  border: "1px solid " + difficultyStyle[spec.difficulty].border,
+                }}>
+                  {spec.difficulty === "beginner" ? "🟢" : spec.difficulty === "intermediate" ? "🟠" : "🔴"} {spec.difficulty}
+                </span>
+              </div>
+
+              {/* Overview */}
+              <div style={{ fontSize: isMobile ? 12 : 13, color: "#c4b5fd", lineHeight: 1.7 }}>
+                {spec.overview}
+              </div>
+
+              {/* Requirements */}
+              <div>
+                <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>📋 Requirements</div>
+                <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 5 }}>
+                  {spec.requirements.map((req, i) => (
+                    <li key={i} style={{ fontSize: isMobile ? 11 : 12, color: "#ddd6fe", lineHeight: 1.6 }}>{req}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Acceptance criteria */}
+              <div>
+                <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>✅ Acceptance Criteria</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {spec.acceptance.map((ac, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, fontSize: isMobile ? 11 : 12, color: "#ddd6fe", lineHeight: 1.6 }}>
+                      <span style={{ color: "#4ade80", flexShrink: 0, marginTop: 1 }}>✓</span>
+                      <span>{ac}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Architecture diagram */}
+              {spec.diagram && (
+                <div>
+                  <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>🗺 Architecture</div>
+                  <pre style={{
+                    margin: 0,
+                    background: "#050213",
+                    border: "1px solid #3b1f7b",
+                    borderRadius: 7,
+                    padding: "12px 14px",
+                    fontSize: 11,
+                    color: "#a5b4fc",
+                    lineHeight: 1.5,
+                    overflowX: "auto",
+                    whiteSpace: "pre",
+                    fontFamily: "'Fira Code', 'Cascadia Code', monospace",
+                  }}>{spec.diagram}</pre>
+                </div>
+              )}
+
+              {/* Hints */}
+              {spec.hints && spec.hints.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>💡 Hints</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {spec.hints.map((hint, i) => (
+                      <div key={i} style={{
+                        background: "#1a0a3b",
+                        border: "1px solid #4c1d9555",
+                        borderRadius: 6,
+                        padding: "8px 12px",
+                        fontSize: isMobile ? 11 : 12,
+                        color: "#c4b5fd",
+                        lineHeight: 1.6,
+                      }}>{hint}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            /* Fallback: show raw item text if no spec written yet */
+            <div>
+              <div style={{ fontSize: 10, color: "#c4b5fd", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6, fontWeight: 700 }}>🔨 Challenge</div>
+              <div style={{
+                background: "#0f0a2a",
+                border: "1px solid #3b1f7b",
+                borderRadius: 7,
+                padding: "12px 14px",
+                fontSize: isMobile ? 12 : 13,
+                color: "#ddd6fe",
+                lineHeight: 1.65,
+              }}>{res.item}</div>
             </div>
-            <div style={{
-              background: "#0f0a2a",
-              border: "1px solid #3b1f7b",
-              borderRadius: 7,
-              padding: "12px 14px",
-              fontSize: isMobile ? 12 : 13,
-              color: "#ddd6fe",
-              lineHeight: 1.65,
-            }}>
-              {res.item}
-            </div>
-          </div>
+          )}
 
           {/* Extension / bonus */}
           {res.where && (
@@ -357,4 +447,3 @@ export function ResourceCard({
     </div>
   );
 }
-

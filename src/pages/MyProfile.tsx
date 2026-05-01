@@ -211,13 +211,14 @@ export default function MyProfile() {
           {/* Stats grid */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${ctx.isMobile ? 2 : 4}, 1fr)`,
+            gridTemplateColumns: `repeat(${ctx.isMobile ? 2 : 5}, 1fr)`,
             borderTop: "1px solid var(--border-subtle)",
           }}>
             {statKeys.map(({ key, label, href }, i) => {
               const pub  = profile?.published[key] ?? 0;
               const pend = profile?.pending[key]   ?? 0;
-              const isLastRow = ctx.isMobile ? i >= 2 : false;
+              // Mobile: 2 cols, 5 items → rows 0-1 (i<4) and row 2 (i=4). Row 2 needs top border.
+              const isLastRow = ctx.isMobile ? i >= 4 : false;
               const isOddRight = ctx.isMobile && i % 2 === 1;
               return (
                 <Link

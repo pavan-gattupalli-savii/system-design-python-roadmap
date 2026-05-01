@@ -30,6 +30,23 @@ export function DetailPanel({
   const { user } = useAuth();
   const { submissions: buildSubmissions, submit: submitBuild, remove: deleteBuild } = useBuilds(language);
 
+  // MUST be called unconditionally (Rules of Hooks) — guard inside the memo body
+  const weekProgress = useMemo(() => {
+    if (!phase) return {} as Record<number, { done: number; total: number }>;
+    const map: Record<number, { done: number; total: number }> = {};
+    phase.weeks.forEach((w) => {
+      let done = 0, total = 0;
+      w.sessions.forEach((s, si) => {
+        s.resources.forEach((_, ri) => {
+          total++;
+          if (completed.has(resId(phase.phase, w.n, si, ri))) done++;
+        });
+      });
+      map[w.n] = { done, total };
+    });
+    return map;
+  }, [phase, completed]);
+
   const successColor = isDark ? "#4ade80" : "#16a34a";
 
   if (!phase) {
@@ -64,22 +81,7 @@ export function DetailPanel({
   const weekPct = totalResInWeek ? Math.round((doneInWeek / totalResInWeek) * 100) : 0;
   const phaseAccent = phase.accent || "#6366f1";
 
-  // Per-week completion within this phase (for progress dots)
-  const weekProgress = useMemo(() => {
-    const map: Record<number, { done: number; total: number }> = {};
-    phase.weeks.forEach((w) => {
-      let done = 0, total = 0;
-      w.sessions.forEach((s, si) => {
-        s.resources.forEach((_, ri) => {
-          total++;
-          if (completed.has(resId(phase.phase, w.n, si, ri))) done++;
-        });
-      });
-      map[w.n] = { done, total };
-    });
-    return map;
-  }, [phase, completed]);
-
+  // Per-week progress is already computed above (weekProgress)
   const weekIndex = phase.weeks.findIndex((w) => w.n === weekObj.n);
   const prevWeekN  = weekIndex > 0                       ? phase.weeks[weekIndex - 1].n : null;
   const nextWeekN  = weekIndex < phase.weeks.length - 1  ? phase.weeks[weekIndex + 1].n : null;

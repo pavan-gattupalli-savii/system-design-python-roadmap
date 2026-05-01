@@ -2,6 +2,15 @@
 // Shared TypeScript interfaces for the roadmap data structures.
 // Import from here in hooks, utils, and components for consistent typing.
 
+export interface BuildSpec {
+  overview: string;
+  requirements: string[];
+  acceptance: string[];
+  diagram?: string;
+  hints?: string[];
+  difficulty: "beginner" | "intermediate" | "advanced";
+}
+
 export interface Resource {
   type: string;
   item: string;
