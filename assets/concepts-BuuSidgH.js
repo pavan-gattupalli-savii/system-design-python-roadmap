@@ -1,0 +1,1 @@
+import{p as n}from"./index-B8R4Fawm.js";async function a(e,c,t){return n(`/api/concepts/week/${e}/${c}/${t}`)}async function p(){return n("/api/concepts/summaries")}async function s(e){return n(`/api/concepts/${encodeURIComponent(e)}`)}export{p as a,s as b,a as f};
