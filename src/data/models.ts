@@ -17,6 +17,10 @@ export interface Resource {
   where: string;
   mins: number;
   url?: string;
+  /** When true, resource is required for phase progression. Defaults true. */
+  isCore?: boolean;
+  /** Build resources only — rich spec loaded from `build_specs`. */
+  spec?: BuildSpec;
 }
 
 export interface Session {
@@ -29,6 +33,8 @@ export interface Week {
   n: number;
   title: string;
   sessions: Session[];
+  /** Curated objectives for the week — rendered above sessions when present. */
+  learningObjectives?: string[];
 }
 
 export interface Phase {
@@ -39,6 +45,8 @@ export interface Phase {
   light: string;
   desc: string;
   weeks: Week[];
+  /** Curated outcomes for the phase — rendered in TimelinePanel when present. */
+  outcomes?: string[];
 }
 
 /** Week enriched with its parent phase metadata (from allWeeks flat list). */

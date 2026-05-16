@@ -58,6 +58,15 @@ export function TrackerTab({ roadmap, channels, completed, reset, isMobile, isDa
         <div className="progress-bar-track" style={{ height: 8 }}>
           <div className="progress-bar-fill" style={{ width: totalStats.pct + "%", background: totalStats.pct === 100 ? "#4ade80" : "linear-gradient(90deg, #6366f1, #8b5cf6)" }} />
         </div>
+        <Link
+          to="/app/me/stats"
+          style={{
+            display: "inline-block", marginTop: 12, fontSize: 11, color: "#a5b4fc",
+            textDecoration: "none", fontWeight: 600,
+          }}
+        >
+          View detailed stats →
+        </Link>
       </div>
 
       {/* ── Google Sheets tracker link ── */}

@@ -5,6 +5,8 @@
 
 import { getPhaseStats } from "../utils/stats";
 import type { Phase }    from "../data/models";
+import { useMyCheckpointStatus } from "../hooks/useCheckpoints";
+import type { Language } from "../data/roadmap-index";
 
 interface Props {
   roadmap:       Phase[];
@@ -15,15 +17,18 @@ interface Props {
   isDark:        boolean;
   selectPhase:   (ph: number) => void;
   setMobileView: (v: string) => void;
+  language?:     Language;
 }
 
 export function TimelinePanel({
   roadmap, selPhase, isMobile, width,
   completed, isDark, selectPhase, setMobileView,
+  language,
 }: Props) {
 
   const successColor = isDark ? "#4ade80" : "#16a34a";
   const totalWeeks   = roadmap.reduce((s, p) => s + p.weeks.length, 0);
+  const { status: checkpointStatus } = useMyCheckpointStatus(language ?? "python");
 
   return (
     <div
@@ -189,6 +194,25 @@ export function TimelinePanel({
                     )}
                   </div>
                 )}
+
+                {/* Checkpoint badge — appears when this phase has any quizzes authored */}
+                {(() => {
+                  const cp = checkpointStatus[p.phase];
+                  if (!cp || cp.total === 0) return null;
+                  const fullPass = cp.passed === cp.total;
+                  return (
+                    <div style={{
+                      marginTop: 6, display: "inline-flex", alignItems: "center", gap: 4,
+                      fontSize: 9, fontWeight: 700,
+                      color: fullPass ? successColor : p.light,
+                      background: fullPass ? successColor + "12" : p.accent + "10",
+                      border: "1px solid " + (fullPass ? successColor + "44" : p.accent + "33"),
+                      borderRadius: 4, padding: "1px 6px",
+                    }}>
+                      🧪 {cp.passed}/{cp.total}
+                    </div>
+                  );
+                })()}
               </button>
             </div>
           );

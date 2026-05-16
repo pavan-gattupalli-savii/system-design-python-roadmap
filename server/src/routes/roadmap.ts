@@ -4,22 +4,27 @@
 
 import { Router } from "express";
 import { db } from "../db/client.js";
-import { roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources } from "../db/schema.js";
+import { roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSpecs } from "../db/schema.js";
 import { eq, asc } from "drizzle-orm";
 import { roadmapCache } from "../lib/cache.js";
 import { sendCached } from "../middleware/cache.js";
 
 const router = Router();
 
+// Same `resId` the frontend uses — keep in sync (src/utils/stats.ts).
+function resId(phase: number, weekN: number, si: number, ri: number): string {
+  return `${phase}_${weekN}_${si}_${ri}`;
+}
 
 async function fetchFromDB(language: "python" | "java"): Promise<unknown[]> {
   const phases = await db.select().from(roadmapPhases).where(eq(roadmapPhases.language, language)).orderBy(asc(roadmapPhases.phaseNumber));
   if (!phases.length) return [];
 
-  const [weeks, sessions, resources] = await Promise.all([
+  const [weeks, sessions, resources, specs] = await Promise.all([
     db.select().from(roadmapWeeks).orderBy(asc(roadmapWeeks.weekNumber)),
     db.select().from(roadmapSessions).orderBy(asc(roadmapSessions.sortOrder)),
     db.select().from(roadmapResources).orderBy(asc(roadmapResources.sortOrder)),
+    db.select().from(buildSpecs).where(eq(buildSpecs.language, language)),
   ]);
 
   const weeksByPhase = new Map<number, typeof weeks>();
@@ -40,27 +45,43 @@ async function fetchFromDB(language: "python" | "java"): Promise<unknown[]> {
     arr.push(r);
     resourcesBySession.set(r.sessionId, arr);
   }
+  const specByKey = new Map(specs.map((s) => [s.resourceKey, s]));
 
   return phases.map((p) => ({
-    phase:  p.phaseNumber,
-    title:  p.title,
-    icon:   p.icon,
-    accent: p.accent,
-    light:  p.light,
-    desc:   p.description,
+    phase:    p.phaseNumber,
+    title:    p.title,
+    icon:     p.icon,
+    accent:   p.accent,
+    light:    p.light,
+    desc:     p.description,
+    outcomes: p.outcomes ?? [],
     weeks: (weeksByPhase.get(p.id) ?? []).map((w) => ({
-      n:     w.weekNumber,
-      title: w.title,
-      sessions: (sessionsByWeek.get(w.id) ?? []).map((s) => ({
+      n:                  w.weekNumber,
+      title:              w.title,
+      learningObjectives: w.learningObjectives ?? [],
+      sessions: (sessionsByWeek.get(w.id) ?? []).map((s, si) => ({
         label:     s.label,
         focus:     s.focus,
-        resources: (resourcesBySession.get(s.id) ?? []).map((r) => ({
-          type:  r.type,
-          item:  r.item,
-          where: r.whereText,
-          mins:  r.mins,
-          url:   r.url ?? undefined,
-        })),
+        resources: (resourcesBySession.get(s.id) ?? []).map((r, ri) => {
+          const key = resId(p.phaseNumber, w.weekNumber, si, ri);
+          const spec = r.type === "Build" ? specByKey.get(key) : undefined;
+          return {
+            type:   r.type,
+            item:   r.item,
+            where:  r.whereText,
+            mins:   r.mins,
+            url:    r.url ?? undefined,
+            isCore: r.isCore,
+            spec:   spec ? {
+              overview:     spec.overview,
+              requirements: spec.requirements,
+              acceptance:   spec.acceptance,
+              diagram:      spec.diagram ?? undefined,
+              hints:        spec.hints,
+              difficulty:   spec.difficulty,
+            } : undefined,
+          };
+        }),
       })),
     })),
   }));

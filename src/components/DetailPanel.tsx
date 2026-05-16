@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { TYPES } from "../data/types";
 import { resId, sessionColors } from "../utils/stats";
 import { ResourceCard } from "./ResourceCard";
@@ -6,6 +7,8 @@ import type { Phase, WeekWithPhase } from "../data/models";
 import type { Language } from "../data/roadmap-index";
 import { useBuilds } from "../hooks/useBuilds";
 import { useAuth } from "../lib/auth";
+import { useWeekConcepts } from "../hooks/useWeekConcepts";
+import { useNotes } from "../hooks/useNotes";
 
 interface Props {
   weekObj:       WeekWithPhase | undefined;
@@ -29,6 +32,8 @@ export function DetailPanel({
 }: Props) {
   const { user } = useAuth();
   const { submissions: buildSubmissions, submit: submitBuild, remove: deleteBuild } = useBuilds(language);
+  const { concepts: weekConcepts } = useWeekConcepts(language, weekObj?.phase, weekObj?.n);
+  const { notes: userNotes, save: saveNote, remove: deleteNote } = useNotes(language);
 
   // MUST be called unconditionally (Rules of Hooks) — guard inside the memo body
   const weekProgress = useMemo(() => {
@@ -268,6 +273,51 @@ export function DetailPanel({
           </div>
         </div>
 
+        {/* Learning objectives — shown only when curated */}
+        {weekObj.learningObjectives && weekObj.learningObjectives.length > 0 && (
+          <div style={{
+            marginBottom: 16, padding: "12px 14px", borderRadius: 8,
+            background: phaseAccent + "0d", border: "1px solid " + phaseAccent + "33",
+          }}>
+            <div style={{ fontSize: 10, color: phaseAccent, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, marginBottom: 7 }}>
+              🎯 Learning Objectives
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+              {weekObj.learningObjectives.map((obj, i) => (
+                <li key={i} style={{ fontSize: 12, color: "var(--text-body)", lineHeight: 1.5 }}>{obj}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Concepts covered this week — pulled from concept_week_links */}
+        {weekConcepts.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, marginBottom: 7 }}>
+              📖 Concepts this week
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {weekConcepts.map((c) => (
+                <Link
+                  key={c.slug}
+                  to={`/app/concepts/${c.slug}`}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    padding: "4px 10px", borderRadius: 12,
+                    background: "#6366f111", border: "1px solid #6366f133",
+                    color: "#a5b4fc", fontSize: 11, fontWeight: 500,
+                    textDecoration: "none",
+                  }}
+                  title={c.tagline}
+                >
+                  <span>{c.emoji}</span>
+                  <span>{c.title}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Session accordions */}
         {weekObj.sessions.map((session, si) => {
           const isOpen      = openSessions[si] !== false;
@@ -309,6 +359,9 @@ export function DetailPanel({
                       buildSubmissions={buildSubmissions}
                       onSubmitBuild={(resourceKey, githubUrl, notes) => submitBuild({ resourceKey, githubUrl, notes })}
                       onDeleteBuild={(resourceKey) => deleteBuild({ resourceKey })}
+                      userNotes={user ? userNotes : undefined}
+                      onSaveNote={user ? (resourceKey, bodyMd) => saveNote({ resourceKey, bodyMd }) : undefined}
+                      onDeleteNote={user ? (resourceKey) => deleteNote({ resourceKey }) : undefined}
                     />
                   ))}
                 </div>
@@ -316,6 +369,40 @@ export function DetailPanel({
             </div>
           );
         })}
+
+        {/* Phase outcomes — surfaced on the last week of the phase as a recap */}
+        {phase.outcomes && phase.outcomes.length > 0 && weekIndex === phase.weeks.length - 1 && (
+          <div style={{
+            marginTop: 18, padding: "14px 16px", borderRadius: 10,
+            background: phaseAccent + "0d", border: "1px solid " + phaseAccent + "33",
+          }}>
+            <div style={{ fontSize: 10, color: phaseAccent, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>
+              🏁 Phase {phase.phase} Outcomes
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 5 }}>
+              {phase.outcomes.map((o, i) => (
+                <li key={i} style={{ fontSize: 12, color: "var(--text-body)", lineHeight: 1.6 }}>{o}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Checkpoint CTA — shown on last week of phase */}
+        {weekIndex === phase.weeks.length - 1 && (
+          <Link
+            to={`/app/roadmap/phase/${phase.phase}/checkpoint?lang=${language}`}
+            style={{
+              marginTop: 14, display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 16px", borderRadius: 10,
+              background: phaseAccent + "18", border: "1px solid " + phaseAccent + "55",
+              color: phaseAccent, textDecoration: "none", fontWeight: 600,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>🧪</span>
+            <span style={{ flex: 1, fontSize: 13 }}>Take the Phase {phase.phase} checkpoint quiz</span>
+            <span style={{ fontSize: 13 }}>→</span>
+          </Link>
+        )}
 
         {/* Motivational tip */}
         <div style={{ marginTop: 16, background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 16px", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>

@@ -27,6 +27,8 @@ const ResourcesByTypePage = lazy(() => import("./pages/ResourcesByTypePage"));
 const DailyTopicPage   = lazy(() => import("./pages/DailyTopicPage"));
 const ConceptsPage     = lazy(() => import("./pages/ConceptsPage"));
 const ContributePage   = lazy(() => import("./pages/ContributePage"));
+const CheckpointPage   = lazy(() => import("./pages/CheckpointPage"));
+const StatsPage        = lazy(() => import("./pages/StatsPage"));
 
 function PageFallback() {
   return (
@@ -54,6 +56,7 @@ export default function App() {
           <Route path="roadmap"            element={<RoadmapPage />} />
           <Route path="roadmap/phase/:p"   element={<RoadmapPage />} />
           <Route path="roadmap/phase/:p/week/:w" element={<RoadmapPage />} />
+          <Route path="roadmap/phase/:p/checkpoint" element={<CheckpointPage />} />
           <Route path="readings"           element={<ReadingsPage />} />
           <Route path="readings/submit"    element={<RequireAuth><SubmitReading /></RequireAuth>} />
           <Route path="interview"          element={<InterviewPage />} />
@@ -65,6 +68,7 @@ export default function App() {
           <Route path="about"              element={<AboutPage />} />
           <Route path="contribute"         element={<ContributePage />} />
           <Route path="me"                 element={<RequireAuth><MyProfile /></RequireAuth>} />
+          <Route path="me/stats"           element={<RequireAuth><StatsPage /></RequireAuth>} />
           <Route path="admin"              element={<RequireAdmin><AdminQueue /></RequireAdmin>} />
         </Route>
 

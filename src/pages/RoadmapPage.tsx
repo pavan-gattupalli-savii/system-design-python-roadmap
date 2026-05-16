@@ -168,6 +168,7 @@ export default function RoadmapPage() {
                 isDark={ctx.isDark}
                 selectPhase={selectPhase}
                 setMobileView={setMobileView}
+                language={lang}
               />
             )}
             {mobileView === "detail" && (
@@ -198,6 +199,7 @@ export default function RoadmapPage() {
               isDark={ctx.isDark}
               selectPhase={selectPhase}
               setMobileView={setMobileView}
+              language={lang}
             />
             <DragHandle onMouseDown={timeline.onDragStart} />
             <DetailPanel

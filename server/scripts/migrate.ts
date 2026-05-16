@@ -203,9 +203,21 @@ async function migrate() {
   // ── Drop NOT NULL on legacy attribution columns ──────────────────────────
   // Identity now comes from users joined via submitted_by; new rows leave the
   // legacy columns NULL. Old seed rows keep their values for back-compat.
-  await sql`ALTER TABLE readings    ALTER COLUMN added_by    DROP NOT NULL`;
-  await sql`ALTER TABLE experiences ALTER COLUMN added_by    DROP NOT NULL`;
-  await sql`ALTER TABLE answer_docs ALTER COLUMN by          DROP NOT NULL`;
+  // Guarded so re-running on a DB where the columns were already dropped is a no-op.
+  await sql`
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='readings' AND column_name='added_by') THEN
+        ALTER TABLE readings ALTER COLUMN added_by DROP NOT NULL;
+      END IF;
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='experiences' AND column_name='added_by') THEN
+        ALTER TABLE experiences ALTER COLUMN added_by DROP NOT NULL;
+      END IF;
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='answer_docs' AND column_name='by') THEN
+        ALTER TABLE answer_docs ALTER COLUMN "by" DROP NOT NULL;
+      END IF;
+    END $$;
+  `;
   console.log("  ✓ legacy attribution columns made nullable");
 
   // ── Per-user reading upvotes ─────────────────────────────────────────────
@@ -276,6 +288,99 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS idx_iq_submitted_by         ON interview_questions(submitted_by) WHERE submitted_by IS NOT NULL`;
   await sql`CREATE INDEX IF NOT EXISTS idx_exp_submitted_by        ON experiences(submitted_by) WHERE submitted_by IS NOT NULL`;
   await sql`CREATE INDEX IF NOT EXISTS idx_answer_docs_submitted_by ON answer_docs(submitted_by) WHERE submitted_by IS NOT NULL`;
+
+  // ── A2: is_core flag on resources (for future "compress mode") ─────────────
+  await sql`ALTER TABLE roadmap_resources ADD COLUMN IF NOT EXISTS is_core BOOLEAN NOT NULL DEFAULT TRUE`;
+  console.log("  ✓ roadmap_resources.is_core");
+
+  // ── B3: learning objectives + phase outcomes ───────────────────────────────
+  await sql`ALTER TABLE roadmap_weeks  ADD COLUMN IF NOT EXISTS learning_objectives TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE roadmap_phases ADD COLUMN IF NOT EXISTS outcomes            TEXT[] NOT NULL DEFAULT '{}'`;
+  console.log("  ✓ learning_objectives + outcomes");
+
+  // ── B1: build specs ────────────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS build_specs (
+      id            SERIAL PRIMARY KEY,
+      language      TEXT      NOT NULL CHECK (language IN ('python','java')),
+      resource_key  TEXT      NOT NULL,
+      overview      TEXT      NOT NULL,
+      requirements  TEXT[]    NOT NULL DEFAULT '{}',
+      acceptance    TEXT[]    NOT NULL DEFAULT '{}',
+      diagram       TEXT,
+      hints         TEXT[]    NOT NULL DEFAULT '{}',
+      difficulty    TEXT      NOT NULL DEFAULT 'intermediate' CHECK (difficulty IN ('beginner','intermediate','advanced')),
+      UNIQUE (language, resource_key)
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_build_specs_lang_key ON build_specs(language, resource_key)`;
+  console.log("  ✓ build_specs");
+
+  // ── B2: concepts + week links ──────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS concepts (
+      slug              TEXT PRIMARY KEY,
+      title             TEXT NOT NULL,
+      emoji             TEXT NOT NULL DEFAULT '',
+      category          TEXT NOT NULL,
+      tagline           TEXT NOT NULL,
+      sections          JSONB NOT NULL DEFAULT '[]'::jsonb,
+      related           TEXT[] NOT NULL DEFAULT '{}',
+      roadmap_keywords  TEXT[] NOT NULL DEFAULT '{}',
+      sort_order        INT NOT NULL DEFAULT 0,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS concept_week_links (
+      concept_slug  TEXT NOT NULL REFERENCES concepts(slug) ON DELETE CASCADE,
+      language      TEXT NOT NULL CHECK (language IN ('python','java')),
+      phase_number  INT  NOT NULL,
+      week_number   INT  NOT NULL,
+      PRIMARY KEY (concept_slug, language, phase_number, week_number)
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_cwl_lang_week ON concept_week_links(language, phase_number, week_number)`;
+  console.log("  ✓ concepts + concept_week_links");
+
+  // ── C1: user notes per resource ────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_notes (
+      user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      language      TEXT NOT NULL CHECK (language IN ('python','java')),
+      resource_key  TEXT NOT NULL,
+      body_md       TEXT NOT NULL,
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, language, resource_key)
+    )
+  `;
+  console.log("  ✓ user_notes");
+
+  // ── C2: phase checkpoints (quizzes) ────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS phase_checkpoints (
+      id            SERIAL PRIMARY KEY,
+      language      TEXT NOT NULL CHECK (language IN ('python','java')),
+      phase_number  INT  NOT NULL,
+      question      TEXT NOT NULL,
+      options       JSONB NOT NULL,
+      answer_idx    INT  NOT NULL,
+      explanation   TEXT NOT NULL DEFAULT '',
+      sort_order    INT  NOT NULL DEFAULT 0,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_checkpoints_phase ON phase_checkpoints(language, phase_number)`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_checkpoint_attempts (
+      user_id        UUID NOT NULL REFERENCES users(id)             ON DELETE CASCADE,
+      checkpoint_id  INT  NOT NULL REFERENCES phase_checkpoints(id) ON DELETE CASCADE,
+      passed         BOOLEAN NOT NULL,
+      attempted_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, checkpoint_id)
+    )
+  `;
+  console.log("  ✓ phase_checkpoints + user_checkpoint_attempts");
 
   console.log("✅ Migration complete");
 }

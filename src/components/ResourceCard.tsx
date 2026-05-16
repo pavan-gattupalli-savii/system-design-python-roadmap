@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import type { BuildSubmission } from "../api/builds";
 import type { Language } from "../data/roadmap-index";
 import { BUILD_SPECS } from "../data/build-specs";
+import type { UserNote } from "../api/notes";
 
 interface Props {
   phase: number;
@@ -23,11 +24,16 @@ interface Props {
   buildSubmissions?: Map<string, BuildSubmission>;
   onSubmitBuild?: (resourceKey: string, githubUrl: string, notes?: string) => void;
   onDeleteBuild?: (resourceKey: string) => void;
+  /** Lookup of user notes keyed by resourceKey (resId). Undefined when signed out. */
+  userNotes?: Map<string, UserNote>;
+  onSaveNote?: (resourceKey: string, bodyMd: string) => void;
+  onDeleteNote?: (resourceKey: string) => void;
 }
 
 export function ResourceCard({
   phase, weekN, si, ri, res, completed, toggle, isMobile,
   language, buildSubmissions, onSubmitBuild, onDeleteBuild,
+  userNotes, onSaveNote, onDeleteNote,
 }: Props) {
   const id    = resId(phase, weekN, si, ri);
   const isDone = completed.has(id);
@@ -38,7 +44,10 @@ export function ResourceCard({
 
   const isBuild = res.type === "Build";
   const existing = isBuild ? buildSubmissions?.get(id) : undefined;
-  const spec = isBuild ? (BUILD_SPECS[res.item] ?? null) : null;
+  // Prefer DB-loaded spec (res.spec, keyed by resId on the server). Fall back to
+  // the bundled BUILD_SPECS map keyed by res.item for resources whose spec
+  // hasn't been migrated to the DB yet.
+  const spec = isBuild ? (res.spec ?? BUILD_SPECS[res.item] ?? null) : null;
 
   const difficultyStyle: Record<string, { color: string; bg: string; border: string }> = {
     beginner:     { color: "#4ade80", bg: "#4ade8012", border: "#4ade8033" },
@@ -52,6 +61,17 @@ export function ResourceCard({
   const [urlError, setUrlError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // ── User notes (signed-in only) ────────────────────────────────────────────
+  const existingNote = userNotes?.get(id);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState(existingNote?.bodyMd ?? "");
+  const [noteSyncedFor, setNoteSyncedFor] = useState(existingNote?.bodyMd ?? "");
+  if ((existingNote?.bodyMd ?? "") !== noteSyncedFor) {
+    setNoteDraft(existingNote?.bodyMd ?? "");
+    setNoteSyncedFor(existingNote?.bodyMd ?? "");
+  }
+  const noteDirty = noteDraft !== (existingNote?.bodyMd ?? "");
 
   // Keep local form in sync if the query reloads with fresh data
   const existingKey = existing?.githubUrl ?? "";
@@ -212,7 +232,81 @@ export function ResourceCard({
         >
           {isBookmarked ? "★" : "☆"}
         </button>
+
+        {/* Note button — only when signed in (userNotes provided) */}
+        {language && onSaveNote && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setNoteOpen((v) => !v); }}
+            title={existingNote ? "Edit note" : "Add note"}
+            style={{
+              background: "transparent", border: "none",
+              color: existingNote ? "#6ee7b7" : "var(--text-muted)",
+              cursor: "pointer", fontSize: 14, padding: "4px", lineHeight: 1,
+              marginTop: 2, transition: "color 0.15s",
+            }}
+          >
+            {existingNote ? "📝" : "✎"}
+          </button>
+        )}
       </div>
+
+      {/* ── Note editor ─────────────────────────────────────────── */}
+      {noteOpen && language && onSaveNote && (
+        <div style={{
+          marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border-subtle)",
+          display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 700 }}>
+            📝 Your notes (markdown)
+          </div>
+          <textarea
+            value={noteDraft}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            placeholder="Capture takeaways, gotchas, links to your code…"
+            rows={4}
+            style={{
+              width: "100%", boxSizing: "border-box",
+              background: "var(--bg-secondary)", border: "1px solid var(--border)",
+              borderRadius: 6, padding: "8px 10px",
+              color: "var(--text-body)", fontSize: 12, fontFamily: "inherit",
+              outline: "none", resize: "vertical",
+            }}
+          />
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              onClick={() => onSaveNote(id, noteDraft)}
+              disabled={!noteDirty || noteDraft.trim() === ""}
+              style={{
+                background: noteDirty && noteDraft.trim() !== "" ? "#6366f1" : "var(--bg-card)",
+                color: noteDirty && noteDraft.trim() !== "" ? "#fff" : "var(--text-muted)",
+                border: "none", borderRadius: 6, padding: "5px 12px",
+                fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+                cursor: noteDirty && noteDraft.trim() !== "" ? "pointer" : "default",
+              }}
+            >
+              Save
+            </button>
+            {existingNote && onDeleteNote && (
+              <button
+                onClick={() => { onDeleteNote(id); setNoteOpen(false); }}
+                style={{
+                  background: "transparent", color: "#f87171",
+                  border: "1px solid #f8717144", borderRadius: 6,
+                  padding: "4px 10px", fontSize: 11, fontWeight: 600,
+                  fontFamily: "inherit", cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
+            )}
+            {existingNote && (
+              <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: "auto" }}>
+                updated {new Date(existingNote.updatedAt).toLocaleString()}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Build expanded panel ──────────────────────────────────── */}
       {isBuild && expanded && (

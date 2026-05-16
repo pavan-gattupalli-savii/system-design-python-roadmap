@@ -20,6 +20,10 @@ import authRouter        from "./routes/auth.js";
 import dailyTopicRouter  from "./routes/dailyTopic.js";
 import bookmarksRouter   from "./routes/bookmarks.js";
 import buildsRouter      from "./routes/builds.js";
+import conceptsRouter    from "./routes/concepts.js";
+import notesRouter       from "./routes/notes.js";
+import checkpointsRouter from "./routes/checkpoints.js";
+import analyticsRouter   from "./routes/analytics.js";
 
 
 const app = express();
@@ -88,6 +92,10 @@ app.use("/api/admin",       readLimiter, adminRouter);
 app.use("/api/daily-topic", readLimiter, dailyTopicRouter);
 app.use("/api/bookmarks",   bookmarksRouter);   // auth handled inside router
 app.use("/api/builds",     buildsRouter);       // auth required inside router
+app.use("/api/concepts",    readLimiter, conceptsRouter);
+app.use("/api/me/notes",    notesRouter);       // auth required inside router
+app.use("/api/me/analytics", analyticsRouter);  // auth required inside router
+app.use("/api/checkpoints", readLimiter, checkpointsRouter);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

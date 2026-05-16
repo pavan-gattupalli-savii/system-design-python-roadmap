@@ -5,7 +5,7 @@
 
 import {
   pgTable, serial, text, integer, boolean, timestamp, uuid,
-  primaryKey, customType, uniqueIndex,
+  primaryKey, customType, uniqueIndex, jsonb,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -82,14 +82,16 @@ export const roadmapPhases = pgTable("roadmap_phases", {
   accent:      text("accent").notNull().default("#6366f1"),
   light:       text("light").notNull().default("#a5b4fc"),
   description: text("description").notNull().default(""),
+  outcomes:    text("outcomes").array().notNull().default([]),
 });
 
 // ── Roadmap: Weeks ────────────────────────────────────────────────────────────
 export const roadmapWeeks = pgTable("roadmap_weeks", {
-  id:         serial("id").primaryKey(),
-  phaseId:    integer("phase_id").notNull(),
-  weekNumber: integer("week_number").notNull(),
-  title:      text("title").notNull(),
+  id:                 serial("id").primaryKey(),
+  phaseId:            integer("phase_id").notNull(),
+  weekNumber:         integer("week_number").notNull(),
+  title:              text("title").notNull(),
+  learningObjectives: text("learning_objectives").array().notNull().default([]),
 });
 
 // ── Roadmap: Sessions ────────────────────────────────────────────────────────
@@ -111,7 +113,84 @@ export const roadmapResources = pgTable("roadmap_resources", {
   mins:      integer("mins").notNull().default(0),
   url:       text("url"),
   sortOrder: integer("sort_order").notNull().default(0),
+  isCore:    boolean("is_core").notNull().default(true),
 });
+
+// ── Build specs (rich Build resource detail) ──────────────────────────────────
+export const buildSpecs = pgTable("build_specs", {
+  id:           serial("id").primaryKey(),
+  language:     text("language").notNull(),
+  resourceKey:  text("resource_key").notNull(),
+  overview:     text("overview").notNull(),
+  requirements: text("requirements").array().notNull().default([]),
+  acceptance:   text("acceptance").array().notNull().default([]),
+  diagram:      text("diagram"),
+  hints:        text("hints").array().notNull().default([]),
+  difficulty:   text("difficulty").notNull().default("intermediate"),
+}, (t) => [uniqueIndex("build_specs_lang_key_uq").on(t.language, t.resourceKey)]);
+
+// ── Concepts (system-design vocab) ────────────────────────────────────────────
+export const concepts = pgTable("concepts", {
+  slug:             text("slug").primaryKey(),
+  title:            text("title").notNull(),
+  emoji:            text("emoji").notNull().default(""),
+  category:         text("category").notNull(),
+  tagline:          text("tagline").notNull(),
+  sections:         jsonb("sections").notNull().default([]),
+  related:          text("related").array().notNull().default([]),
+  roadmapKeywords:  text("roadmap_keywords").array().notNull().default([]),
+  sortOrder:        integer("sort_order").notNull().default(0),
+  createdAt:        timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ── Concept ↔ week curated links ──────────────────────────────────────────────
+export const conceptWeekLinks = pgTable(
+  "concept_week_links",
+  {
+    conceptSlug:  text("concept_slug").notNull(),
+    language:     text("language").notNull(),
+    phaseNumber:  integer("phase_number").notNull(),
+    weekNumber:   integer("week_number").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.conceptSlug, t.language, t.phaseNumber, t.weekNumber] })],
+);
+
+// ── User notes per resource ───────────────────────────────────────────────────
+export const userNotes = pgTable(
+  "user_notes",
+  {
+    userId:      uuid("user_id").notNull(),
+    language:    text("language").notNull(),
+    resourceKey: text("resource_key").notNull(),
+    bodyMd:      text("body_md").notNull(),
+    updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.language, t.resourceKey] })],
+);
+
+// ── Phase checkpoint quizzes ──────────────────────────────────────────────────
+export const phaseCheckpoints = pgTable("phase_checkpoints", {
+  id:           serial("id").primaryKey(),
+  language:     text("language").notNull(),
+  phaseNumber:  integer("phase_number").notNull(),
+  question:     text("question").notNull(),
+  options:      jsonb("options").notNull(),
+  answerIdx:    integer("answer_idx").notNull(),
+  explanation:  text("explanation").notNull().default(""),
+  sortOrder:    integer("sort_order").notNull().default(0),
+  createdAt:    timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const userCheckpointAttempts = pgTable(
+  "user_checkpoint_attempts",
+  {
+    userId:       uuid("user_id").notNull(),
+    checkpointId: integer("checkpoint_id").notNull(),
+    passed:       boolean("passed").notNull(),
+    attemptedAt:  timestamp("attempted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.checkpointId] })],
+);
 
 // ── Users ─────────────────────────────────────────────────────────────────────
 export const users = pgTable("users", {
