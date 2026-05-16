@@ -5,10 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchCheckpoints, fetchMyCheckpointStatus, type CheckpointQuestion, type PhaseCheckpointStatus } from "../api/checkpoints";
 import type { Language } from "../data/roadmap-index";
 import { useAuth } from "../lib/auth";
+import { qk } from "../lib/queryKeys";
 
 export function useCheckpoints(language: Language, phase: number) {
   const { data, isLoading } = useQuery<CheckpointQuestion[]>({
-    queryKey: ["checkpoints", language, phase],
+    queryKey: qk.checkpoints.byPhase(language, phase),
     queryFn:  () => fetchCheckpoints(language, phase),
     staleTime: 30 * 60_000,
   });
@@ -19,7 +20,7 @@ export function useCheckpoints(language: Language, phase: number) {
 export function useMyCheckpointStatus(language: Language) {
   const { user } = useAuth();
   const { data, isLoading } = useQuery<PhaseCheckpointStatus>({
-    queryKey: ["checkpoint-status", language, user?.id],
+    queryKey: qk.checkpoints.myStatus(language, user?.id),
     queryFn:  () => fetchMyCheckpointStatus(language),
     enabled:  !!user,
     staleTime: 60_000,

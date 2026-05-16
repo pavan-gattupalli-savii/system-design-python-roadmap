@@ -7,13 +7,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchNotes, saveNote, deleteNote, type UserNote } from "../api/notes";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
+import { qk } from "../lib/queryKeys";
 
 export function useNotes(language: Language) {
   const { user } = useAuth();
   const qc       = useQueryClient();
+  const key = qk.notes.byLang(language, user?.id);
 
   const { data: rawList = [], isLoading } = useQuery<UserNote[]>({
-    queryKey: ["notes", language, user?.id],
+    queryKey: key,
     queryFn:  () => fetchNotes(language),
     enabled:  !!user,
     staleTime: 60_000,
@@ -24,12 +26,12 @@ export function useNotes(language: Language) {
   const saveMutation = useMutation({
     mutationFn: ({ resourceKey, bodyMd }: { resourceKey: string; bodyMd: string }) =>
       saveNote(language, resourceKey, bodyMd),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notes", language, user?.id] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: ({ resourceKey }: { resourceKey: string }) => deleteNote(language, resourceKey),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ["notes", language, user?.id] }),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: key }),
   });
 
   return {

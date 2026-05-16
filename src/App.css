@@ -27,6 +27,18 @@
   --badge-sky-tx:    #38bdf8;
   --badge-sky-bg:    #0ea5e911;
   --badge-sky-border:#0ea5e933;
+  /* Brand accents — for places where CSS variables work (className-driven styles).
+     Inline-style React code that needs string concat for alpha (e.g. accent + "22")
+     should keep using the JS palette in src/lib/colors.ts. */
+  --accent-indigo:   #6366f1;
+  --accent-violet:   #a5b4fc;
+  --accent-purple:   #8b5cf6;
+  --accent-amber:    #fbbf24;
+  --accent-orange:   #fb923c;
+  --accent-green:    #4ade80;
+  --accent-mint:     #6ee7b7;
+  --accent-red:      #f87171;
+  --accent-cyan:     #67e8f9;
 }
 
 /* ── Light theme overrides ────────────────────────────────────────────── */

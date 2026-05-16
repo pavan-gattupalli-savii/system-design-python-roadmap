@@ -6,11 +6,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchMe, type MyProfile } from "../api/me";
 import { useAuth } from "../lib/auth";
+import { qk } from "../lib/queryKeys";
 
 export function useMyProfile() {
   const { user } = useAuth();
   return useQuery<MyProfile>({
-    queryKey: ["me", user?.id],
+    queryKey: qk.me.profile(user?.id),
     queryFn:  fetchMe,
     enabled:  !!user,
     staleTime: 30_000,

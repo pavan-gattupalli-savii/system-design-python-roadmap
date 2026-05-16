@@ -7,10 +7,11 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllConcepts } from "../api/concepts";
 import type { Concept, ConceptCategory } from "../lib/conceptTypes";
+import { qk } from "../lib/queryKeys";
 
 export function useConcepts() {
   const { data, isLoading } = useQuery<Concept[]>({
-    queryKey: ["concepts", "all"],
+    queryKey: qk.concepts.all,
     queryFn:  fetchAllConcepts,
     staleTime: 30 * 60_000,
     gcTime:    60 * 60_000,

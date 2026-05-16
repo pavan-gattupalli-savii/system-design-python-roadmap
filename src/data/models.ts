@@ -33,6 +33,8 @@ export interface Resource {
   isCore?: boolean;
   /** Build resources only — rich spec loaded from `build_specs`. */
   spec?: BuildSpec;
+  /** Server-side keyword-matched concept for the 📖 cross-link chip. */
+  linkedConcept?: { slug: string; title: string; emoji: string };
 }
 
 export interface Session {

@@ -8,17 +8,24 @@
 // for optional columns.
 
 import type { InferSelectModel } from "drizzle-orm";
-import type { roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSpecs } from "../db/schema.js";
+import type { roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSpecs, concepts } from "../db/schema.js";
 
 type Phase    = InferSelectModel<typeof roadmapPhases>;
 type Week     = InferSelectModel<typeof roadmapWeeks>;
 type Session  = InferSelectModel<typeof roadmapSessions>;
 type Resource = InferSelectModel<typeof roadmapResources>;
 type Spec     = InferSelectModel<typeof buildSpecs>;
+type Concept  = InferSelectModel<typeof concepts>;
 
 /** Stable resource key — must match `resId` in `src/utils/stats.ts` on the frontend. */
 export function resId(phase: number, weekN: number, si: number, ri: number): string {
   return `${phase}_${weekN}_${si}_${ri}`;
+}
+
+export interface LinkedConcept {
+  slug:  string;
+  title: string;
+  emoji: string;
 }
 
 export interface RoadmapMaps {
@@ -26,10 +33,18 @@ export interface RoadmapMaps {
   sessionsByWeek:     Map<number, Session[]>;
   resourcesBySession: Map<number, Resource[]>;
   specByResourceKey:  Map<string, Spec>;
+  /** Concept index keyed by lowercase keyword → minimal concept shape for client. */
+  conceptByKeyword:   Map<string, LinkedConcept>;
 }
 
-/** Group the four flat lists into lookup maps. specs is optional (analytics doesn't need it). */
-export function buildMaps(weeks: Week[], sessions: Session[], resources: Resource[], specs: Spec[] = []): RoadmapMaps {
+/** Group the four flat lists into lookup maps. specs + concepts optional. */
+export function buildMaps(
+  weeks: Week[],
+  sessions: Session[],
+  resources: Resource[],
+  specs: Spec[] = [],
+  conceptsList: Concept[] = [],
+): RoadmapMaps {
   const weeksByPhase = new Map<number, Week[]>();
   for (const w of weeks) {
     const arr = weeksByPhase.get(w.phaseId) ?? [];
@@ -49,7 +64,29 @@ export function buildMaps(weeks: Week[], sessions: Session[], resources: Resourc
     resourcesBySession.set(r.sessionId, arr);
   }
   const specByResourceKey = new Map<string, Spec>(specs.map((s) => [s.resourceKey, s]));
-  return { weeksByPhase, sessionsByWeek, resourcesBySession, specByResourceKey };
+
+  // Flatten concepts → keyword index. First concept wins on overlap (matches
+  // the legacy frontend `CONCEPTS.find` semantics).
+  const conceptByKeyword = new Map<string, LinkedConcept>();
+  for (const c of conceptsList) {
+    for (const kw of c.roadmapKeywords ?? []) {
+      const k = kw.toLowerCase();
+      if (!conceptByKeyword.has(k)) {
+        conceptByKeyword.set(k, { slug: c.slug, title: c.title, emoji: c.emoji });
+      }
+    }
+  }
+
+  return { weeksByPhase, sessionsByWeek, resourcesBySession, specByResourceKey, conceptByKeyword };
+}
+
+/** Find the first concept whose keyword matches any text in `haystack`. */
+function findLinkedConcept(haystack: string, conceptByKeyword: Map<string, LinkedConcept>): LinkedConcept | undefined {
+  const lower = haystack.toLowerCase();
+  for (const [kw, concept] of conceptByKeyword) {
+    if (lower.includes(kw)) return concept;
+  }
+  return undefined;
 }
 
 /**
@@ -75,13 +112,15 @@ export function serializePhases(phases: Phase[], maps: RoadmapMaps): unknown[] {
         resources: (maps.resourcesBySession.get(s.id) ?? []).map((r, ri) => {
           const key = resId(p.phaseNumber, w.weekNumber, si, ri);
           const spec = r.type === "Build" ? maps.specByResourceKey.get(key) : undefined;
+          const linkedConcept = findLinkedConcept(r.item + " " + r.whereText, maps.conceptByKeyword);
           return {
-            type:   r.type,
-            item:   r.item,
-            where:  r.whereText,
-            mins:   r.mins,
-            url:    r.url ?? undefined,
-            isCore: r.isCore,
+            type:           r.type,
+            item:           r.item,
+            where:          r.whereText,
+            mins:           r.mins,
+            url:            r.url ?? undefined,
+            isCore:         r.isCore,
+            linkedConcept,
             spec:   spec ? {
               overview:      spec.overview,
               requirements:  spec.requirements,

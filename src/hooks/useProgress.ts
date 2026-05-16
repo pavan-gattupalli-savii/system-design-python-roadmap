@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Language } from "../data/roadmap-index";
 import { fetchProgress, resetProgress, setProgress } from "../api/me";
 import { useAuth } from "../lib/auth";
+import { qk } from "../lib/queryKeys";
 
 const storageKey = (lang: Language) => `sd-progress-${lang}-v2`;
 
@@ -49,7 +50,7 @@ export function useProgress(lang: Language): ProgressApi {
 
   // Server progress, only fetched when signed in.
   const serverQuery = useQuery({
-    queryKey: ["progress", user?.id, lang],
+    queryKey: qk.progress.byLang(user?.id, lang),
     queryFn:  () => fetchProgress(lang),
     enabled:  !!user,
     staleTime: 30_000,
@@ -71,7 +72,7 @@ export function useProgress(lang: Language): ProgressApi {
     const localOnly = [...local].filter((k) => !remote.has(k));
     if (localOnly.length === 0) return;
     Promise.allSettled(localOnly.map((k) => setProgress(lang, k, true)))
-      .then(() => qc.invalidateQueries({ queryKey: ["progress", user.id, lang] }));
+      .then(() => qc.invalidateQueries({ queryKey: qk.progress.byLang(user.id, lang) }));
     // We intentionally only run this once per server fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, serverQuery.data, lang]);
@@ -85,7 +86,7 @@ export function useProgress(lang: Language): ProgressApi {
 
     if (user) {
       setProgress(lang, key, !isDone)
-        .then(() => qc.invalidateQueries({ queryKey: ["progress", user.id, lang] }))
+        .then(() => qc.invalidateQueries({ queryKey: qk.progress.byLang(user.id, lang) }))
         .catch(() => { /* keep local update */ });
     }
   }, [completed, local, lang, user, qc]);
@@ -95,7 +96,7 @@ export function useProgress(lang: Language): ProgressApi {
     saveLocal(lang, new Set());
     if (user) {
       resetProgress(lang)
-        .then(() => qc.invalidateQueries({ queryKey: ["progress", user.id, lang] }))
+        .then(() => qc.invalidateQueries({ queryKey: qk.progress.byLang(user.id, lang) }))
         .catch(() => { /* ignore */ });
     }
   }, [lang, user, qc]);

@@ -6,13 +6,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchBuilds, submitBuild, deleteBuild, type BuildSubmission } from "../api/builds";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
+import { qk } from "../lib/queryKeys";
 
 export function useBuilds(language: Language) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const buildsKey = qk.builds.byLang(language, user?.id);
+  const meKey     = qk.me.profile(user?.id);
 
   const { data: rawList = [], isLoading } = useQuery<BuildSubmission[]>({
-    queryKey: ["builds", language, user?.id],
+    queryKey: buildsKey,
     queryFn:  () => fetchBuilds(language),
     enabled:  !!user,
     staleTime: 60_000,
@@ -27,8 +30,8 @@ export function useBuilds(language: Language) {
     mutationFn: ({ resourceKey, githubUrl, notes }: { resourceKey: string; githubUrl: string; notes?: string }) =>
       submitBuild(language, resourceKey, githubUrl, notes),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["builds", language, user?.id] });
-      qc.invalidateQueries({ queryKey: ["me", user?.id] });
+      qc.invalidateQueries({ queryKey: buildsKey });
+      qc.invalidateQueries({ queryKey: meKey });
     },
   });
 
@@ -36,8 +39,8 @@ export function useBuilds(language: Language) {
     mutationFn: ({ resourceKey }: { resourceKey: string }) =>
       deleteBuild(language, resourceKey),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["builds", language, user?.id] });
-      qc.invalidateQueries({ queryKey: ["me", user?.id] });
+      qc.invalidateQueries({ queryKey: buildsKey });
+      qc.invalidateQueries({ queryKey: meKey });
     },
   });
 

@@ -11,6 +11,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../api/client";
 import { useAuth } from "../lib/auth";
+import { qk } from "../lib/queryKeys";
 
 interface UpvotesResponse {
   readings:    string[];
@@ -108,12 +109,12 @@ export function useMyInteractions() {
     },
     onMutate: async ({ id, on }) => {
       await qc.cancelQueries({ queryKey: QK });
-      await qc.cancelQueries({ queryKey: ["readings"] });
+      await qc.cancelQueries({ queryKey: qk.readings });
       const prev         = qc.getQueryData<MyInteractions>(QK);
       const prevReadings = snapshotQueries(qc, ["readings"]);
       patchSet("readingUpvotes", id, on);
       // Optimistically adjust the displayed count by ±1
-      qc.setQueriesData<PagedList>({ queryKey: ["readings"] }, (old) => {
+      qc.setQueriesData<PagedList>({ queryKey: qk.readings }, (old) => {
         if (!old) return old;
         return { ...old, data: old.data.map((r) => r.id === id ? { ...r, upvotes: r.upvotes + (on ? 1 : -1) } : r) };
       });
@@ -143,12 +144,12 @@ export function useMyInteractions() {
     },
     onMutate: async ({ id, on }) => {
       await qc.cancelQueries({ queryKey: QK });
-      await qc.cancelQueries({ queryKey: ["experiences"] });
+      await qc.cancelQueries({ queryKey: qk.experiences });
       const prev            = qc.getQueryData<MyInteractions>(QK);
       const prevExperiences = snapshotQueries(qc, ["experiences"]);
       patchSet("expUpvotes", id, on);
       // Optimistically adjust the displayed count by ±1
-      qc.setQueriesData<PagedList>({ queryKey: ["experiences"] }, (old) => {
+      qc.setQueriesData<PagedList>({ queryKey: qk.experiences }, (old) => {
         if (!old) return old;
         return { ...old, data: old.data.map((e) => e.id === id ? { ...e, upvotes: e.upvotes + (on ? 1 : -1) } : e) };
       });

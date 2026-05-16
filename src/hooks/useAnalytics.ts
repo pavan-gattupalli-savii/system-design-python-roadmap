@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchAnalytics, type AnalyticsResponse } from "../api/analytics";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
+import { qk } from "../lib/queryKeys";
 
 export function useAnalytics(language: Language) {
   const { user } = useAuth();
   const { data, isLoading } = useQuery<AnalyticsResponse>({
-    queryKey: ["analytics", language, user?.id],
+    queryKey: qk.analytics.byLang(language, user?.id),
     queryFn:  () => fetchAnalytics(language),
     enabled:  !!user,
     staleTime: 60_000,

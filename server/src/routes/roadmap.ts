@@ -4,7 +4,7 @@
 
 import { Router } from "express";
 import { db } from "../db/client.js";
-import { roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSpecs } from "../db/schema.js";
+import { roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSpecs, concepts } from "../db/schema.js";
 import { eq, asc } from "drizzle-orm";
 import { roadmapCache } from "../lib/cache.js";
 import { sendCached } from "../middleware/cache.js";
@@ -16,14 +16,15 @@ async function fetchFromDB(language: "python" | "java"): Promise<unknown[]> {
   const phases = await db.select().from(roadmapPhases).where(eq(roadmapPhases.language, language)).orderBy(asc(roadmapPhases.phaseNumber));
   if (!phases.length) return [];
 
-  const [weeks, sessions, resources, specs] = await Promise.all([
+  const [weeks, sessions, resources, specs, conceptsList] = await Promise.all([
     db.select().from(roadmapWeeks).orderBy(asc(roadmapWeeks.weekNumber)),
     db.select().from(roadmapSessions).orderBy(asc(roadmapSessions.sortOrder)),
     db.select().from(roadmapResources).orderBy(asc(roadmapResources.sortOrder)),
     db.select().from(buildSpecs).where(eq(buildSpecs.language, language)),
+    db.select().from(concepts).orderBy(asc(concepts.sortOrder)),
   ]);
 
-  return serializePhases(phases, buildMaps(weeks, sessions, resources, specs));
+  return serializePhases(phases, buildMaps(weeks, sessions, resources, specs, conceptsList));
 }
 
 // buildRoadmap: thin wrapper that adds SWR caching + in-flight dedup via roadmapCache.load().

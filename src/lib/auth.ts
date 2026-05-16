@@ -18,9 +18,10 @@ export interface AuthUser {
   role:        "user" | "admin";
 }
 
-export const authKeys = {
-  me: ["auth", "me"] as const,
-};
+// Re-export the auth key from the central registry so existing call sites
+// (`import { authKeys } from "../lib/auth"`) keep working unchanged.
+import { qk } from "./queryKeys";
+export const authKeys = { me: qk.auth.me };
 
 /**
  * Returns the signed-in user, or `null` when unauthenticated.

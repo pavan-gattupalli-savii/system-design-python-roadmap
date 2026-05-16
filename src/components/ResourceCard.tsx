@@ -4,7 +4,6 @@ import { resId } from "../utils/stats";
 import { getResourceUrl } from "../utils/url";
 import type { Resource } from "../data/models";
 import { useBookmarks } from "../hooks/useBookmarks";
-import { useConcepts } from "../hooks/useConcepts";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import type { BuildSubmission } from "../api/builds";
 import type { Language } from "../data/roadmap-index";
@@ -94,12 +93,8 @@ export function ResourceCard({
   }, [existingGh, existingNotes]);
 
   // Cross-link: find first concept whose keywords match this resource
-  const { concepts: allConcepts } = useConcepts();
-  const linkedConcept = allConcepts.find((c) =>
-    c.roadmapKeywords?.some((kw) =>
-      res.item.toLowerCase().includes(kw) || res.where.toLowerCase().includes(kw),
-    ),
-  ) ?? null;
+  // Server already computes the matched concept and ships it on res.linkedConcept.
+  const linkedConcept = res.linkedConcept ?? null;
 
   async function handleSubmit() {
     const trimmed = ghUrl.trim();

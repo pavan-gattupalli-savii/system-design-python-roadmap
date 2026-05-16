@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../api/client";
 import { useAuth } from "../lib/auth";
+import { qk } from "../lib/queryKeys";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ export function useDailyTopic(): UseDailyTopicResult {
       qc.setQueryData<DailyTopic>(dailyKeys.today, (old) =>
         old ? { ...old, completed: true, streak: data.streak } : old,
       );
-      qc.invalidateQueries({ queryKey: ["daily", "history"] });
+      qc.invalidateQueries({ queryKey: qk.daily.history });
     },
   });
 

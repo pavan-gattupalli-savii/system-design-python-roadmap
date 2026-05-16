@@ -200,25 +200,10 @@ async function migrate() {
   await sql`ALTER TABLE answer_docs           ADD COLUMN IF NOT EXISTS submitted_by UUID`;
   console.log("  ✓ submitted_by columns");
 
-  // ── Drop NOT NULL on legacy attribution columns ──────────────────────────
-  // Identity now comes from users joined via submitted_by; new rows leave the
-  // legacy columns NULL. Old seed rows keep their values for back-compat.
-  // Guarded so re-running on a DB where the columns were already dropped is a no-op.
-  await sql`
-    DO $$
-    BEGIN
-      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='readings' AND column_name='added_by') THEN
-        ALTER TABLE readings ALTER COLUMN added_by DROP NOT NULL;
-      END IF;
-      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='experiences' AND column_name='added_by') THEN
-        ALTER TABLE experiences ALTER COLUMN added_by DROP NOT NULL;
-      END IF;
-      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='answer_docs' AND column_name='by') THEN
-        ALTER TABLE answer_docs ALTER COLUMN "by" DROP NOT NULL;
-      END IF;
-    END $$;
-  `;
-  console.log("  ✓ legacy attribution columns made nullable");
+  // (Legacy added_by/by NOT NULL drop removed — those columns no longer exist
+  // on any live DB. The CREATE TABLE blocks above already define the modern
+  // schema with submitted_by UUID for new installs.)
+
 
   // ── Per-user reading upvotes ─────────────────────────────────────────────
   await sql`
