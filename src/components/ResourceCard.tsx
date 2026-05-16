@@ -320,8 +320,8 @@ export function ResourceCard({
           {/* ── Rich spec (if in BUILD_SPECS) ── */}
           {spec ? (
             <>
-              {/* Difficulty badge */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Difficulty + est_hours + tags row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: 1,
                   textTransform: "uppercase", padding: "2px 10px", borderRadius: 20,
@@ -331,6 +331,22 @@ export function ResourceCard({
                 }}>
                   {spec.difficulty === "beginner" ? "🟢" : spec.difficulty === "intermediate" ? "🟠" : "🔴"} {spec.difficulty}
                 </span>
+                {(spec.estHours ?? 0) > 0 && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+                    color: "#fbbf24", background: "#fbbf2412", border: "1px solid #fbbf2433",
+                  }}>
+                    ⏱ ~{spec.estHours}h
+                  </span>
+                )}
+                {(spec.tags ?? []).map((t) => (
+                  <span key={t} style={{
+                    fontSize: 10, padding: "2px 8px", borderRadius: 4,
+                    color: "#a5b4fc", background: "#6366f112", border: "1px solid #6366f133",
+                  }}>
+                    {t}
+                  </span>
+                ))}
               </div>
 
               {/* Overview */}
@@ -396,6 +412,72 @@ export function ResourceCard({
                         color: "#c4b5fd",
                         lineHeight: 1.6,
                       }}>{hint}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Common pitfalls (warning panel) */}
+              {spec.pitfalls && spec.pitfalls.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>⚠️ Common Pitfalls</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {spec.pitfalls.map((p, i) => (
+                      <div key={i} style={{
+                        background: "#3b0a0a",
+                        border: "1px solid #7f1d1d55",
+                        borderRadius: 6,
+                        padding: "8px 12px",
+                        fontSize: isMobile ? 11 : 12,
+                        color: "#fca5a5",
+                        lineHeight: 1.6,
+                      }}>{p}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Stretch goals */}
+              {spec.stretchGoals && spec.stretchGoals.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, color: "#86efac", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>🚀 Stretch Goals</div>
+                  <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 5 }}>
+                    {spec.stretchGoals.map((g, i) => (
+                      <li key={i} style={{ fontSize: isMobile ? 11 : 12, color: "#bbf7d0", lineHeight: 1.6 }}>{g}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Prerequisites */}
+              {spec.prerequisites && spec.prerequisites.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>🧰 Prerequisites</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {spec.prerequisites.map((pr, i) => (
+                      <span key={i} style={{
+                        fontSize: 11, padding: "3px 9px", borderRadius: 12,
+                        background: "#0f2a18", color: "#6ee7b7", border: "1px solid #1a4d2e",
+                      }}>{pr}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* References */}
+              {spec.references && spec.references.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 7, fontWeight: 700 }}>🔗 References</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {spec.references.map((ref, i) => (
+                      <a key={i} href={ref.url} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: isMobile ? 11 : 12, color: "#67e8f9", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                        onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                        onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                      >
+                        <span>↗</span>
+                        <span>{ref.label}</span>
+                      </a>
                     ))}
                   </div>
                 </div>

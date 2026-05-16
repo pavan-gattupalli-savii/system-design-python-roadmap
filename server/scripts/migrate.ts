@@ -293,6 +293,15 @@ async function migrate() {
   await sql`ALTER TABLE roadmap_resources ADD COLUMN IF NOT EXISTS is_core BOOLEAN NOT NULL DEFAULT TRUE`;
   console.log("  ✓ roadmap_resources.is_core");
 
+  // ── Build spec enrichment columns (all optional, empty defaults) ───────────
+  await sql`ALTER TABLE build_specs ADD COLUMN IF NOT EXISTS stretch_goals  TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE build_specs ADD COLUMN IF NOT EXISTS pitfalls       TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE build_specs ADD COLUMN IF NOT EXISTS est_hours      INT    NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE build_specs ADD COLUMN IF NOT EXISTS tags           TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE build_specs ADD COLUMN IF NOT EXISTS prerequisites  TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE build_specs ADD COLUMN IF NOT EXISTS "references"   JSONB  NOT NULL DEFAULT '[]'::jsonb`;
+  console.log("  ✓ build_specs enrichment columns");
+
   // ── B3: learning objectives + phase outcomes ───────────────────────────────
   await sql`ALTER TABLE roadmap_weeks  ADD COLUMN IF NOT EXISTS learning_objectives TEXT[] NOT NULL DEFAULT '{}'`;
   await sql`ALTER TABLE roadmap_phases ADD COLUMN IF NOT EXISTS outcomes            TEXT[] NOT NULL DEFAULT '{}'`;

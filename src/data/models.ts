@@ -9,6 +9,18 @@ export interface BuildSpec {
   diagram?: string;
   hints?: string[];
   difficulty: "beginner" | "intermediate" | "advanced";
+  /** Bonus extensions to attempt after the core spec is shipped. */
+  stretchGoals?: string[];
+  /** Common mistakes and anti-patterns to avoid. */
+  pitfalls?: string[];
+  /** Estimated real-world build effort in hours. */
+  estHours?: number;
+  /** Short labels for filtering ("LLD", "Spring", "Concurrency"). */
+  tags?: string[];
+  /** Things to know first — concept slugs or human-readable refs. */
+  prerequisites?: string[];
+  /** Curated external links — articles, videos, docs. */
+  references?: Array<{ label: string; url: string }>;
 }
 
 export interface Resource {

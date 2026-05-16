@@ -118,15 +118,21 @@ export const roadmapResources = pgTable("roadmap_resources", {
 
 // ── Build specs (rich Build resource detail) ──────────────────────────────────
 export const buildSpecs = pgTable("build_specs", {
-  id:           serial("id").primaryKey(),
-  language:     text("language").notNull(),
-  resourceKey:  text("resource_key").notNull(),
-  overview:     text("overview").notNull(),
-  requirements: text("requirements").array().notNull().default([]),
-  acceptance:   text("acceptance").array().notNull().default([]),
-  diagram:      text("diagram"),
-  hints:        text("hints").array().notNull().default([]),
-  difficulty:   text("difficulty").notNull().default("intermediate"),
+  id:            serial("id").primaryKey(),
+  language:      text("language").notNull(),
+  resourceKey:   text("resource_key").notNull(),
+  overview:      text("overview").notNull(),
+  requirements:  text("requirements").array().notNull().default([]),
+  acceptance:    text("acceptance").array().notNull().default([]),
+  diagram:       text("diagram"),
+  hints:         text("hints").array().notNull().default([]),
+  difficulty:    text("difficulty").notNull().default("intermediate"),
+  stretchGoals:  text("stretch_goals").array().notNull().default([]),
+  pitfalls:      text("pitfalls").array().notNull().default([]),
+  estHours:      integer("est_hours").notNull().default(0),
+  tags:          text("tags").array().notNull().default([]),
+  prerequisites: text("prerequisites").array().notNull().default([]),
+  references:    jsonb("references").notNull().default([]),
 }, (t) => [uniqueIndex("build_specs_lang_key_uq").on(t.language, t.resourceKey)]);
 
 // ── Concepts (system-design vocab) ────────────────────────────────────────────
