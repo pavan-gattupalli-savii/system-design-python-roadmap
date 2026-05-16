@@ -39,7 +39,14 @@ export function SearchResults({ roadmap, query, onJumpToWeek, isMobile, complete
         w.sessions.forEach((s, si) => {
           const sessionHit = phaseHit || weekTextHit || s.focus.toLowerCase().includes(q);
           s.resources.forEach((r, ri) => {
-            if (sessionHit || r.item.toLowerCase().includes(q) || r.type.toLowerCase().includes(q) || r.where.toLowerCase().includes(q)) {
+            const tagHit  = (r.spec?.tags ?? []).some((t) => t.toLowerCase().includes(q));
+            const specHit = r.spec
+              ? (r.spec.overview.toLowerCase().includes(q)
+                || r.spec.requirements.some((req) => req.toLowerCase().includes(q))
+                || (r.spec.stretchGoals ?? []).some((g) => g.toLowerCase().includes(q))
+                || tagHit)
+              : false;
+            if (sessionHit || specHit || r.item.toLowerCase().includes(q) || r.type.toLowerCase().includes(q) || r.where.toLowerCase().includes(q)) {
               found.push({ p, w, s, si, r, ri });
             }
           });

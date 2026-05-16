@@ -5,7 +5,7 @@ import { getResourceUrl } from "../utils/url";
 import type { Resource } from "../data/models";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { CONCEPTS } from "../data/concepts/index";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import type { BuildSubmission } from "../api/builds";
 import type { Language } from "../data/roadmap-index";
 import { BUILD_SPECS } from "../data/build-specs";
@@ -41,6 +41,17 @@ export function ResourceCard({
   const url   = getResourceUrl(res);
   const { bookmarks, toggleBookmark } = useBookmarks();
   const isBookmarked = bookmarks.roadmap_resource.has(id);
+  const navigate = useNavigate();
+  const [, setParams] = useSearchParams();
+
+  // Clicking a tag chip pushes the tag into the roadmap search query so the
+  // user lands on every build sharing that tag. Search now matches spec.tags.
+  function searchByTag(tag: string) {
+    const next = new URLSearchParams();
+    next.set("q", tag);
+    setParams(next, { replace: false });
+    navigate(`/app/roadmap?q=${encodeURIComponent(tag)}`);
+  }
 
   const isBuild = res.type === "Build";
   const existing = isBuild ? buildSubmissions?.get(id) : undefined;
@@ -340,12 +351,21 @@ export function ResourceCard({
                   </span>
                 )}
                 {(spec.tags ?? []).map((t) => (
-                  <span key={t} style={{
-                    fontSize: 10, padding: "2px 8px", borderRadius: 4,
-                    color: "#a5b4fc", background: "#6366f112", border: "1px solid #6366f133",
-                  }}>
+                  <button
+                    key={t}
+                    onClick={(e) => { e.stopPropagation(); searchByTag(t); }}
+                    title={`Find all builds tagged "${t}"`}
+                    style={{
+                      fontSize: 10, padding: "2px 8px", borderRadius: 4,
+                      color: "#a5b4fc", background: "#6366f112",
+                      border: "1px solid #6366f133",
+                      cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#6366f128"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "#6366f112"; }}
+                  >
                     {t}
-                  </span>
+                  </button>
                 ))}
               </div>
 
