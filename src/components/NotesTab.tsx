@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useOutletContext, Link } from "react-router-dom";
 import { useNotes } from "../hooks/useNotes";
 import { useRoadmap } from "../hooks/useRoadmap";
+import MarkdownView from "./MarkdownView";
 import type { LayoutContext } from "./Layout";
 
 export default function NotesTab() {
@@ -128,12 +129,7 @@ export default function NotesTab() {
                 </div>
               </>
             ) : (
-              <pre style={{
-                margin: 0, fontFamily: "inherit", fontSize: 12,
-                color: "var(--text-body)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word",
-              }}>
-                {n.bodyMd}
-              </pre>
+              <MarkdownView body={n.bodyMd} />
             )}
           </div>
         );
