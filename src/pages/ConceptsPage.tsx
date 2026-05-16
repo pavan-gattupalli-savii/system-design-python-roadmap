@@ -330,8 +330,7 @@ function Sidebar({
       {/* Footer */}
       <div style={{ marginTop: "auto", padding: "16px", borderTop: "1px solid var(--border-subtle)" }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1.5 }}>
-          {concepts.length} concepts — content loaded from API.<br />
-          More concepts added regularly.
+          {concepts.length} concepts
         </div>
       </div>
     </div>
