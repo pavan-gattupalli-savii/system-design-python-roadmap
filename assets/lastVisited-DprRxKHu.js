@@ -1,0 +1,1 @@
+const a="sd-last-visited";function r(){try{const e=localStorage.getItem(a);if(!e)return null;const t=JSON.parse(e);return!t.language||!t.phase||!t.week?null:t}catch{return null}}function i(e,t,s){try{const n={language:e,phase:t,week:s,updatedAt:new Date().toISOString()};localStorage.setItem(a,JSON.stringify(n))}catch{}}export{r as g,i as s};
