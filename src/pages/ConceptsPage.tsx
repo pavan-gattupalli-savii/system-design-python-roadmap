@@ -7,7 +7,8 @@
 
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { useConcepts } from "../hooks/useConcepts";
+import { useConceptSummaries, useConceptDetail } from "../hooks/useConcepts";
+import type { ConceptSummary } from "../api/concepts";
 import type { Concept, ConceptCategory, ConceptSection } from "../lib/conceptTypes";
 import { ConceptDiagram } from "../components/concepts/ConceptDiagram";
 import type { LayoutContext } from "../components/Layout";
@@ -138,7 +139,7 @@ function SectionBlock({ section }: { section: ConceptSection }) {
 }
 
 // ── Concept article ───────────────────────────────────────────────────────────
-function ConceptArticle({ concept, allConcepts }: { concept: Concept; allConcepts: Concept[] }) {
+function ConceptArticle({ concept, allConcepts }: { concept: Concept; allConcepts: ConceptSummary[] }) {
   const cc = CAT_COLOR[concept.category] ?? { bg: "transparent", tx: "var(--text-muted)" };
   const related = allConcepts.filter((c) => concept.related?.includes(c.slug));
   const navigate = useNavigate();
@@ -214,10 +215,10 @@ function ConceptArticle({ concept, allConcepts }: { concept: Concept; allConcept
 function Sidebar({
   active, search, onSearch, concepts, categories,
 }: {
-  active: Concept | null;
+  active: { slug: string } | null;
   search: string;
   onSearch: (v: string) => void;
-  concepts: Concept[];
+  concepts: ConceptSummary[];
   categories: ConceptCategory[];
 }) {
   const navigate = useNavigate();
@@ -338,7 +339,7 @@ function Sidebar({
 }
 
 // ── Mobile concept list ───────────────────────────────────────────────────────
-function MobileConceptList({ active, concepts }: { active: Concept | null; concepts: Concept[] }) {
+function MobileConceptList({ active, concepts }: { active: { slug: string } | null; concepts: ConceptSummary[] }) {
   const navigate = useNavigate();
   return (
     <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
@@ -376,9 +377,16 @@ export default function ConceptsPage() {
   const isMobile = ctx.isMobile;
 
   const [search, setSearch] = useState("");
-  const { concepts, bySlug, categories, isLoading } = useConcepts();
+  const { summaries, categories, isLoading: summariesLoading } = useConceptSummaries();
 
-  if (isLoading) {
+  // Resolve which slug is active: URL slug if set + present, else first in list.
+  const activeSlug = slug && summaries.some((s) => s.slug === slug)
+    ? slug
+    : summaries[0]?.slug;
+
+  const { concept: activeFull, isLoading: detailLoading } = useConceptDetail(activeSlug);
+
+  if (summariesLoading) {
     return (
       <div style={{ flex: 1, display: "grid", placeItems: "center", color: "var(--text-muted)", fontSize: 13 }}>
         Loading concepts…
@@ -386,16 +394,18 @@ export default function ConceptsPage() {
     );
   }
 
-  const active: Concept | null = slug
-    ? (bySlug.get(slug) ?? concepts[0] ?? null)
-    : (concepts[0] ?? null);
+  const activeStub = activeSlug ? { slug: activeSlug } : null;
 
   if (isMobile) {
     return (
       <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-        <MobileConceptList active={active} concepts={concepts} />
+        <MobileConceptList active={activeStub} concepts={summaries} />
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {active && <ConceptArticle concept={active} allConcepts={concepts} />}
+          {activeFull
+            ? <ConceptArticle concept={activeFull} allConcepts={summaries} />
+            : detailLoading && (
+                <div style={{ padding: 24, color: "var(--text-muted)", fontSize: 13 }}>Loading concept…</div>
+              )}
         </div>
       </div>
     );
@@ -404,12 +414,14 @@ export default function ConceptsPage() {
   return (
     <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
       {/* Sidebar */}
-      <Sidebar active={active} search={search} onSearch={setSearch} concepts={concepts} categories={categories} />
+      <Sidebar active={activeStub} search={search} onSearch={setSearch} concepts={summaries} categories={categories} />
 
       {/* Main content */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        {active ? (
-          <ConceptArticle concept={active} allConcepts={concepts} />
+        {activeFull ? (
+          <ConceptArticle concept={activeFull} allConcepts={summaries} />
+        ) : detailLoading ? (
+          <div style={{ padding: 24, color: "var(--text-muted)", fontSize: 13 }}>Loading concept…</div>
         ) : (
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
