@@ -8,13 +8,9 @@ import { roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSp
 import { eq, asc } from "drizzle-orm";
 import { roadmapCache } from "../lib/cache.js";
 import { sendCached } from "../middleware/cache.js";
+import { buildMaps, serializePhases } from "../lib/roadmapTree.js";
 
 const router = Router();
-
-// Same `resId` the frontend uses — keep in sync (src/utils/stats.ts).
-function resId(phase: number, weekN: number, si: number, ri: number): string {
-  return `${phase}_${weekN}_${si}_${ri}`;
-}
 
 async function fetchFromDB(language: "python" | "java"): Promise<unknown[]> {
   const phases = await db.select().from(roadmapPhases).where(eq(roadmapPhases.language, language)).orderBy(asc(roadmapPhases.phaseNumber));
@@ -27,70 +23,7 @@ async function fetchFromDB(language: "python" | "java"): Promise<unknown[]> {
     db.select().from(buildSpecs).where(eq(buildSpecs.language, language)),
   ]);
 
-  const weeksByPhase = new Map<number, typeof weeks>();
-  for (const w of weeks) {
-    const arr = weeksByPhase.get(w.phaseId) ?? [];
-    arr.push(w);
-    weeksByPhase.set(w.phaseId, arr);
-  }
-  const sessionsByWeek = new Map<number, typeof sessions>();
-  for (const s of sessions) {
-    const arr = sessionsByWeek.get(s.weekId) ?? [];
-    arr.push(s);
-    sessionsByWeek.set(s.weekId, arr);
-  }
-  const resourcesBySession = new Map<number, typeof resources>();
-  for (const r of resources) {
-    const arr = resourcesBySession.get(r.sessionId) ?? [];
-    arr.push(r);
-    resourcesBySession.set(r.sessionId, arr);
-  }
-  const specByKey = new Map(specs.map((s) => [s.resourceKey, s]));
-
-  return phases.map((p) => ({
-    phase:    p.phaseNumber,
-    title:    p.title,
-    icon:     p.icon,
-    accent:   p.accent,
-    light:    p.light,
-    desc:     p.description,
-    outcomes: p.outcomes ?? [],
-    weeks: (weeksByPhase.get(p.id) ?? []).map((w) => ({
-      n:                  w.weekNumber,
-      title:              w.title,
-      learningObjectives: w.learningObjectives ?? [],
-      sessions: (sessionsByWeek.get(w.id) ?? []).map((s, si) => ({
-        label:     s.label,
-        focus:     s.focus,
-        resources: (resourcesBySession.get(s.id) ?? []).map((r, ri) => {
-          const key = resId(p.phaseNumber, w.weekNumber, si, ri);
-          const spec = r.type === "Build" ? specByKey.get(key) : undefined;
-          return {
-            type:   r.type,
-            item:   r.item,
-            where:  r.whereText,
-            mins:   r.mins,
-            url:    r.url ?? undefined,
-            isCore: r.isCore,
-            spec:   spec ? {
-              overview:      spec.overview,
-              requirements:  spec.requirements,
-              acceptance:    spec.acceptance,
-              diagram:       spec.diagram ?? undefined,
-              hints:         spec.hints,
-              difficulty:    spec.difficulty,
-              stretchGoals:  spec.stretchGoals ?? [],
-              pitfalls:      spec.pitfalls ?? [],
-              estHours:      spec.estHours ?? 0,
-              tags:          spec.tags ?? [],
-              prerequisites: spec.prerequisites ?? [],
-              references:    spec.references ?? [],
-            } : undefined,
-          };
-        }),
-      })),
-    })),
-  }));
+  return serializePhases(phases, buildMaps(weeks, sessions, resources, specs));
 }
 
 // buildRoadmap: thin wrapper that adds SWR caching + in-flight dedup via roadmapCache.load().

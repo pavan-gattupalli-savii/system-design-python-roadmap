@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TYPES } from "../data/types";
 import { resId } from "../utils/stats";
 import { getResourceUrl } from "../utils/url";
@@ -75,23 +75,25 @@ export function ResourceCard({
 
   // ── User notes (signed-in only) ────────────────────────────────────────────
   const existingNote = userNotes?.get(id);
+  const existingBody = existingNote?.bodyMd ?? "";
   const [noteOpen, setNoteOpen] = useState(false);
-  const [noteDraft, setNoteDraft] = useState(existingNote?.bodyMd ?? "");
-  const [noteSyncedFor, setNoteSyncedFor] = useState(existingNote?.bodyMd ?? "");
-  if ((existingNote?.bodyMd ?? "") !== noteSyncedFor) {
-    setNoteDraft(existingNote?.bodyMd ?? "");
-    setNoteSyncedFor(existingNote?.bodyMd ?? "");
-  }
-  const noteDirty = noteDraft !== (existingNote?.bodyMd ?? "");
+  const [noteDraft, setNoteDraft] = useState(existingBody);
+  // Sync the draft when the underlying note changes (e.g. after a save settles
+  // and the query refetches). Using useEffect avoids the setState-in-render
+  // anti-pattern that React tolerates but warns about under strict mode.
+  useEffect(() => {
+    setNoteDraft(existingBody);
+  }, [existingBody]);
+  const noteDirty = noteDraft !== existingBody;
 
-  // Keep local form in sync if the query reloads with fresh data
-  const existingKey = existing?.githubUrl ?? "";
-  const [lastSynced, setLastSynced] = useState(existingKey);
-  if (existingKey !== lastSynced) {
-    setGhUrl(existing?.githubUrl ?? "");
-    setNotes(existing?.notes ?? "");
-    setLastSynced(existingKey);
-  }
+  // Keep the build-submission form in sync when the query reloads. Effect-based
+  // sync is cleaner than the setState-in-render pattern React tolerates but warns.
+  const existingGh = existing?.githubUrl ?? "";
+  const existingNotes = existing?.notes ?? "";
+  useEffect(() => {
+    setGhUrl(existingGh);
+    setNotes(existingNotes);
+  }, [existingGh, existingNotes]);
 
   // Cross-link: find first concept whose keywords match this resource
   const linkedConcept = CONCEPTS.find((c) =>

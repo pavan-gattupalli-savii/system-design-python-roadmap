@@ -19,59 +19,26 @@ import { db, sql } from "../db/client.js";
 import { userProgress, roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSpecs } from "../db/schema.js";
 import { eq, asc, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
+import { buildMaps, flattenResources } from "../lib/roadmapTree.js";
 
 const router = Router();
 router.use(requireAuth);
-
-function resId(phase: number, weekN: number, si: number, ri: number): string {
-  return `${phase}_${weekN}_${si}_${ri}`;
-}
 
 router.get("/", async (req, res) => {
   const lang = req.query.lang === "java" ? "java" : "python";
   const userId = req.user!.id;
   try {
-    // 1. Roadmap shape — phase/week/session/resource. Mirrors routes/roadmap.ts.
+    // 1. Roadmap shape — fetched + assembled by the shared roadmapTree helper.
     const phases    = await db.select().from(roadmapPhases).where(eq(roadmapPhases.language, lang)).orderBy(asc(roadmapPhases.phaseNumber));
-    const weeks     = await db.select().from(roadmapWeeks);
-    const sessions  = await db.select().from(roadmapSessions).orderBy(asc(roadmapSessions.sortOrder));
-    const resources = await db.select().from(roadmapResources).orderBy(asc(roadmapResources.sortOrder));
-    const specs     = await db.select().from(buildSpecs).where(eq(buildSpecs.language, lang));
+    const [weeks, sessions, resources, specs] = await Promise.all([
+      db.select().from(roadmapWeeks),
+      db.select().from(roadmapSessions).orderBy(asc(roadmapSessions.sortOrder)),
+      db.select().from(roadmapResources).orderBy(asc(roadmapResources.sortOrder)),
+      db.select().from(buildSpecs).where(eq(buildSpecs.language, lang)),
+    ]);
 
-    const estHoursByKey = new Map<string, number>(
-      specs.filter((s) => s.estHours > 0).map((s) => [s.resourceKey, s.estHours]),
-    );
-
-    const weeksByPhase     = new Map<number, typeof weeks>();
-    const sessionsByWeek   = new Map<number, typeof sessions>();
-    const resourcesBySession = new Map<number, typeof resources>();
-    weeks.forEach((w) => { const a = weeksByPhase.get(w.phaseId) ?? []; a.push(w); weeksByPhase.set(w.phaseId, a); });
-    sessions.forEach((s) => { const a = sessionsByWeek.get(s.weekId) ?? []; a.push(s); sessionsByWeek.set(s.weekId, a); });
-    resources.forEach((r) => { const a = resourcesBySession.get(r.sessionId) ?? []; a.push(r); resourcesBySession.set(r.sessionId, a); });
-
-    // 2. Flatten with stable resourceKey so we can join progress
-    interface FlatRes { key: string; type: string; mins: number; phase: number; phaseTitle: string }
-    const flat: FlatRes[] = [];
-    for (const p of phases) {
-      const phWeeks = weeksByPhase.get(p.id) ?? [];
-      for (const w of phWeeks) {
-        const wSessions = sessionsByWeek.get(w.id) ?? [];
-        for (let si = 0; si < wSessions.length; si++) {
-          const s = wSessions[si];
-          const sRes = resourcesBySession.get(s.id) ?? [];
-          for (let ri = 0; ri < sRes.length; ri++) {
-            const r = sRes[ri];
-            flat.push({
-              key:        resId(p.phaseNumber, w.weekNumber, si, ri),
-              type:       r.type,
-              mins:       r.mins,
-              phase:      p.phaseNumber,
-              phaseTitle: p.title,
-            });
-          }
-        }
-      }
-    }
+    const maps = buildMaps(weeks, sessions, resources, specs);
+    const flat = flattenResources(phases, maps);
 
     // 3. Pull completion rows + the completed_at timestamps for velocity/streak.
     const progressRows = await db.select({
@@ -94,7 +61,7 @@ router.get("/", async (req, res) => {
     for (const f of flat) {
       totalCount++;
       totalMins += f.mins;
-      const hours = estHoursByKey.get(f.key) ?? 0;
+      const hours = f.estHours;
       totalHours += hours;
       byType[f.type] ??= { done: 0, total: 0, mins: 0 };
       byType[f.type].total++;
