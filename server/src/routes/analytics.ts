@@ -16,7 +16,7 @@
 
 import { Router } from "express";
 import { db, sql } from "../db/client.js";
-import { userProgress, roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources } from "../db/schema.js";
+import { userProgress, roadmapPhases, roadmapWeeks, roadmapSessions, roadmapResources, buildSpecs } from "../db/schema.js";
 import { eq, asc, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -36,6 +36,11 @@ router.get("/", async (req, res) => {
     const weeks     = await db.select().from(roadmapWeeks);
     const sessions  = await db.select().from(roadmapSessions).orderBy(asc(roadmapSessions.sortOrder));
     const resources = await db.select().from(roadmapResources).orderBy(asc(roadmapResources.sortOrder));
+    const specs     = await db.select().from(buildSpecs).where(eq(buildSpecs.language, lang));
+
+    const estHoursByKey = new Map<string, number>(
+      specs.filter((s) => s.estHours > 0).map((s) => [s.resourceKey, s.estHours]),
+    );
 
     const weeksByPhase     = new Map<number, typeof weeks>();
     const sessionsByWeek   = new Map<number, typeof sessions>();
@@ -82,24 +87,30 @@ router.get("/", async (req, res) => {
     // 4. Aggregates
     let doneCount = 0, totalCount = 0;
     let doneMins = 0,  totalMins  = 0;
+    let doneHours = 0, totalHours = 0;
     const byType: Record<string, { done: number; total: number; mins: number }> = {};
-    const byPhase: Record<number, { phase: number; title: string; done: number; total: number; mins: number; totalMins: number }> = {};
+    const byPhase: Record<number, { phase: number; title: string; done: number; total: number; mins: number; totalMins: number; hours: number; totalHours: number }> = {};
 
     for (const f of flat) {
       totalCount++;
       totalMins += f.mins;
+      const hours = estHoursByKey.get(f.key) ?? 0;
+      totalHours += hours;
       byType[f.type] ??= { done: 0, total: 0, mins: 0 };
       byType[f.type].total++;
-      byPhase[f.phase] ??= { phase: f.phase, title: f.phaseTitle, done: 0, total: 0, mins: 0, totalMins: 0 };
+      byPhase[f.phase] ??= { phase: f.phase, title: f.phaseTitle, done: 0, total: 0, mins: 0, totalMins: 0, hours: 0, totalHours: 0 };
       byPhase[f.phase].total++;
       byPhase[f.phase].totalMins += f.mins;
+      byPhase[f.phase].totalHours += hours;
       if (doneSet.has(f.key)) {
         doneCount++;
         doneMins += f.mins;
+        doneHours += hours;
         byType[f.type].done++;
         byType[f.type].mins += f.mins;
         byPhase[f.phase].done++;
         byPhase[f.phase].mins += f.mins;
+        byPhase[f.phase].hours += hours;
       }
     }
 
@@ -144,7 +155,8 @@ router.get("/", async (req, res) => {
         total: totalCount,
         pct:   totalCount ? Math.round((doneCount / totalCount) * 100) : 0,
       },
-      mins: { done: doneMins, total: totalMins, remaining: totalMins - doneMins },
+      mins:  { done: doneMins,  total: totalMins,  remaining: totalMins  - doneMins  },
+      hours: { done: doneHours, total: totalHours, remaining: totalHours - doneHours },
       byType,
       byPhase: byPhaseArr,
       velocity: { last7d: last7, last30d: last30, perDay7: perDay },

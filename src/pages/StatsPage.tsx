@@ -44,7 +44,7 @@ export default function StatsPage() {
     );
   }
 
-  const { totals, mins, byType, byPhase, velocity, predictedDays, streak, lastCompletedAt } = analytics;
+  const { totals, mins, hours, byType, byPhase, velocity, predictedDays, streak, lastCompletedAt } = analytics;
   const ACCENT = "#6366f1";
   const SUCCESS = ctx.isDark ? "#4ade80" : "#16a34a";
 
@@ -88,7 +88,7 @@ export default function StatsPage() {
         </div>
 
         <div style={card}>
-          <div style={cardLabel}>Time invested</div>
+          <div style={cardLabel}>Reading invested</div>
           <div style={cardValue}>{fmtHours(mins.done)}</div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>{fmtHours(mins.remaining)} to go</div>
         </div>
@@ -111,6 +111,27 @@ export default function StatsPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Build hours strip ─────────────────────────────────────────────── */}
+      {hours.total > 0 && (
+        <div style={{ ...card, marginBottom: 22 }}>
+          <div style={cardLabel}>Build effort (authored estimates)</div>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#fbbf24" }}>{hours.done}h</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>built so far</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: ACCENT }}>{hours.remaining}h</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>remaining</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: SUCCESS }}>{hours.total}h</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>total course</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Velocity strip ────────────────────────────────────────────────── */}
       <div style={{ ...card, marginBottom: 22 }}>
@@ -147,6 +168,9 @@ export default function StatsPage() {
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 {p.done}/{p.total} · {fmtHours(p.mins)} / {fmtHours(p.totalMins)}
+                {p.totalHours > 0 && (
+                  <span style={{ color: "#fbbf24" }}> · ~{p.hours}/{p.totalHours}h build</span>
+                )}
               </div>
             </div>
             <div style={{ height: 5, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>

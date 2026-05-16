@@ -5,8 +5,9 @@ import type { Language } from "../data/roadmap-index";
 export interface AnalyticsResponse {
   totals:           { done: number; total: number; pct: number };
   mins:             { done: number; total: number; remaining: number };
+  hours:            { done: number; total: number; remaining: number };
   byType:           Record<string, { done: number; total: number; mins: number }>;
-  byPhase:          Array<{ phase: number; title: string; done: number; total: number; pct: number; mins: number; totalMins: number }>;
+  byPhase:          Array<{ phase: number; title: string; done: number; total: number; pct: number; mins: number; totalMins: number; hours: number; totalHours: number }>;
   velocity:         { last7d: number; last30d: number; perDay7: number };
   predictedDays:    number | null;
   streak:           number;

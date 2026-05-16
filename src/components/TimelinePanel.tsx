@@ -55,6 +55,17 @@ export function TimelinePanel({
       {/* ── Thread scroll area ── */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 12px 32px" }}>
         {roadmap.map((p, idx) => {
+          // Total estimated build hours for this phase, summed across all weeks/resources.
+          const phaseBuildHours = p.weeks.reduce(
+            (a, w) => a + w.sessions.reduce(
+              (b, s) => b + s.resources.reduce(
+                (c, r) => c + (r.type === "Build" ? (r.spec?.estHours ?? 0) : 0),
+                0,
+              ),
+              0,
+            ),
+            0,
+          );
           const isActive   = selPhase === p.phase;
           const isLast     = idx === roadmap.length - 1;
           const { done, total, pct } = getPhaseStats(p, completed);
@@ -190,6 +201,9 @@ export function TimelinePanel({
                     {isActive && (
                       <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 4 }}>
                         {done}/{total} resources · {p.weeks.length} weeks
+                        {phaseBuildHours > 0 && (
+                          <span style={{ color: "#fbbf24" }}> · ~{phaseBuildHours}h build</span>
+                        )}
                       </div>
                     )}
                   </div>
