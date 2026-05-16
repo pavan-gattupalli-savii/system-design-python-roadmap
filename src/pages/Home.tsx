@@ -9,6 +9,7 @@ import { FONT_STACK } from "../constants/theme";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useAuth } from "../lib/auth";
 import { getLastVisited, type LastVisited } from "../lib/lastVisited";
+import { prefetchRoute } from "../lib/routePrefetch";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
 
@@ -114,32 +115,47 @@ export default function Home() {
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           {resumeHref && resume ? (
-            <Link to={resumeHref} style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#6366f1", color: "#fff", border: "none",
-              borderRadius: 9, padding: "12px 22px", fontSize: 14, fontWeight: 700,
-              textDecoration: "none", boxShadow: "0 6px 18px #6366f155",
-            }}>
+            <Link
+              to={resumeHref}
+              onMouseEnter={() => prefetchRoute("roadmap")}
+              onFocus={() => prefetchRoute("roadmap")}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "#6366f1", color: "#fff", border: "none",
+                borderRadius: 9, padding: "12px 22px", fontSize: 14, fontWeight: 700,
+                textDecoration: "none", boxShadow: "0 6px 18px #6366f155",
+              }}
+            >
               ▶ Continue — Phase {resume.phase} · Week {resume.week}
               <span aria-hidden>→</span>
             </Link>
           ) : (
-            <Link to={user ? "/app/overview" : "/sign-in"} style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#6366f1", color: "#fff", border: "none",
-              borderRadius: 9, padding: "12px 22px", fontSize: 14, fontWeight: 700,
-              textDecoration: "none", boxShadow: "0 6px 18px #6366f155",
-            }}>
+            <Link
+              to={user ? "/app/overview" : "/sign-in"}
+              onMouseEnter={() => prefetchRoute(user ? "overview" : "signin")}
+              onFocus={() => prefetchRoute(user ? "overview" : "signin")}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "#6366f1", color: "#fff", border: "none",
+                borderRadius: 9, padding: "12px 22px", fontSize: 14, fontWeight: 700,
+                textDecoration: "none", boxShadow: "0 6px 18px #6366f155",
+              }}
+            >
               {user ? "Open dashboard" : "Get started — free"}
               <span aria-hidden>→</span>
             </Link>
           )}
-          <Link to="/app/overview" style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "transparent", color: "var(--text-secondary)",
-            border: "1px solid var(--border)", borderRadius: 9,
-            padding: "12px 22px", fontSize: 14, fontWeight: 600, textDecoration: "none",
-          }}>
+          <Link
+            to="/app/overview"
+            onMouseEnter={() => prefetchRoute("overview")}
+            onFocus={() => prefetchRoute("overview")}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "transparent", color: "var(--text-secondary)",
+              border: "1px solid var(--border)", borderRadius: 9,
+              padding: "12px 22px", fontSize: 14, fontWeight: 600, textDecoration: "none",
+            }}
+          >
             Browse roadmap →
           </Link>
         </div>

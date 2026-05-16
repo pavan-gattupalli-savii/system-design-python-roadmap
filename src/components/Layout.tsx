@@ -15,6 +15,7 @@ import { useProgress } from "../hooks/useProgress";
 import { getPhaseStats } from "../utils/stats";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { useAuth } from "../lib/auth";
+import { prefetchRoute } from "../lib/routePrefetch";
 import { UserMenu } from "./UserMenu";
 import OnboardingModal from "./OnboardingModal";
 
@@ -27,6 +28,8 @@ const APP_TABS = [
   { id: "concepts",  label: "📖 Concepts", path: "/app/concepts"  },
   { id: "about",     label: "About",      path: "/app/about"     },
 ] as const;
+
+type AppTabId = (typeof APP_TABS)[number]["id"];
 
 export interface LayoutContext {
   isMobile: boolean;
@@ -223,6 +226,8 @@ export default function Layout() {
                 to={tab.path + (params.has("lang") ? `?lang=${lang}` : "")}
                 className="nav-tab"
                 aria-current={active ? "page" : undefined}
+                onMouseEnter={() => prefetchRoute(tab.id as AppTabId)}
+                onFocus={() => prefetchRoute(tab.id as AppTabId)}
                 style={{
                   borderBottom: active ? "2px solid #6366f1" : "2px solid transparent",
                   padding: isMobile ? "8px 14px" : "10px 18px",
@@ -241,6 +246,8 @@ export default function Layout() {
               to="/app/admin"
               className="nav-tab"
               aria-current={activeTab === "admin" ? "page" : undefined}
+              onMouseEnter={() => prefetchRoute("admin")}
+              onFocus={() => prefetchRoute("admin")}
               style={{
                 borderBottom: activeTab === "admin" ? "2px solid #f59e0b" : "2px solid transparent",
                 padding: isMobile ? "8px 14px" : "10px 18px",
