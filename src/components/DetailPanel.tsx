@@ -71,6 +71,10 @@ export function DetailPanel({
   }
 
   const allMins = weekObj.sessions.reduce((a, s) => a + s.resources.reduce((b, r) => b + r.mins, 0), 0);
+  const buildHours = weekObj.sessions.reduce(
+    (a, s) => a + s.resources.reduce((b, r) => b + (r.type === "Build" ? (r.spec?.estHours ?? 0) : 0), 0),
+    0,
+  );
 
   const typeCounts: Record<string, number> = {};
   weekObj.sessions.forEach((s) => s.resources.forEach((r) => {
@@ -258,7 +262,12 @@ export function DetailPanel({
                 </span>
               );
             })}
-            <span style={{ fontSize: 11, color: "var(--text-secondary)", marginLeft: 4 }}>≈ {allMins} min total</span>
+            <span style={{ fontSize: 11, color: "var(--text-secondary)", marginLeft: 4 }}>
+              ≈ {allMins} min reading
+              {buildHours > 0 && (
+                <span style={{ color: "#fbbf24" }}> · ~{buildHours}h building</span>
+              )}
+            </span>
             <span
               className={doneInWeek === totalResInWeek && totalResInWeek > 0 ? "success-text" : ""}
               style={{ fontSize: 11, color: doneInWeek === totalResInWeek && totalResInWeek > 0 ? successColor : "var(--text-dim)", marginLeft: "auto" }}
