@@ -4,11 +4,10 @@ import { resId } from "../utils/stats";
 import { getResourceUrl } from "../utils/url";
 import type { Resource } from "../data/models";
 import { useBookmarks } from "../hooks/useBookmarks";
-import { CONCEPTS } from "../data/concepts/index";
+import { useConcepts } from "../hooks/useConcepts";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import type { BuildSubmission } from "../api/builds";
 import type { Language } from "../data/roadmap-index";
-import { BUILD_SPECS } from "../data/build-specs";
 import type { UserNote } from "../api/notes";
 
 interface Props {
@@ -55,10 +54,9 @@ export function ResourceCard({
 
   const isBuild = res.type === "Build";
   const existing = isBuild ? buildSubmissions?.get(id) : undefined;
-  // Prefer DB-loaded spec (res.spec, keyed by resId on the server). Fall back to
-  // the bundled BUILD_SPECS map keyed by res.item for resources whose spec
-  // hasn't been migrated to the DB yet.
-  const spec = isBuild ? (res.spec ?? BUILD_SPECS[res.item] ?? null) : null;
+  // DB-loaded spec via the /api/roadmap response. The previous in-bundle
+  // fallback was retired once 107/107 build_specs were seeded into Postgres.
+  const spec = isBuild ? (res.spec ?? null) : null;
 
   const difficultyStyle: Record<string, { color: string; bg: string; border: string }> = {
     beginner:     { color: "#4ade80", bg: "#4ade8012", border: "#4ade8033" },
@@ -96,7 +94,8 @@ export function ResourceCard({
   }, [existingGh, existingNotes]);
 
   // Cross-link: find first concept whose keywords match this resource
-  const linkedConcept = CONCEPTS.find((c) =>
+  const { concepts: allConcepts } = useConcepts();
+  const linkedConcept = allConcepts.find((c) =>
     c.roadmapKeywords?.some((kw) =>
       res.item.toLowerCase().includes(kw) || res.where.toLowerCase().includes(kw),
     ),

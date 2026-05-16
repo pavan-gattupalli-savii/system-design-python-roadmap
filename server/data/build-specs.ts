@@ -1,9 +1,18 @@
 // ── BUILD SPECS ───────────────────────────────────────────────────────────────
 // Detailed requirement specs for every "Build" resource in the roadmap.
 // Keyed by the exact `res.item` string from the roadmap data.
-// Used by ResourceCard to render a rich expanded panel.
+// Source-of-truth file consumed by server/scripts/seed-build-specs.ts; the
+// runtime data lives in the build_specs DB table and is served via the
+// /api/roadmap response (Resource.spec).
 
-import type { BuildSpec } from "./models";
+interface BuildSpec {
+  overview:     string;
+  requirements: string[];
+  acceptance:   string[];
+  diagram?:     string;
+  hints?:       string[];
+  difficulty:   "beginner" | "intermediate" | "advanced";
+}
 
 export const BUILD_SPECS: Record<string, BuildSpec> = {
 

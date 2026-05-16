@@ -1,13 +1,14 @@
 // ── ConceptsPage ──────────────────────────────────────────────────────────────
 // Two-panel layout: sidebar category list (left) + concept article (right).
-// All content is bundled — zero network requests.
+// Content loaded from /api/concepts via useConcepts hook (cached 30 min).
+// Diagrams remain in-bundle (React SVG components) and dispatch by DiagramKey.
 // Route: /app/concepts   → shows list + first concept
 //        /app/concepts/:slug → shows list + that concept
 
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { CONCEPTS, CONCEPTS_BY_SLUG, CONCEPT_CATEGORIES } from "../data/concepts/index";
-import type { Concept, ConceptCategory, ConceptSection } from "../data/concepts/index";
+import { useConcepts } from "../hooks/useConcepts";
+import type { Concept, ConceptCategory, ConceptSection } from "../lib/conceptTypes";
 import { ConceptDiagram } from "../components/concepts/ConceptDiagram";
 import type { LayoutContext } from "../components/Layout";
 
@@ -211,21 +212,23 @@ function ConceptArticle({ concept, allConcepts }: { concept: Concept; allConcept
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar({
-  active, search, onSearch,
+  active, search, onSearch, concepts, categories,
 }: {
   active: Concept | null;
   search: string;
   onSearch: (v: string) => void;
+  concepts: Concept[];
+  categories: ConceptCategory[];
 }) {
   const navigate = useNavigate();
 
   const filtered = useMemo(() => {
-    if (!search) return CONCEPTS;
+    if (!search) return concepts;
     const q = search.toLowerCase();
-    return CONCEPTS.filter(
+    return concepts.filter(
       (c) => c.title.toLowerCase().includes(q) || c.tagline.toLowerCase().includes(q) || c.category.toLowerCase().includes(q),
     );
-  }, [search]);
+  }, [search, concepts]);
 
   return (
     <div style={{
@@ -261,7 +264,7 @@ function Sidebar({
       </div>
 
       {/* Category groups */}
-      {CONCEPT_CATEGORIES.map((cat) => {
+      {categories.map((cat) => {
         const items = filtered.filter((c) => c.category === cat);
         if (items.length === 0) return null;
         const cc = CAT_COLOR[cat] ?? { tx: "var(--text-muted)", bg: "transparent" };
@@ -327,7 +330,7 @@ function Sidebar({
       {/* Footer */}
       <div style={{ marginTop: "auto", padding: "16px", borderTop: "1px solid var(--border-subtle)" }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1.5 }}>
-          {CONCEPTS.length} concepts — all content bundled, no API calls.<br />
+          {concepts.length} concepts — content loaded from API.<br />
           More concepts added regularly.
         </div>
       </div>
@@ -336,12 +339,12 @@ function Sidebar({
 }
 
 // ── Mobile concept list ───────────────────────────────────────────────────────
-function MobileConceptList({ active }: { active: Concept | null }) {
+function MobileConceptList({ active, concepts }: { active: Concept | null; concepts: Concept[] }) {
   const navigate = useNavigate();
   return (
     <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
       <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
-        {CONCEPTS.map((c) => {
+        {concepts.map((c) => {
           const cc = CAT_COLOR[c.category] ?? { tx: "#a5b4fc", bg: "#6366f111" };
           const isActive = active?.slug === c.slug;
           return (
@@ -374,17 +377,26 @@ export default function ConceptsPage() {
   const isMobile = ctx.isMobile;
 
   const [search, setSearch] = useState("");
+  const { concepts, bySlug, categories, isLoading } = useConcepts();
+
+  if (isLoading) {
+    return (
+      <div style={{ flex: 1, display: "grid", placeItems: "center", color: "var(--text-muted)", fontSize: 13 }}>
+        Loading concepts…
+      </div>
+    );
+  }
 
   const active: Concept | null = slug
-    ? (CONCEPTS_BY_SLUG.get(slug) ?? CONCEPTS[0])
-    : CONCEPTS[0];
+    ? (bySlug.get(slug) ?? concepts[0] ?? null)
+    : (concepts[0] ?? null);
 
   if (isMobile) {
     return (
       <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-        <MobileConceptList active={active} />
+        <MobileConceptList active={active} concepts={concepts} />
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {active && <ConceptArticle concept={active} allConcepts={CONCEPTS} />}
+          {active && <ConceptArticle concept={active} allConcepts={concepts} />}
         </div>
       </div>
     );
@@ -393,12 +405,12 @@ export default function ConceptsPage() {
   return (
     <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
       {/* Sidebar */}
-      <Sidebar active={active} search={search} onSearch={setSearch} />
+      <Sidebar active={active} search={search} onSearch={setSearch} concepts={concepts} categories={categories} />
 
       {/* Main content */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {active ? (
-          <ConceptArticle concept={active} allConcepts={CONCEPTS} />
+          <ConceptArticle concept={active} allConcepts={concepts} />
         ) : (
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",

@@ -38,8 +38,8 @@ export function SagaFlow() {
         {choreoServices.map((s, i) => (
           <g key={i}>
             <rect x={s.x} y={48} width={130} height={52} rx={6} fill={s.col + "18"} stroke={s.col} strokeWidth={1.5} />
-            <text x={s.x + 65} y={70} textAnchor="middle" fontSize={9} fontWeight={700} fill={s.col}>{s.name.split("\n")[0]}</text>
-            <text x={s.x + 65} y={83} textAnchor="middle" fontSize={9} fontWeight={700} fill={s.col}>{s.name.split("\n")[1]}</text>
+            <text x={s.x + 65} y={70} textAnchor="middle" fontSize={9} fontWeight={700} fill={s.col}>{s.label.split("\n")[0]}</text>
+            <text x={s.x + 65} y={83} textAnchor="middle" fontSize={9} fontWeight={700} fill={s.col}>{s.label.split("\n")[1]}</text>
 
             {/* Event bus arrow between services */}
             {i < choreoServices.length - 1 && (

@@ -1,7 +1,7 @@
 // ── ConceptDiagram ────────────────────────────────────────────────────────────
 // Dispatches a DiagramKey to the correct SVG component.
 
-import type { DiagramKey } from "../../data/concepts/index";
+import type { DiagramKey } from "../../lib/conceptTypes";
 import { LatencyTimeline }    from "./diagrams/LatencyTimeline";
 import { LatencyTable }       from "./diagrams/LatencyTable";
 import { LLDSymbolGrid }      from "./diagrams/LLDSymbolGrid";

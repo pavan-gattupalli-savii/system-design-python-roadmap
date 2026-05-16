@@ -27,7 +27,7 @@ interface ClientBuildSpec {
 async function loadFrontendSpecs(): Promise<Record<string, ClientBuildSpec>> {
   // Dynamic import from the frontend source — single source of truth.
   // Path resolved relative to the `server/` cwd.
-  const mod = await import("../../src/data/build-specs.ts");
+  const mod = await import("../data/build-specs.ts");
   return mod.BUILD_SPECS as Record<string, ClientBuildSpec>;
 }
 
