@@ -32,9 +32,12 @@ export function SearchResults({ roadmap, query, onJumpToWeek, isMobile, complete
     const q = query.toLowerCase();
     const found: SearchHit[] = [];
     roadmap.forEach((p) => {
+      const phaseHit = (p.outcomes ?? []).some((o) => o.toLowerCase().includes(q));
       p.weeks.forEach((w) => {
+        const weekTextHit = w.title.toLowerCase().includes(q)
+          || (w.learningObjectives ?? []).some((o) => o.toLowerCase().includes(q));
         w.sessions.forEach((s, si) => {
-          const sessionHit = s.focus.toLowerCase().includes(q) || w.title.toLowerCase().includes(q);
+          const sessionHit = phaseHit || weekTextHit || s.focus.toLowerCase().includes(q);
           s.resources.forEach((r, ri) => {
             if (sessionHit || r.item.toLowerCase().includes(q) || r.type.toLowerCase().includes(q) || r.where.toLowerCase().includes(q)) {
               found.push({ p, w, s, si, r, ri });

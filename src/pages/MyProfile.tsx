@@ -10,6 +10,7 @@ import type { LayoutContext } from "../components/Layout";
 import { useAuth } from "../lib/auth";
 import type { Language } from "../data/roadmap-index";
 import BookmarksTab from "../components/BookmarksTab";
+import NotesTab from "../components/NotesTab";
 import { useBuilds } from "../hooks/useBuilds";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -62,7 +63,7 @@ export default function MyProfile() {
   const allBuilds = [...buildsPy.values(), ...buildsJava.values()]
     .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
-  const [tab, setTab] = useState<"info" | "prefs" | "bookmarks">("info");
+  const [tab, setTab] = useState<"info" | "prefs" | "bookmarks" | "notes">("info");
   const [form, setForm] = useState<ProfileForm>({ displayName: "", github: "", linkedin: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -281,7 +282,7 @@ export default function MyProfile() {
           padding: 4,
           marginBottom: 20,
         }}>
-          {(["info", "prefs", "bookmarks"] as const).map((t) => (
+          {(["info", "prefs", "bookmarks", "notes"] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -303,7 +304,7 @@ export default function MyProfile() {
                 boxShadow: tab === t ? "0 1px 6px #6366f133" : "none",
               }}
             >
-              {t === "info" ? "✏️  Edit Profile" : t === "prefs" ? "⚙️  Preferences" : "★ Bookmarks"}
+              {t === "info" ? "✏️  Edit Profile" : t === "prefs" ? "⚙️  Preferences" : t === "bookmarks" ? "★ Bookmarks" : "📝 Notes"}
             </button>
           ))}
         </div>
@@ -447,6 +448,7 @@ export default function MyProfile() {
         )}
 
         {tab === "bookmarks" && <BookmarksTab />}
+        {tab === "notes"     && <NotesTab />}
 
       </div>
     </div>
