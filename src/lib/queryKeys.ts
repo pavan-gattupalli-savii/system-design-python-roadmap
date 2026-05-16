@@ -68,4 +68,13 @@ export const qk = {
   // ── Community lists (read by infinite/list hooks elsewhere) ──────────────
   readings:    ["readings"] as const,
   experiences: ["experiences"] as const,
+  interviews:  ["interviews"] as const,
+  readingsList:    (sort: string) => ["readings", sort] as const,
+  experiencesList: (sort: string) => ["experiences", sort] as const,
+  interviewsList:  (sort: string) => ["interviews", sort] as const,
+
+  // ── Admin ────────────────────────────────────────────────────────────────
+  admin: {
+    pending: ["admin", "pending"] as const,
+  },
 } as const;

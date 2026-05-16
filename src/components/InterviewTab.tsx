@@ -18,6 +18,7 @@ import { buildInterviewsUrl, buildExperiencesUrl } from "../api/interviews";
 import { useAuth } from "../lib/auth";
 import { useMyInteractions } from "../hooks/useMyInteractions";
 import { useBookmarks } from "../hooks/useBookmarks";
+import { qk } from "../lib/queryKeys";
 
 const SUBMIT_QA_PATH   = "/app/interview/submit";
 const SUBMIT_EXP_PATH  = "/app/experiences/submit";
@@ -145,7 +146,7 @@ function ExperiencesSection({ isMobile }: { isMobile: boolean }) {
   // ── API fetch ────────────────────────────────────────────────────────
   const expApiUrl = buildExperiencesUrl({ sort, limit: 200 });
   const { data: expResp, isLoading: expLoading, error: expErr } = useQuery({
-    queryKey: ["experiences", sort],
+    queryKey: qk.experiencesList(sort),
     queryFn:  () => apiFetch<{ data: InterviewExp[]; page: number; limit: number }>(expApiUrl),
   });
   const expError = expErr instanceof Error ? expErr.message : null;
@@ -549,7 +550,7 @@ function QASection({ isMobile }: { isMobile: boolean }) {
   // ── API fetch ────────────────────────────────────────────────────────
   const qaApiUrl = buildInterviewsUrl({ sort, limit: 200 });
   const { data: qaResp, isLoading: qaLoading, error: qaErr } = useQuery({
-    queryKey: ["interviews", sort],
+    queryKey: qk.interviewsList(sort),
     queryFn:  () => apiFetch<{ data: InterviewQ[]; page: number; limit: number }>(qaApiUrl),
   });
   const qaError = qaErr instanceof Error ? qaErr.message : null;

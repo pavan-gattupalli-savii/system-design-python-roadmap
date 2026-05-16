@@ -8,6 +8,7 @@ import { useAuth } from "../lib/auth";
 import { useRoadmap } from "../hooks/useRoadmap";
 import { resId } from "../utils/stats";
 import { getResourceUrl } from "../utils/url";
+import { qk } from "../lib/queryKeys";
 
 // ── Section ───────────────────────────────────────────────────────────────────
 function BookmarkSection({
@@ -105,7 +106,7 @@ export default function BookmarksTab() {
   const { toggleBookmark } = useBookmarks();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["me", "bookmarks-resolved"],
+    queryKey: qk.me.resolvedBookmarks,
     queryFn:  fetchResolvedBookmarks,
     enabled:  !!user,
     staleTime: 60_000,

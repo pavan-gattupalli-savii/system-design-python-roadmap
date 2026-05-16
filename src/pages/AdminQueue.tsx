@@ -11,6 +11,7 @@ import {
 } from "../api/admin";
 import { FormShell } from "../components/FormShell";
 import type { LayoutContext } from "../components/Layout";
+import { qk } from "../lib/queryKeys";
 
 const TABS: { kind: AdminKind; label: string }[] = [
   { kind: "readings",    label: "Readings" },
@@ -25,18 +26,18 @@ export default function AdminQueue() {
   const [active, setActive] = useState<AdminKind>("readings");
 
   const { data: queue, isLoading, error } = useQuery<PendingQueue>({
-    queryKey: ["admin", "pending"],
+    queryKey: qk.admin.pending,
     queryFn:  fetchPending,
     staleTime: 15_000,
   });
 
   const approve = useMutation({
     mutationFn: ({ kind, id }: { kind: AdminKind; id: number }) => approveItem(kind, id),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ["admin", "pending"] }),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: qk.admin.pending }),
   });
   const reject  = useMutation({
     mutationFn: ({ kind, id }: { kind: AdminKind; id: number }) => rejectItem(kind, id),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ["admin", "pending"] }),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: qk.admin.pending }),
   });
 
   function counts(k: AdminKind): number {

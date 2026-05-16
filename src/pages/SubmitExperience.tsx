@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../lib/auth";
+import { qk } from "../lib/queryKeys";
 import { useMyProfile } from "../hooks/useMyProfile";
 import { EXP_PLATFORMS, EXP_OUTCOMES } from "../data/interviews";
 import { apiFetch } from "../api/client";
@@ -72,7 +73,7 @@ export default function SubmitExperience() {
         method: "POST",
         body:   JSON.stringify(parsed.data),
       });
-      qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: qk.me.all });
       setDone(true);
       setTimeout(() => navigate("/app/interview"), 1500);
     } catch (err) {

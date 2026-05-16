@@ -8,6 +8,7 @@ import { profileForm, type ProfileForm } from "../lib/schemas";
 import { FormButton, fieldInput } from "../components/FormShell";
 import type { LayoutContext } from "../components/Layout";
 import { useAuth } from "../lib/auth";
+import { qk } from "../lib/queryKeys";
 import type { Language } from "../data/roadmap-index";
 import BookmarksTab from "../components/BookmarksTab";
 import NotesTab from "../components/NotesTab";
@@ -81,7 +82,7 @@ export default function MyProfile() {
   const mutation = useMutation({
     mutationFn: (payload: ProfileForm) => patchMe(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: qk.me.all });
       setSavedAt(Date.now());
     },
   });

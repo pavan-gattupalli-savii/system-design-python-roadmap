@@ -13,6 +13,7 @@ import { buildReadingsUrl } from "../api/readings";
 import { useAuth } from "../lib/auth";
 import { useMyInteractions } from "../hooks/useMyInteractions";
 import { useBookmarks } from "../hooks/useBookmarks";
+import { qk } from "../lib/queryKeys";
 
 const SUBMIT_PATH = "/app/readings/submit";
 
@@ -56,7 +57,7 @@ export function ReadingsTab({ isMobile }: { isMobile: boolean }) {
   // ── API fetch ─────────────────────────────────────────────────────────────
   const apiUrl = buildReadingsUrl({ sort, limit: 200 });
   const { data: apiResp, isLoading: loading, error } = useQuery({
-    queryKey: ["readings", sort],
+    queryKey: qk.readingsList(sort),
     queryFn:  () => apiFetch<{ data: Reading[]; page: number; limit: number }>(apiUrl),
   });
   const fetchError = error instanceof Error ? error.message : null;

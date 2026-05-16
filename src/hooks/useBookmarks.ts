@@ -8,6 +8,7 @@ import { fetchBookmarks, addBookmark, removeBookmark } from "../api/bookmarks";
 import type { BookmarkType, BookmarksResponse } from "../api/bookmarks";
 import { useAuth } from "../lib/auth";
 import { useNavigate } from "react-router-dom";
+import { qk } from "../lib/queryKeys";
 
 export interface MyBookmarks {
   reading:          Set<string>;
@@ -16,7 +17,8 @@ export interface MyBookmarks {
   roadmap_resource: Set<string>;
 }
 
-export const QK = ["me", "bookmarks"] as const;
+// Back-compat alias — call sites that imported QK keep working unchanged.
+export const QK = qk.me.bookmarks;
 
 const EMPTY: MyBookmarks = {
   reading:          new Set(),
@@ -68,7 +70,7 @@ export function useBookmarks() {
     },
     // Invalidate resolved bookmarks cache so the BookmarksTab refreshes.
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["me", "bookmarks-resolved"] });
+      qc.invalidateQueries({ queryKey: qk.me.resolvedBookmarks });
     },
   });
 
