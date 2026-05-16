@@ -11,6 +11,7 @@ import { SearchResults } from "../components/SearchResults";
 import { useRoadmap }    from "../hooks/useRoadmap";
 import { usePanelResize }from "../hooks/usePanelResize";
 import { getAllWeeks }   from "../utils/stats";
+import { setLastVisited } from "../lib/lastVisited";
 import type { LayoutContext } from "../components/Layout";
 import type { Language } from "../data/roadmap-index";
 
@@ -57,6 +58,11 @@ export default function RoadmapPage() {
   }, [phase, selWeek, navigate]);
 
   const weekObj = flatWeeks.find((wk) => wk.n === selWeek && wk.phase === selPhase);
+
+  // Track the last opened (phase, week) so Home can offer a "Continue" CTA.
+  useEffect(() => {
+    if (weekObj) setLastVisited(lang, selPhase, weekObj.n);
+  }, [lang, selPhase, weekObj]);
 
   function selectPhase(ph: number) {
     const first = roadmap.find((p2) => p2.phase === ph)?.weeks[0]?.n ?? 1;

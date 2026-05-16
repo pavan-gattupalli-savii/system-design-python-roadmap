@@ -2,12 +2,13 @@
 // Big hero, feature grid, footer with creator profile. Reachable at "/" and
 // the post-sign-out redirect.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { APP_TITLE, APP_SUBTITLE } from "../constants/app";
 import { FONT_STACK } from "../constants/theme";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useAuth } from "../lib/auth";
+import { getLastVisited, type LastVisited } from "../lib/lastVisited";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
 
@@ -24,10 +25,16 @@ const FEATURES = [
 export default function Home() {
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const [resume, setResume] = useState<LastVisited | null>(null);
 
   useEffect(() => {
     document.title = APP_TITLE + " — system design roadmap with curated readings + interviews";
+    setResume(getLastVisited());
   }, []);
+
+  const resumeHref = resume
+    ? `/app/roadmap/phase/${resume.phase}/week/${resume.week}?lang=${resume.language}`
+    : null;
 
   return (
     <div style={{
@@ -106,15 +113,27 @@ export default function Home() {
           organised so you always know what to study next. Pick Python or Java and start where you are.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link to={user ? "/app/overview" : "/sign-in"} style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "#6366f1", color: "#fff", border: "none",
-            borderRadius: 9, padding: "12px 22px", fontSize: 14, fontWeight: 700,
-            textDecoration: "none", boxShadow: "0 6px 18px #6366f155",
-          }}>
-            {user ? "Open dashboard" : "Get started — free"}
-            <span aria-hidden>→</span>
-          </Link>
+          {resumeHref && resume ? (
+            <Link to={resumeHref} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "#6366f1", color: "#fff", border: "none",
+              borderRadius: 9, padding: "12px 22px", fontSize: 14, fontWeight: 700,
+              textDecoration: "none", boxShadow: "0 6px 18px #6366f155",
+            }}>
+              ▶ Continue — Phase {resume.phase} · Week {resume.week}
+              <span aria-hidden>→</span>
+            </Link>
+          ) : (
+            <Link to={user ? "/app/overview" : "/sign-in"} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "#6366f1", color: "#fff", border: "none",
+              borderRadius: 9, padding: "12px 22px", fontSize: 14, fontWeight: 700,
+              textDecoration: "none", boxShadow: "0 6px 18px #6366f155",
+            }}>
+              {user ? "Open dashboard" : "Get started — free"}
+              <span aria-hidden>→</span>
+            </Link>
+          )}
           <Link to="/app/overview" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "transparent", color: "var(--text-secondary)",
