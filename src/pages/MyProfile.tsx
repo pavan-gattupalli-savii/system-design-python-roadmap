@@ -1,5 +1,5 @@
 // ── My Profile page ───────────────────────────────────────────────────────────
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMyProfile } from "../hooks/useMyProfile";
@@ -10,9 +10,11 @@ import type { LayoutContext } from "../components/Layout";
 import { useAuth } from "../lib/auth";
 import { qk } from "../lib/queryKeys";
 import type { Language } from "../data/roadmap-index";
-import BookmarksTab from "../components/BookmarksTab";
-import NotesTab from "../components/NotesTab";
 import { useBuilds } from "../hooks/useBuilds";
+
+// Lazy: only mount when user clicks the tab. Default tab is "info".
+const BookmarksTab = lazy(() => import("../components/BookmarksTab"));
+const NotesTab     = lazy(() => import("../components/NotesTab"));
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function memberSince(iso?: string): string {
@@ -448,8 +450,16 @@ export default function MyProfile() {
           </SectionCard>
         )}
 
-        {tab === "bookmarks" && <BookmarksTab />}
-        {tab === "notes"     && <NotesTab />}
+        {tab === "bookmarks" && (
+          <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>Loading bookmarks…</div>}>
+            <BookmarksTab />
+          </Suspense>
+        )}
+        {tab === "notes" && (
+          <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>Loading notes…</div>}>
+            <NotesTab />
+          </Suspense>
+        )}
 
       </div>
     </div>
