@@ -14,6 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 // of four. Data is seeded into TanStack cache so navigating to any tab is
 // instant even on slow mobile networks.
 import { apiFetch } from "./api/client";
+import { qk } from "./lib/queryKeys";
 
 (async () => {
   try {
@@ -24,10 +25,10 @@ import { apiFetch } from "./api/client";
       experiences: unknown[];
     };
     const boot = await apiFetch<Boot>("/api/bootstrap?lang=python");
-    queryClient.setQueryData(["roadmap",     "python"],  boot.roadmap);
-    queryClient.setQueryData(["readings",    "newest"],  { data: boot.readings,    page: 1, limit: boot.readings.length    });
-    queryClient.setQueryData(["interviews",  "newest"],  { data: boot.interviews,  page: 1, limit: boot.interviews.length  });
-    queryClient.setQueryData(["experiences", "newest"],  { data: boot.experiences, page: 1, limit: boot.experiences.length });
+    queryClient.setQueryData(qk.roadmap.byLang("python"),  boot.roadmap);
+    queryClient.setQueryData(qk.readingsList("newest"),    { data: boot.readings,    page: 1, limit: boot.readings.length    });
+    queryClient.setQueryData(qk.interviewsList("newest"),  { data: boot.interviews,  page: 1, limit: boot.interviews.length  });
+    queryClient.setQueryData(qk.experiencesList("newest"), { data: boot.experiences, page: 1, limit: boot.experiences.length });
   } catch {
     // Silently ignore — components will self-fetch with retry on failure.
   }
