@@ -9,7 +9,7 @@ import type { Resource } from "../data/models";
  *   "Search: 'X'" (at line start)   → google.com/search?q=X
  *   "domain.com/path — description" → https://domain.com/path
  */
-export function resolveUrl(where: string | undefined): string | null {
+function resolveUrl(where: string | undefined): string | null {
   if (!where) return null;
   if (where.startsWith("http")) return where;
 

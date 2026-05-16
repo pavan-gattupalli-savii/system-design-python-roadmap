@@ -80,11 +80,6 @@ export interface Channel {
   desc: string;
 }
 
-export interface Tab {
-  id: string;
-  label: string;
-}
-
 export interface ColorScheme {
   color: string;
   bg: string;

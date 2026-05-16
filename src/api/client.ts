@@ -12,7 +12,7 @@ const BASE = (
 
 const TOKEN_STORAGE_KEY = "sd_session_token";
 
-export function getStoredSessionToken(): string | null {
+function getStoredSessionToken(): string | null {
   try {
     return typeof window === "undefined"
       ? null

@@ -3,7 +3,7 @@
 // Add, remove, or reorder entries here — the UI renders whatever is in this array.
 import type { Channel } from "../data/models";
 
-export const CHANNELS_PYTHON: Channel[] = [
+const CHANNELS_PYTHON: Channel[] = [
   { name: "ByteByteGo",           url: "https://youtube.com/@ByteByteGo",                        desc: "Visual system design walkthroughs" },
   { name: "Hussein Nasser",       url: "https://youtube.com/@hnasr",                             desc: "Deep dives on networking & databases" },
   { name: "Gaurav Sen",           url: "https://youtube.com/@gkcs",                              desc: "System design interview prep" },
@@ -14,7 +14,7 @@ export const CHANNELS_PYTHON: Channel[] = [
   { name: "Google SRE Book",      url: "https://sre.google/sre-book/table-of-contents/",         desc: "Reliability engineering by Google — free" },
 ];
 
-export const CHANNELS_JAVA: Channel[] = [
+const CHANNELS_JAVA: Channel[] = [
   { name: "ByteByteGo",           url: "https://youtube.com/@ByteByteGo",                        desc: "Visual system design walkthroughs" },
   { name: "Hussein Nasser",       url: "https://youtube.com/@hnasr",                             desc: "Deep dives on networking & databases" },
   { name: "Amigoscode",           url: "https://youtube.com/@amigoscode",                        desc: "Spring Boot, Java & cloud tutorials" },
@@ -34,6 +34,3 @@ export const CHANNELS_BY_LANG: Record<string, Channel[]> = {
   python: CHANNELS_PYTHON,
   java:   CHANNELS_JAVA,
 };
-
-/** Back-compat default (Python) */
-export const CHANNELS = CHANNELS_PYTHON;

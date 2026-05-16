@@ -40,8 +40,7 @@ export async function fetchMe(): Promise<AuthUser | null> {
   }
 }
 
-export interface RegisterResponse { ok: true; token: string; }
-export interface LoginResponse    { ok: true; token: string; }
+interface LoginResponse { ok: true; token: string; }
 
 export async function register(email: string, password: string, displayName?: string): Promise<LoginResponse> {
   const res = await apiFetch<LoginResponse>("/api/auth/register", {
@@ -61,33 +60,6 @@ export async function login(email: string, password: string): Promise<LoginRespo
   return res;
 }
 
-export interface RequestOtpResponse {
-  ok:      true;
-  message: string;
-}
-
-export function requestOtp(email: string): Promise<RequestOtpResponse> {
-  return apiFetch<RequestOtpResponse>("/api/auth/request-otp", {
-    method: "POST",
-    body:   JSON.stringify({ email }),
-  });
-}
-
-export interface VerifyOtpResponse {
-  ok:    true;
-  /** Bearer fallback for cookie-blocking browsers. */
-  token: string;
-}
-
-export async function verifyOtp(email: string, code: string): Promise<VerifyOtpResponse> {
-  const response = await apiFetch<VerifyOtpResponse>("/api/auth/verify-otp", {
-    method: "POST",
-    body:   JSON.stringify({ email, code }),
-  });
-  if (response.token) setStoredSessionToken(response.token);
-  return response;
-}
-
 export async function signOut(): Promise<void> {
   try {
     await apiFetch<{ ok: true }>("/api/auth/logout", { method: "POST" });
@@ -96,7 +68,7 @@ export async function signOut(): Promise<void> {
   }
 }
 
-export interface UseAuthResult {
+interface UseAuthResult {
   user:      AuthUser | null;
   isLoading: boolean;
   isError:   boolean;
