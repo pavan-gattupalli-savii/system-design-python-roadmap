@@ -11,5 +11,5 @@ export const BOOK_URLS: Record<string, string> = {
   "Head First Design Patterns": "https://www.oreilly.com/library/view/head-first-design/9781492077992/",
   "Java Concurrency in Practice": "https://jcip.net/",
   "System Design Interview Vol 1": "https://bytebytego.com/courses/system-design-interview",
-  "System Design Interview Vol 2": "https://bytebytego.com/courses/system-design-interview-vol-2",
+  "System Design Interview Vol 2": "https://www.amazon.com/System-Design-Interview-Insiders-Volume/dp/1736049119/",
 };
