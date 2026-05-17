@@ -23,11 +23,11 @@ const ROADMAP_HIGHLIGHTS = [
   { icon: "📅", label: "49–54 weeks",  desc: "Structured week-by-week curriculum for Python & Java" },
   { icon: "🎯", label: "9 phases",     desc: "Foundations → LLD → HLD → Reliability → Interview" },
   { icon: "📚", label: "600+ resources", desc: "Books, videos, docs, and hands-on build projects" },
-  { icon: "✅", label: "Progress",     desc: "Per-session tracking saved in your browser" },
+  { icon: "✅", label: "Progress",     desc: "Per-session tracking synced to your account across devices (local fallback when signed out)" },
 ];
 
 const COMMUNITY_FEATURES = [
-  { icon: "📖", label: "Reading List", desc: "Community-curated articles, videos, papers and more — all PR-reviewed" },
+  { icon: "📖", label: "Reading List", desc: "Community-curated articles, videos, papers and more — every submission admin-reviewed before it ships" },
   { icon: "💬", label: "Experiences",  desc: "Real interview experience posts from engineers at top companies" },
   { icon: "❓", label: "Q & A",        desc: "Practice questions with hints, follow-ups, and community answer docs" },
   { icon: "🔥", label: "Daily Topic", desc: "A curated topic every day from the roadmap and community readings — mark it read to build a daily streak and track consistency with a heatmap." },
@@ -110,7 +110,7 @@ export function AboutTab({ isMobile }: { isMobile: boolean }) {
         {[
           ["1", "Pick a phase", "Start from Phase 1 or jump to where your knowledge gaps are."],
           ["2", "Work week by week", "Each week has 2–3 sessions of Study → Build → Practice."],
-          ["3", "Check off resources", "Use the ☐ checkbox on each card — progress is saved in your browser."],
+          ["3", "Check off resources", "Use the ☐ checkbox on each card — progress syncs to your account across devices (saved locally when signed out)."],
           ["4", "Use the search", "Press the 🔍 bar to find any topic instantly across all weeks in both roadmaps."],
           ["5", "Log in the tracker", "Open the Google Sheets tracker to log hours and notes per week."],
           ["6", "Prep for interviews", "Browse the Experiences tab for real stories, then drill Q&A with hints and community answers."],

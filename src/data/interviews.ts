@@ -3,12 +3,11 @@
 // Each entry has hints (key points to hit), follow-ups, and company tags.
 //
 // HOW TO CONTRIBUTE:
-//   1. Fork the repo, add your entry to INTERVIEWS array (next id)
-//   2. Open a Pull Request — maintainer reviews and merges
-//   3. Site auto-deploys via GitHub Actions on merge
+//   Submit a question in-app at /app/interview/submit. Admins review every
+//   entry through the moderation queue before it ships — no fork or PR needed.
 //
 // FIELDS:
-//   id          — auto-increment
+//   id          — server-assigned
 //   category    — one of CATEGORIES
 //   title       — the question as asked by the interviewer
 //   difficulty  — "Easy" | "Medium" | "Hard"
@@ -16,7 +15,7 @@
 //   topics      — kebab-case topic tags
 //   hints       — ordered list of key points the answer must cover
 //   followUps   — optional: likely follow-up questions
-//   addedOn     — ISO date YYYY-MM-DD
+//   createdAt   — ISO date YYYY-MM-DD
 
 export interface InterviewQ {
   id:          string;

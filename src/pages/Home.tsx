@@ -18,8 +18,8 @@ const FEATURES = [
   { icon: "📚", label: "600+ curated free resources", desc: "Books, papers, videos and labs — every entry community-suggested and admin-reviewed before it ships." },
   { icon: "💬", label: "Real interview experiences", desc: "First-hand accounts from Google, Amazon, Meta and more — alongside Q&A with hints and community answer docs." },
   { icon: "✅", label: "Per-account progress",     desc: "Sign in to track completed sessions across devices. Falls back to local storage when signed out." },
-  { icon: "�", label: "Topic of the day",        desc: "A fresh curated topic every day drawn from the roadmap and community readings. Mark it done and build a streak — like LeetCode’s Daily Problem." },
-  { icon: "�🛠️", label: "In-app submissions",       desc: "Publish a reading, share an experience or contribute a question — straight from the app, no PR required." },
+  { icon: "🔥", label: "Topic of the day",        desc: "A fresh curated topic every day drawn from the roadmap and community readings. Mark it done and build a streak — like LeetCode’s Daily Problem." },
+  { icon: "🛠️", label: "In-app submissions",       desc: "Publish a reading, share an experience or contribute a question — straight from the app, no PR required." },
   { icon: "🌗", label: "Light + dark theme",       desc: "Tuned for late-night study sessions. Theme is persisted between visits." },
 ];
 

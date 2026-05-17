@@ -68,7 +68,7 @@ function Pagination({ page, total, pageSize, onChange }: {
 
 export default function InterviewQASection({ isMobile }: { isMobile: boolean }) {
   const [search,        setSearch]        = useState("");
-  const [activecat,     setActiveCat]     = useState("");
+  const [activeCat,     setActiveCat]     = useState("");
   const [activeDiff,    setActiveDiff]    = useState("");
   const [activeCompany, setActiveCompany] = useState("");
   const [sort,          setSort]          = useState<QASort>("newest");
@@ -114,7 +114,7 @@ export default function InterviewQASection({ isMobile }: { isMobile: boolean }) 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     let res = allInterviews.filter((r) => {
-      if (activecat     && r.category !== activecat)              return false;
+      if (activeCat     && r.category !== activeCat)              return false;
       if (activeDiff    && r.difficulty !== activeDiff)           return false;
       if (activeCompany && !r.companies.includes(activeCompany))  return false;
       if (!q) return true;
@@ -130,16 +130,16 @@ export default function InterviewQASection({ isMobile }: { isMobile: boolean }) 
     if (sort === "newest")     res = [...res].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     if (sort === "alpha")      res = [...res].sort((a, b) => a.title.localeCompare(b.title));
     return res;
-  }, [search, activecat, activeDiff, activeCompany, sort, allInterviews]);
+  }, [search, activeCat, activeDiff, activeCompany, sort, allInterviews]);
 
-  const activeFilterCount = (activecat ? 1 : 0) + (activeDiff ? 1 : 0) + (activeCompany ? 1 : 0);
-  const hasFilters     = !!(search || activecat || activeDiff || activeCompany);
+  const activeFilterCount = (activeCat ? 1 : 0) + (activeDiff ? 1 : 0) + (activeCompany ? 1 : 0);
+  const hasFilters     = !!(search || activeCat || activeDiff || activeCompany);
   const practicedCount = filtered.filter((q) => practiced.has(q.id)).length;
 
   function clearAll() { setSearch(""); setActiveCat(""); setActiveDiff(""); setActiveCompany(""); }
 
   // Reset to page 1 when filters change
-  React.useEffect(() => { setPage(1); }, [search, activecat, activeDiff, activeCompany, sort]);
+  React.useEffect(() => { setPage(1); }, [search, activeCat, activeDiff, activeCompany, sort]);
 
   const pagedQA = filtered.slice((page - 1) * QA_PAGE_SIZE, page * QA_PAGE_SIZE);
 
@@ -236,7 +236,7 @@ export default function InterviewQASection({ isMobile }: { isMobile: boolean }) 
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Category</div>
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                 {(CATEGORIES as readonly string[]).map((c) => {
-                  const active = activecat === c;
+                  const active = activeCat === c;
                   return (
                     <button key={c} onClick={() => setActiveCat(active ? "" : c)} style={{
                       background: active ? "#6366f1" : "transparent",
