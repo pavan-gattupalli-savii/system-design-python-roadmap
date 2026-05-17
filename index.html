@@ -7,14 +7,27 @@
     <meta name="description" content="9-Month System Design Mastery Roadmap for working engineers — curated readings, real interview Q&A, and shared experiences. Python and Java tracks." />
     <meta name="theme-color" content="#6366f1" />
 
+    <!-- Set data-theme before first paint so the page doesn't flash the wrong theme. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('sd-theme');
+          document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Open Graph / social -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="System Design Mastery Roadmap" />
     <meta property="og:description" content="9-month system design curriculum with curated readings, real interview Q&A, and field experiences. Python or Java." />
-    <meta property="og:image" content="/system-design-python-roadmap/favicon.svg" />
+    <meta property="og:image" content="https://pavan-gattupalli-savii.github.io/system-design-python-roadmap/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="System Design Mastery Roadmap" />
     <meta name="twitter:description" content="Curated readings + interview Q&A + field experiences, organised into a 9-month roadmap." />
+    <meta name="twitter:image" content="https://pavan-gattupalli-savii.github.io/system-design-python-roadmap/og.png" />
 
     <title>System Design Mastery Roadmap</title>
 
@@ -35,7 +48,7 @@
         }
       })(window.location);
     </script>
-    <script type="module" crossorigin src="/system-design-python-roadmap/assets/index-1AyE40UO.js"></script>
+    <script type="module" crossorigin src="/system-design-python-roadmap/assets/index-C83yS3M1.js"></script>
     <link rel="modulepreload" crossorigin href="/system-design-python-roadmap/assets/react-BatKE75m.js">
     <link rel="modulepreload" crossorigin href="/system-design-python-roadmap/assets/query-DOlmcjT_.js">
     <link rel="modulepreload" crossorigin href="/system-design-python-roadmap/assets/router-CRhB1Hmo.js">
