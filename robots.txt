@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pavan-gattupalli-savii.github.io/system-design-python-roadmap/sitemap.xml
