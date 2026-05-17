@@ -12,6 +12,7 @@ import type { ConceptSummary } from "../api/concepts";
 import type { Concept, ConceptCategory, ConceptSection } from "../lib/conceptTypes";
 import { ConceptDiagram } from "../components/concepts/ConceptDiagram";
 import type { LayoutContext } from "../components/Layout";
+import { useSeoMeta } from "../lib/seo";
 
 // ── Category accent colours ───────────────────────────────────────────────────
 const CAT_COLOR: Record<ConceptCategory, { bg: string; tx: string }> = {
@@ -385,6 +386,17 @@ export default function ConceptsPage() {
     : summaries[0]?.slug;
 
   const { concept: activeFull, isLoading: detailLoading } = useConceptDetail(activeSlug);
+
+  const activeTitle = activeFull?.title;
+  useSeoMeta({
+    title: activeTitle
+      ? `${activeTitle} — System Design Concept`
+      : "System Design Concepts — quick-reference glossary",
+    description: activeTitle
+      ? `${activeTitle}: definition, diagrams, trade-offs and key references — a concise system design concept reference.`
+      : "Quick-reference glossary of system design concepts: CAP, load balancing, B-trees, consistent hashing, replication, sharding, CDN, observability, microservices, and more.",
+    canonical: activeSlug ? `/app/concepts/${activeSlug}` : "/app/concepts",
+  });
 
   if (summariesLoading) {
     return (

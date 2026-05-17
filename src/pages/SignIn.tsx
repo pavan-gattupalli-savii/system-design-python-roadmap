@@ -7,6 +7,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { APP_TITLE, APP_SUBTITLE } from "../constants/app";
 import { FONT_STACK } from "../constants/theme";
 import { login, register, useAuth, useInvalidateAuth } from "../lib/auth";
+import { useSeoMeta } from "../lib/seo";
 
 type Mode = "signin" | "register";
 
@@ -33,7 +34,12 @@ export default function SignIn() {
   const [busy,        setBusy]        = useState(false);
   const [error,       setError]       = useState<string | null>(null);
 
-  useEffect(() => { document.title = `Sign in · ${APP_TITLE}`; }, []);
+  useSeoMeta({
+    title: "Sign in to sync your progress",
+    description:
+      "Sign in to System Design Mastery Roadmap to sync your progress, bookmarks, and daily-topic streak across devices.",
+    canonical: "/sign-in",
+  });
 
   useEffect(() => {
     if (!isLoading && user) navigate(next, { replace: true });

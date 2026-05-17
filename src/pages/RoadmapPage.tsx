@@ -12,6 +12,7 @@ import { useRoadmap }    from "../hooks/useRoadmap";
 import { usePanelResize }from "../hooks/usePanelResize";
 import { getAllWeeks }   from "../utils/stats";
 import { setLastVisited } from "../lib/lastVisited";
+import { useSeoMeta } from "../lib/seo";
 import type { LayoutContext } from "../components/Layout";
 import type { Language } from "../data/roadmap-index";
 
@@ -41,6 +42,13 @@ export default function RoadmapPage() {
   const selPhase = p ? parseInt(p) : 1;
   const selWeek  = w ? parseInt(w) : NaN;
   const lang: Language = ctx.lang;
+
+  const langLabel = lang === "python" ? "Python" : "Java";
+  useSeoMeta({
+    title: `${langLabel} Roadmap — 9-month system design curriculum`,
+    description: `Week-by-week ${langLabel} system design curriculum: foundations, low-level design, high-level design, reliability and interview prep. 600+ curated free resources, organised into 9 phases.`,
+    canonical: `/app/roadmap?lang=${lang}`,
+  });
 
   const { phases: roadmap, isLoading } = useRoadmap(lang);
   const flatWeeks = useMemo(() => getAllWeeks(roadmap), [roadmap]);

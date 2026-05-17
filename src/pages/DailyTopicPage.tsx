@@ -5,6 +5,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { useDailyTopic, useDailyHistory } from "../hooks/useDailyTopic";
 import { useAuth } from "../lib/auth";
 import type { LayoutContext } from "../components/Layout";
+import { useSeoMeta } from "../lib/seo";
 
 // ── Contribution graph (GitHub style) ────────────────────────────────────────
 
@@ -139,6 +140,13 @@ export default function DailyTopicPage() {
 
   const { topic, isLoading, markAsRead, isMarking } = useDailyTopic();
   const { dates: completedDates }                   = useDailyHistory(150);
+
+  useSeoMeta({
+    title: "Daily Topic — keep your system design streak alive",
+    description:
+      "A fresh curated system design topic every day from the roadmap and community readings. Mark it done, build a streak, track 20 weeks of consistency on a contribution heatmap.",
+    canonical: "/app/daily",
+  });
 
   const sourceLabel = topic?.sourceType === "session" ? "🗺 Roadmap Session" : "📖 Community Reading";
   const sourceColor = topic?.sourceType === "session" ? "#6366f1" : "#0ea5e9";

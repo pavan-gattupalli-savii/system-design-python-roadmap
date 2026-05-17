@@ -4,11 +4,19 @@ import { TrackerTab } from "../components/TrackerTab";
 import { useRoadmap } from "../hooks/useRoadmap";
 import { CHANNELS_BY_LANG } from "../constants/channels";
 import type { LayoutContext } from "../components/Layout";
+import { useSeoMeta } from "../lib/seo";
 
 export default function OverviewPage() {
   const ctx = useOutletContext<LayoutContext>();
   const navigate = useNavigate();
   const { phases: roadmap } = useRoadmap(ctx.lang);
+
+  useSeoMeta({
+    title: "Overview — your system design progress dashboard",
+    description:
+      "Track your progress across all 9 phases of the System Design Mastery Roadmap. Phase-by-phase completion, weekly stats, and a curated channel list per language.",
+    canonical: "/app/overview",
+  });
 
   return (
     <TrackerTab

@@ -10,6 +10,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { useAuth } from "../lib/auth";
 import { getLastVisited, type LastVisited } from "../lib/lastVisited";
 import { prefetchRoute } from "../lib/routePrefetch";
+import { useSeoMeta } from "../lib/seo";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/iamgpavan";
 
@@ -28,8 +29,13 @@ export default function Home() {
   const { user } = useAuth();
   const [resume, setResume] = useState<LastVisited | null>(null);
 
+  useSeoMeta({
+    description:
+      "9-Month System Design Mastery Roadmap — phase-by-phase Python & Java curriculum with 600+ curated free resources, real interview Q&A, daily-topic streak, and field experiences from engineers at Google, Amazon, Meta and more.",
+    canonical: "/",
+  });
+
   useEffect(() => {
-    document.title = APP_TITLE + " — system design roadmap with curated readings + interviews";
     setResume(getLastVisited());
   }, []);
 
