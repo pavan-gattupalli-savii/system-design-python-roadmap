@@ -189,7 +189,7 @@ export default function Layout() {
             <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer" className="tracker-link"
               style={{ display: isMobile ? "none" : undefined }}
             >
-              🔊 Tracker ↗
+              📊 Tracker ↗
             </a>
 
             <button className="theme-toggle" onClick={() => setIsDark((d) => !d)}
@@ -223,7 +223,7 @@ export default function Layout() {
             return (
               <NavLink
                 key={tab.id}
-                to={tab.path + (params.has("lang") ? `?lang=${lang}` : "")}
+                to={`${tab.path}?lang=${lang}`}
                 className="nav-tab"
                 aria-current={active ? "page" : undefined}
                 onMouseEnter={() => prefetchRoute(tab.id as AppTabId)}

@@ -10,6 +10,26 @@ function manualChunks(id) {
     if (id.includes('react-router'))                          return 'router'
     if (id.includes('@tanstack/react-query'))                 return 'query'
     if (id.includes('zod'))                                   return 'schemas'
+    // react-markdown + its full unified/remark/rehype/micromark dep tree (~120kB) is
+    // only used by NotesTab — split into its own chunk so users who never open a note
+    // don't download it, and so it caches independently across deploys.
+    if (
+      id.includes('react-markdown') ||
+      id.includes('remark-')        ||
+      id.includes('rehype-')        ||
+      id.includes('micromark')      ||
+      id.includes('mdast-')         ||
+      id.includes('hast-')          ||
+      id.includes('/unified/')      ||
+      id.includes('vfile')          ||
+      id.includes('bail')           ||
+      id.includes('trough')         ||
+      id.includes('decode-named-character-reference') ||
+      id.includes('character-entities') ||
+      id.includes('property-information') ||
+      id.includes('space-separated-tokens') ||
+      id.includes('comma-separated-tokens')
+    ) return 'markdown'
   }
   return undefined
 }
