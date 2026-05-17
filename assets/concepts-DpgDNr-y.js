@@ -1,0 +1,1 @@
+import{h as n}from"./index-06dAqLs9.js";async function a(e,c,t){return n(`/api/concepts/week/${e}/${c}/${t}`)}async function s(){return n("/api/concepts/summaries")}async function p(e){return n(`/api/concepts/${encodeURIComponent(e)}`)}export{s as a,p as b,a as f};
